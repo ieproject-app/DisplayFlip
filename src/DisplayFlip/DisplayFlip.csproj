@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DisplayFlip</RootNamespace>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>DisplayFlip</AssemblyName>
+    <ApplicationIcon>DisplayFlip.ico</ApplicationIcon>
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DisplayFlip.Core\DisplayFlip.Core.csproj" />
+    <ProjectReference Include="..\DisplayFlip.Windows\DisplayFlip.Windows.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="DisplayFlip.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <EmbeddedResource Include="DisplayFlip.ico" LogicalName="DisplayFlip.ico" />
+  </ItemGroup>
+</Project>
