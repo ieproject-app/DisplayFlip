@@ -16,5 +16,6 @@
   <ItemGroup>
     <ProjectReference Include="..\DisplayFlip.Core\DisplayFlip.Core.csproj" />
     <ProjectReference Include="..\DisplayFlip.Windows\DisplayFlip.Windows.csproj" />
+    <ProjectReference Include="..\DisplayFlip\DisplayFlip.csproj" />
   </ItemGroup>
 </Project>

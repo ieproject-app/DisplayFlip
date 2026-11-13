@@ -40,16 +40,28 @@ public sealed class TrayStabilityTests
     [Fact]
     public void TrayHost_Labels_MustBePlainAscii_NoEmojiOrMojibake()
     {
-        var src = TraySource();
-        src.Should().NotContain("ð");
-        src.Should().NotContain("â");
-        src.Should().NotContain("Tukar kiri-kanan (perlu 2+ DisplayMonitor)", "global rename artefact must not leak to UI");
-        // Every character in user-facing source must be ASCII (comments included after cleanup)
-        src.All(c => c < 128 || c == '\r' || c == '\n').Should().BeTrue("TrayHost.cs must be ASCII-clean to avoid encoding mojibake");
-        src.Should().Contain("\"Tukar kiri-kanan\"");
-        src.Should().Contain("\"Jadikan primary\"");
-        src.Should().Contain("\"Simpan layout sekarang\"");
-        src.Should().Contain("\"Terapkan profil\"");
+        var root = FindRepoRoot();
+        // Semua file presentasi Fase A harus ASCII-bersih (glyph ikon memakai escape \u).
+        var files = new[]
+        {
+            Path.Combine(root, "src", "DisplayFlip", "TrayHost.cs"),
+            Path.Combine(root, "src", "DisplayFlip", "FluentMenu.cs"),
+            Path.Combine(root, "src", "DisplayFlip", "FluentTheme.cs"),
+            Path.Combine(root, "src", "DisplayFlip", "FluentIcons.cs"),
+        };
+        foreach (var f in files)
+        {
+            var src = File.ReadAllText(f);
+            src.Should().NotContain("ð", $"{f} bebas mojibake");
+            src.Should().NotContain("â", $"{f} bebas mojibake");
+            src.All(c => c < 128 || c == '\r' || c == '\n').Should()
+                .BeTrue($"{Path.GetFileName(f)} must be ASCII-clean to avoid encoding mojibake");
+        }
+        var tray = File.ReadAllText(Path.Combine(root, "src", "DisplayFlip", "TrayHost.cs"));
+        tray.Should().Contain("\"Tukar kiri-kanan\"");
+        tray.Should().Contain("\"Jadikan primary\"");
+        tray.Should().Contain("\"Simpan layout sekarang\"");
+        tray.Should().Contain("\"Terapkan profil\"");
     }
 
     [Fact]

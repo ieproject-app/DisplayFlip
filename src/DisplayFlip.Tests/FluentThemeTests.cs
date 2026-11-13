@@ -1,0 +1,53 @@
+using FluentAssertions;
+using Xunit;
+
+namespace DisplayFlip.Tests;
+
+/// <summary>Token tema Fase A: nilai sesuai dokumen, kontras teks >= 4.5.</summary>
+public sealed class FluentThemeTests
+{
+    [Fact]
+    public void Palette_Matches_DocumentTokens()
+    {
+        // Terang (dokumen bagian 6 + jawaban owner 10).
+        DisplayFlip.FluentTheme.AccentFallbackLight.ToArgb().Should().Be(
+            System.Drawing.Color.FromArgb(0x00, 0x67, 0xB8).ToArgb());
+        DisplayFlip.FluentTheme.AccentFallbackDark.ToArgb().Should().Be(
+            System.Drawing.Color.FromArgb(0x4C, 0xC2, 0xFF).ToArgb());
+        DisplayFlip.FluentTheme.CautionBackgroundLight.ToArgb().Should().Be(
+            System.Drawing.Color.FromArgb(0xFF, 0xF4, 0xCE).ToArgb());
+        DisplayFlip.FluentTheme.CautionIconLight.ToArgb().Should().Be(
+            System.Drawing.Color.FromArgb(0x9D, 0x5D, 0x00).ToArgb());
+        DisplayFlip.FluentTheme.CautionBackgroundDark.ToArgb().Should().Be(
+            System.Drawing.Color.FromArgb(0x43, 0x35, 0x19).ToArgb());
+        DisplayFlip.FluentTheme.CautionIconDark.ToArgb().Should().Be(
+            System.Drawing.Color.FromArgb(0xFC, 0xE1, 0x00).ToArgb());
+    }
+
+    [Fact]
+    public void TextContrast_Meets_45_in_BothThemes()
+    {
+        var lightText = System.Drawing.Color.FromArgb(0x1B, 0x1B, 0x1B);
+        var lightSurface = System.Drawing.Color.FromArgb(0xFF, 0xFF, 0xFF);
+        var lightSecondary = System.Drawing.Color.FromArgb(0x6B, 0x6B, 0x6B);
+        var darkText = System.Drawing.Color.FromArgb(0xFF, 0xFF, 0xFF);
+        var darkSurface = System.Drawing.Color.FromArgb(0x2B, 0x2B, 0x2B);
+        var darkSecondary = System.Drawing.Color.FromArgb(0xC7, 0xC7, 0xC7);
+        DisplayFlip.FluentTheme.ContrastRatio(lightText, lightSurface).Should().BeGreaterThanOrEqualTo(4.5);
+        DisplayFlip.FluentTheme.ContrastRatio(lightSecondary, lightSurface).Should().BeGreaterThanOrEqualTo(4.5);
+        DisplayFlip.FluentTheme.ContrastRatio(darkText, darkSurface).Should().BeGreaterThanOrEqualTo(4.5);
+        DisplayFlip.FluentTheme.ContrastRatio(darkSecondary, darkSurface).Should().BeGreaterThanOrEqualTo(4.5);
+    }
+
+    [Fact]
+    public void Metrics_Match_Document()
+    {
+        DisplayFlip.FluentTheme.FlyoutWidth.Should().Be(240);
+        DisplayFlip.FluentTheme.SubmenuWidth.Should().Be(260);
+        DisplayFlip.FluentTheme.ItemHeight.Should().Be(32);
+        DisplayFlip.FluentTheme.MonitorRowHeight.Should().Be(44);
+        DisplayFlip.FluentTheme.RadiusMenu.Should().Be(8);
+        DisplayFlip.FluentTheme.RadiusItem.Should().Be(4);
+        DisplayFlip.FluentTheme.FontSizeBody.Should().Be(12);
+    }
+}

@@ -5,18 +5,20 @@ using Microsoft.Win32;
 
 namespace DisplayFlip;
 
-/// <summary>Tray host. Menu is rebuilt only when it opens or after an action, never on a timer while visible.</summary>
+/// <summary>Tray host. Menu Fluent (Fase A); rebuild hanya saat Opening/aksi/display berubah.</summary>
 public sealed class TrayHost : ApplicationContext
 {
     private readonly NotifyIcon _icon;
     private readonly CcdTopologyAdapter _adapter;
     private readonly ProfileService _profiles;
     private readonly ProfileStore _store;
-    private readonly ContextMenuStrip _menu;
-    private readonly ToolStripMenuItem _mirrorItem;
-    private readonly ToolStripMenuItem _primaryParent;
-    private readonly ToolStripMenuItem _applyParent;
-    private readonly ToolStripMenuItem _startupItem;
+    private readonly FluentMenu _menu;
+    private readonly FluentMenu _primaryMenu;
+    private readonly FluentMenu _applyMenu;
+    private readonly FluentMenuItem _mirrorItem;
+    private readonly FluentMenuItem _primaryParent;
+    private readonly FluentMenuItem _applyParent;
+    private readonly FluentMenuItem _startupItem;
     private bool _disposed;
     private bool _isMenuOpen;
     private bool _updatingStartup;
@@ -28,31 +30,37 @@ public sealed class TrayHost : ApplicationContext
         _store = new ProfileStore();
         _profiles = new ProfileService(_adapter, _store);
 
-        _menu = new ContextMenuStrip();
-        _mirrorItem = new ToolStripMenuItem("Tukar kiri-kanan");
+        _menu = new FluentMenu(FluentTheme.FlyoutWidth);
+        _primaryMenu = new FluentMenu(FluentTheme.SubmenuWidth);
+        _applyMenu = new FluentMenu(FluentTheme.SubmenuWidth);
+
+        _mirrorItem = Row("Tukar kiri-kanan", FluentIcons.Swap, FluentTheme.FlyoutWidth);
         _mirrorItem.Click += async (_, _) => await OnMirrorClickedAsync();
-        _menu.Items.Add(_mirrorItem);
-
-        _primaryParent = new ToolStripMenuItem("Jadikan primary");
-        _menu.Items.Add(_primaryParent);
-
-        var saveItem = new ToolStripMenuItem("Simpan layout sekarang");
-        saveItem.Click += (_, _) => OnSaveClicked();
-        _menu.Items.Add(saveItem);
-
-        _applyParent = new ToolStripMenuItem("Terapkan profil");
-        _menu.Items.Add(_applyParent);
-
+        _menu.AddItem(_mirrorItem);
         _menu.Items.Add(new ToolStripSeparator());
 
-        _startupItem = new ToolStripMenuItem("Jalan otomatis saat Windows start");
+        _primaryParent = Row("Jadikan primary", FluentIcons.StarOutline, FluentTheme.FlyoutWidth);
+        _primaryParent.DropDown = _primaryMenu;
+        _menu.AddItem(_primaryParent);
+
+        var saveItem = Row("Simpan layout sekarang", FluentIcons.Save, FluentTheme.FlyoutWidth);
+        saveItem.Click += (_, _) => OnSaveClicked();
+        _menu.AddItem(saveItem);
+
+        _applyParent = Row("Terapkan profil", FluentIcons.Play, FluentTheme.FlyoutWidth);
+        _applyParent.DropDown = _applyMenu;
+        _menu.AddItem(_applyParent);
+        _menu.Items.Add(new ToolStripSeparator());
+
+        _startupItem = Row("Jalan otomatis saat Windows start", null, FluentTheme.FlyoutWidth);
+        _startupItem.CheckBox = true;
         _startupItem.CheckOnClick = false;
         _startupItem.Click += (_, _) => OnStartupClicked();
-        _menu.Items.Add(_startupItem);
+        _menu.AddItem(_startupItem);
 
-        var exitItem = new ToolStripMenuItem("Keluar");
+        var exitItem = Row("Keluar", FluentIcons.Close, FluentTheme.FlyoutWidth);
         exitItem.Click += (_, _) => ExitThread();
-        _menu.Items.Add(exitItem);
+        _menu.AddItem(exitItem);
 
         _menu.Opening += (_, _) =>
         {
@@ -71,6 +79,16 @@ public sealed class TrayHost : ApplicationContext
 
         SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
         RefreshMenu(force: true);
+    }
+
+    private static FluentMenuItem Row(string text, char? glyph, int menuWidth, int height = 0)
+    {
+        var item = new FluentMenuItem(text, height == 0 ? FluentTheme.ItemHeight : height)
+        {
+            Glyph = glyph
+        };
+        item.Width = menuWidth - FluentTheme.MenuPadding * 2;
+        return item;
     }
 
     private void OnDisplaySettingsChanged(object? sender, EventArgs e)
@@ -132,8 +150,7 @@ public sealed class TrayHost : ApplicationContext
     {
         if (_disposed)
             return;
-        // Opening calls with force:true before the menu is shown.
-        // Any later non-forced call while open is ignored to keep the menu stable.
+        // Panggilan non-forced saat menu terbuka diabaikan agar menu stabil.
         if (_isMenuOpen && !force)
             return;
 
@@ -149,45 +166,58 @@ public sealed class TrayHost : ApplicationContext
             _lastSignature = signature;
 
             _mirrorItem.Enabled = monitors.Count >= 2;
-            _mirrorItem.Text = monitors.Count < 2
-                ? "Tukar kiri-kanan (perlu 2+ monitor)"
-                : "Tukar kiri-kanan";
+            // Keputusan owner 8: tanpa item Mirror baru; item yang ada disabled + subteks.
+            // Baris 44px saat ada subteks agar dua baris tidak bertumpuk.
+            _mirrorItem.SecondaryLine = monitors.Count < 2 ? "Perlu 2+ monitor" : null;
+            _mirrorItem.Height = _mirrorItem.SecondaryLine != null
+                ? FluentTheme.MonitorRowHeight
+                : FluentTheme.ItemHeight;
 
-            var primaryEntries = new List<(string label, bool enabled, Action? onClick)>();
+            _primaryMenu.ClearItems();
             if (monitors.Count == 0)
             {
-                primaryEntries.Add(("(tidak ada monitor aktif)", false, null));
+                var none = Row("(tidak ada monitor aktif)", null, FluentTheme.SubmenuWidth);
+                none.Enabled = false;
+                _primaryMenu.AddItem(none);
+                _primaryParent.Enabled = false;
             }
             else
             {
+                _primaryParent.Enabled = true;
                 foreach (var m in monitors)
                 {
                     var id = m.StableKey;
                     var isPrimary = m.Position.X == 0 && m.Position.Y == 0;
-                    var label = isPrimary ? $"{m.FriendlyName} (primary)" : m.FriendlyName;
-                    Action onClick = () => OnSetPrimary(id, m.FriendlyName);
-                    primaryEntries.Add((label, true, onClick));
+                    var item = Row(m.FriendlyName, null, FluentTheme.SubmenuWidth, FluentTheme.MonitorRowHeight);
+                    item.Radio = true;
+                    item.RadioChecked = isPrimary;
+                    item.BadgePrimary = isPrimary;
+                    // ASCII "x" (bukan "x") agar file sumber tetap ASCII-bersih.
+                    item.SecondaryLine = $"{m.Position.Width}x{m.Position.Height}";
+                    item.Click += (_, _) => OnSetPrimary(id, m.FriendlyName);
+                    _primaryMenu.AddItem(item);
                 }
             }
-            RebuildSubmenu(_primaryParent, primaryEntries);
-            _primaryParent.Enabled = monitors.Count > 0;
 
-            var profileEntries = new List<(string label, bool enabled, Action? onClick)>();
+            _applyMenu.ClearItems();
             if (names.Count == 0)
             {
-                profileEntries.Add(("(belum ada profil)", false, null));
+                var empty = Row("(belum ada profil)", null, FluentTheme.SubmenuWidth);
+                empty.Enabled = false;
+                _applyMenu.AddItem(empty);
+                _applyParent.Enabled = false;
             }
             else
             {
+                _applyParent.Enabled = true;
                 foreach (var n in names)
                 {
                     var captured = n;
-                    Action onClick = () => _ = OnApplyClickedAsync(captured);
-                    profileEntries.Add((captured, true, onClick));
+                    var item = Row(captured, null, FluentTheme.SubmenuWidth);
+                    item.Click += async (_, _) => await OnApplyClickedAsync(captured);
+                    _applyMenu.AddItem(item);
                 }
             }
-            RebuildSubmenu(_applyParent, profileEntries);
-            _applyParent.Enabled = names.Count > 0;
 
             if (!_updatingStartup)
                 _startupItem.Checked = startup;
@@ -198,23 +228,6 @@ public sealed class TrayHost : ApplicationContext
         catch
         {
             // Keep tray alive if a transient CCD read fails.
-        }
-    }
-
-    private static void RebuildSubmenu(ToolStripMenuItem parent, IReadOnlyList<(string label, bool enabled, Action? onClick)> entries)
-    {
-        while (parent.DropDownItems.Count > 0)
-        {
-            var item = parent.DropDownItems[0];
-            parent.DropDownItems.RemoveAt(0);
-            item.Dispose();
-        }
-        foreach (var (label, enabled, onClick) in entries)
-        {
-            var item = new ToolStripMenuItem(label) { Enabled = enabled };
-            if (onClick != null)
-                item.Click += (_, _) => onClick();
-            parent.DropDownItems.Add(item);
         }
     }
 
@@ -353,6 +366,8 @@ public sealed class TrayHost : ApplicationContext
             _icon.Visible = false;
             _icon.Dispose();
             _menu.Dispose();
+            _primaryMenu.Dispose();
+            _applyMenu.Dispose();
         }
         base.Dispose(disposing);
     }
