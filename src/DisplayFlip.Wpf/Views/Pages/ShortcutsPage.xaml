@@ -11,60 +11,58 @@
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="32,24,32,32">
-            <ui:TextBlock
-                FontTypography="Title"
-                Text="Pintasan Keyboard" />
-            <ui:TextBlock
-                Margin="0,4,0,20"
-                Appearance="Secondary"
-                FontTypography="Body"
-                Text="Atur tombol pintas global untuk aksi cepat multi-layar dan pergantian profil." />
+    <StackPanel Margin="32,24,32,32">
+        <ui:TextBlock
+            FontTypography="Title"
+            Text="Pintasan Keyboard" />
+        <ui:TextBlock
+            Margin="0,4,0,20"
+            Appearance="Secondary"
+            FontTypography="Body"
+            Text="Atur tombol pintas global untuk aksi cepat multi-layar dan pergantian profil." />
 
-            <ui:TextBlock
-                Margin="0,12,0,12"
-                FontTypography="Subtitle"
-                Text="Aksi Cepat Global" />
+        <ui:TextBlock
+            Margin="0,12,0,12"
+            FontTypography="Subtitle"
+            Text="Aksi Cepat Global" />
 
-            <ui:CardControl Margin="0,0,0,12">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="BodyStrong" Text="Tukar Kiri-Kanan" />
-                        <ui:TextBlock Appearance="Secondary" Text="Tukar posisi horizontal antar dua monitor secara instan." />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ui:CardControl.Icon>
-                    <ui:SymbolIcon Symbol="ArrowSwap24" />
-                </ui:CardControl.Icon>
-                <ui:Button Content="Win + Ctrl + Shift + X" IsEnabled="False" />
-            </ui:CardControl>
+        <ui:CardControl Margin="0,0,0,12">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Tukar Kiri-Kanan" />
+                    <ui:TextBlock Appearance="Secondary" Text="Tukar posisi horizontal antar dua monitor secara instan." />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="ArrowSwap24" />
+            </ui:CardControl.Icon>
+            <ui:Button Content="Win + Ctrl + Shift + X" IsEnabled="False" />
+        </ui:CardControl>
 
-            <ui:CardControl Margin="0,0,0,12">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="BodyStrong" Text="Identifikasi Layar" />
-                        <ui:TextBlock Appearance="Secondary" Text="Tampilkan nomor monitor fisik besar di tengah layar." />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ui:CardControl.Icon>
-                    <ui:SymbolIcon Symbol="Eye24" />
-                </ui:CardControl.Icon>
-                <ui:Button Content="Win + Ctrl + Shift + I" IsEnabled="False" />
-            </ui:CardControl>
+        <ui:CardControl Margin="0,0,0,12">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Identifikasi Layar" />
+                    <ui:TextBlock Appearance="Secondary" Text="Tampilkan nomor monitor fisik besar di tengah layar." />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Eye24" />
+            </ui:CardControl.Icon>
+            <ui:Button Content="Win + Ctrl + Shift + I" IsEnabled="False" />
+        </ui:CardControl>
 
-            <ui:CardControl Margin="0,0,0,12">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="BodyStrong" Text="Buka Pengaturan" />
-                        <ui:TextBlock Appearance="Secondary" Text="Buka jendela pengaturan DisplayFlip dari mana saja." />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ui:CardControl.Icon>
-                    <ui:SymbolIcon Symbol="Settings24" />
-                </ui:CardControl.Icon>
-                <ui:Button Content="Win + Ctrl + Shift + S" IsEnabled="False" />
-            </ui:CardControl>
-        </StackPanel>
-    </ScrollViewer>
+        <ui:CardControl Margin="0,0,0,12">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Buka Pengaturan" />
+                    <ui:TextBlock Appearance="Secondary" Text="Buka jendela pengaturan DisplayFlip dari mana saja." />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Settings24" />
+            </ui:CardControl.Icon>
+            <ui:Button Content="Win + Ctrl + Shift + S" IsEnabled="False" />
+        </ui:CardControl>
+    </StackPanel>
 </Page>

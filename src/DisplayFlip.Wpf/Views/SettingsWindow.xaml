@@ -7,6 +7,7 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:pages="clr-namespace:DisplayFlip.UI.Views.Pages"
     Title="DisplayFlip — Pengaturan"
+    Icon="pack://application:,,,/DisplayFlip.ico"
     Width="980"
     Height="720"
     MinWidth="680"
@@ -19,25 +20,9 @@
     mc:Ignorable="d">
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <ui:TitleBar
-            x:Name="TitleBar"
-            Grid.Row="0"
-            Title="DisplayFlip — Pengaturan"
-            CloseWindowByDoubleClickOnIcon="True">
-            <ui:TitleBar.Icon>
-                <ui:ImageIcon Source="pack://application:,,,/DisplayFlip.ico" />
-            </ui:TitleBar.Icon>
-        </ui:TitleBar>
-
         <ui:NavigationView
             x:Name="RootNavigation"
-            Grid.Row="1"
-            Padding="24,12,24,24"
+            Padding="24,0,24,24"
             CompactPaneLength="52"
             IsBackButtonVisible="Collapsed"
             IsPaneToggleVisible="True"
@@ -82,5 +67,14 @@
             </ui:NavigationView.FooterMenuItems>
 
         </ui:NavigationView>
+
+        <ui:TitleBar
+            x:Name="TitleBar"
+            Title="DisplayFlip — Pengaturan"
+            CloseWindowByDoubleClickOnIcon="True">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="pack://application:,,,/DisplayFlip.ico" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
     </Grid>
 </ui:FluentWindow>

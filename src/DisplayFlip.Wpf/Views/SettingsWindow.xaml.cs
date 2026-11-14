@@ -15,10 +15,10 @@ public partial class SettingsWindow : FluentWindow
 
     public SettingsWindow()
     {
-        InitializeComponent();
-
-        // Synchronize light/dark theme and system accent colors with Windows 11
+        // Synchronize light/dark theme and system accent colors with Windows 11 before components load
         SystemThemeWatcher.Watch(this, WindowBackdropType.Mica, true);
+
+        InitializeComponent();
 
         RootNavigation.SetPageProviderService(_pageService);
         Loaded += OnLoaded;

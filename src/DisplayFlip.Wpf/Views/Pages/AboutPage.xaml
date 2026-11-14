@@ -11,51 +11,56 @@
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="32,24,32,32">
-            <ui:TextBlock
-                FontTypography="Title"
-                Text="Tentang &amp; CLI" />
-            <ui:TextBlock
-                Margin="0,4,0,20"
-                Appearance="Secondary"
-                FontTypography="Body"
-                Text="Informasi aplikasi DisplayFlip, status runtime .NET 10, dan dokumentasi perintah baris perintah (CLI)." />
+    <StackPanel Margin="32,24,32,32">
+        <ui:TextBlock
+            FontTypography="Title"
+            Text="Tentang &amp; CLI" />
+        <ui:TextBlock
+            Margin="0,4,0,20"
+            Appearance="Secondary"
+            FontTypography="Body"
+            Text="Informasi aplikasi DisplayFlip, status runtime .NET 10, dan dokumentasi perintah baris perintah (CLI)." />
 
-            <ui:CardControl Margin="0,0,0,12">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="BodyStrong" Text="DisplayFlip v1.0" />
-                        <ui:TextBlock Appearance="Secondary" Text="Utilitas manajemen multi-monitor Windows 11 Fluent (.NET 10 &amp; WPF-UI 4.3.0)." />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ui:CardControl.Icon>
-                    <ui:SymbolIcon Symbol="AppGeneric24" />
-                </ui:CardControl.Icon>
-                <ui:Badge Appearance="Success" Content="Mica Active" />
-            </ui:CardControl>
-
-            <ui:TextBlock
-                Margin="0,16,0,12"
-                FontTypography="Subtitle"
-                Text="Referensi Perintah CLI" />
-
-            <ui:Card Margin="0,0,0,12" Padding="16">
+        <ui:CardControl Margin="0,0,0,12">
+            <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Perintah Cepat:" />
-                    <ui:TextBlock Margin="0,8,0,4" FontFamily="Consolas" Text="displayflip.exe --swap" />
-                    <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Tukar posisi horizontal monitor kiri dan kanan" />
-
-                    <ui:TextBlock Margin="0,4,0,4" FontFamily="Consolas" Text="displayflip.exe --identify" />
-                    <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Munculkan overlay identifikasi nomor monitor fisik" />
-
-                    <ui:TextBlock Margin="0,4,0,4" FontFamily="Consolas" Text="displayflip.exe --apply-profile &lt;nama&gt;" />
-                    <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Terapkan konfigurasi tata letak profil yang tersimpan" />
-
-                    <ui:TextBlock Margin="0,4,0,4" FontFamily="Consolas" Text="displayflip.exe --settings" />
-                    <ui:TextBlock Appearance="Secondary" Text="Buka jendela Pengaturan ini" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="DisplayFlip v1.0" />
+                    <ui:TextBlock Appearance="Secondary" Text="Utilitas manajemen multi-monitor Windows 11 Fluent (.NET 10 &amp; WPF-UI 4.3.0)." />
                 </StackPanel>
-            </ui:Card>
-        </StackPanel>
-    </ScrollViewer>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="AppGeneric24" />
+            </ui:CardControl.Icon>
+            <ui:Badge Appearance="Success" Content="Mica Active" />
+        </ui:CardControl>
+
+        <ui:TextBlock
+            Margin="0,16,0,12"
+            FontTypography="Subtitle"
+            Text="Referensi Perintah CLI" />
+
+        <ui:Card Margin="0,0,0,12" Padding="16">
+            <StackPanel>
+                <ui:TextBlock FontTypography="BodyStrong" Text="Perintah Cepat:" />
+
+                <ui:TextBlock Margin="0,8,0,2" FontFamily="Consolas" Text="displayflip.exe --swap" />
+                <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Tukar posisi horizontal monitor kiri dan kanan" />
+
+                <ui:TextBlock Margin="0,4,0,2" FontFamily="Consolas" Text="displayflip.exe --identify" />
+                <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Munculkan overlay identifikasi nomor monitor fisik" />
+
+                <ui:TextBlock Margin="0,4,0,2" FontFamily="Consolas" Text="displayflip.exe --solo &lt;1|2&gt;" />
+                <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Aktifkan hanya satu monitor (Layar 1 atau Layar 2) secara instan" />
+
+                <ui:TextBlock Margin="0,4,0,2" FontFamily="Consolas" Text="displayflip.exe --apply-profile &lt;nama&gt;" />
+                <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Terapkan konfigurasi tata letak profil yang tersimpan" />
+
+                <ui:TextBlock Margin="0,4,0,2" FontFamily="Consolas" Text="displayflip.exe --list [--json]" />
+                <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Daftar nama profil tata letak monitor yang tersimpan" />
+
+                <ui:TextBlock Margin="0,4,0,2" FontFamily="Consolas" Text="displayflip.exe --settings" />
+                <ui:TextBlock Appearance="Secondary" Text="Buka jendela Pengaturan ini" />
+            </StackPanel>
+        </ui:Card>
+    </StackPanel>
 </Page>
