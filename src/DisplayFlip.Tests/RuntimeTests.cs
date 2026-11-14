@@ -62,7 +62,7 @@ public sealed class RuntimeTests
     public void RuntimeConfig_AfterBuild_HasRollForwardMajor()
     {
         var root = FindRepoRoot();
-        var runtimeConfig = Path.Combine(root, "src", "DisplayFlip", "bin", "Release", "net8.0-windows", "DisplayFlip.runtimeconfig.json");
+        var runtimeConfig = Path.Combine(root, "src", "DisplayFlip", "bin", "Release", "net10.0-windows", "DisplayFlip.runtimeconfig.json");
         if (!File.Exists(runtimeConfig))
         {
             // If not built yet, skip with pass — the csproj test above covers the fix statically
