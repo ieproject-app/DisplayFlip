@@ -25,7 +25,7 @@ public static class StartupRegistry
         {
             var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
             if (!string.IsNullOrEmpty(exePath))
-                key.SetValue(ValueName, $"\"{exePath}\"");
+                key.SetValue(ValueName, $"\"{exePath}\" --tray");
         }
         else
         {

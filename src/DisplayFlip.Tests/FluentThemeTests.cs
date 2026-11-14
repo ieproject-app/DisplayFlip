@@ -50,4 +50,44 @@ public sealed class FluentThemeTests
         DisplayFlip.FluentTheme.RadiusItem.Should().Be(4);
         DisplayFlip.FluentTheme.FontSizeBody.Should().Be(12);
     }
+
+    [Fact]
+    public void HotkeyParser_ParsesValidShortcuts_And_RejectsInvalid()
+    {
+        DisplayFlip.HotkeyParser.TryParse("Ctrl+Alt+F", out uint mods, out uint vk).Should().BeTrue();
+        mods.Should().Be(DisplayFlip.HotkeyParser.MOD_CONTROL | DisplayFlip.HotkeyParser.MOD_ALT);
+        vk.Should().Be((uint)System.Windows.Forms.Keys.F);
+
+        DisplayFlip.HotkeyParser.TryParse("Ctrl+Alt+1", out uint mods2, out uint vk2).Should().BeTrue();
+        mods2.Should().Be(DisplayFlip.HotkeyParser.MOD_CONTROL | DisplayFlip.HotkeyParser.MOD_ALT);
+        vk2.Should().Be((uint)System.Windows.Forms.Keys.D1);
+
+        DisplayFlip.HotkeyParser.TryParse("F9", out uint modsF9, out uint vkF9).Should().BeTrue();
+        modsF9.Should().Be(0u);
+        vkF9.Should().Be((uint)System.Windows.Forms.Keys.F9);
+
+        string numFormatted = DisplayFlip.HotkeyParser.FormatKeyCode(System.Windows.Forms.Keys.NumPad1);
+        numFormatted.Should().Be("Num1");
+        DisplayFlip.HotkeyParser.TryParse($"Ctrl+Alt+{numFormatted}", out uint modsNum, out uint vkNum).Should().BeTrue();
+        modsNum.Should().Be(DisplayFlip.HotkeyParser.MOD_CONTROL | DisplayFlip.HotkeyParser.MOD_ALT);
+        vkNum.Should().Be((uint)System.Windows.Forms.Keys.NumPad1);
+
+        DisplayFlip.HotkeyParser.TryParse("", out _, out _).Should().BeFalse();
+        DisplayFlip.HotkeyParser.TryParse("A", out _, out _).Should().BeFalse();
+        DisplayFlip.HotkeyParser.TryParse("InvalidMod+F9", out _, out _).Should().BeFalse();
+        DisplayFlip.HotkeyParser.TryParse("Ctrl+99999", out _, out _).Should().BeFalse();
+        DisplayFlip.HotkeyParser.TryParse("Ctrl+A+B", out _, out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ModernIconGenerator_ProducesValidMultiSizeIcoForAllStyles()
+    {
+        foreach (var style in new[] { "fluent", "accent", "minimal" })
+        {
+            var bytes = DisplayFlip.FluentIcons.BuildMultiSizeIcoBytes(style);
+            bytes.Length.Should().BeGreaterThan(2048);
+            bytes[2].Should().Be(1);
+            BitConverter.ToUInt16(bytes, 4).Should().Be(8);
+        }
+    }
 }

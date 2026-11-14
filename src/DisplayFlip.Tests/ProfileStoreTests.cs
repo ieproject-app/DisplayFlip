@@ -100,4 +100,45 @@ public sealed class ProfileStoreTests
         bad.Validate(out var err).Should().BeFalse();
         err.Should().Contain("Duplicate");
     }
+
+    [Fact]
+    public void Save_WithShortcut_And_GlobalSettings_RoundTrips()
+    {
+        var (store, path) = CreateTempStore();
+        try
+        {
+            var prof = SampleProfile("Mode Kerja") with { Shortcut = "Ctrl+Alt+1" };
+            store.Save(prof);
+            store.UpdateSettings(cfg => cfg with
+            {
+                MirrorShortcut = "Ctrl+Shift+M",
+                Solo1Shortcut = "Ctrl+Alt+1",
+                Solo2Shortcut = "Ctrl+Alt+2",
+                ExtendShortcut = "Ctrl+Alt+E",
+                AutoApplyDrag = true,
+                IconStyle = "accent"
+            });
+
+            var found = store.Find("mode kerja");
+            found.Should().NotBeNull();
+            found!.Shortcut.Should().Be("Ctrl+Alt+1");
+
+            var loaded = store.Load();
+            loaded.MirrorShortcut.Should().Be("Ctrl+Shift+M");
+            loaded.Solo1Shortcut.Should().Be("Ctrl+Alt+1");
+            loaded.Solo2Shortcut.Should().Be("Ctrl+Alt+2");
+            loaded.ExtendShortcut.Should().Be("Ctrl+Alt+E");
+            loaded.AutoApplyDrag.Should().BeTrue();
+            loaded.IconStyle.Should().Be("accent");
+
+            store.Rename("Mode Kerja", "Mode Gaming").Should().BeTrue();
+            store.Find("Mode Gaming")!.Shortcut.Should().Be("Ctrl+Alt+1");
+            store.Rename("Mode Gaming", "").Should().BeFalse();
+        }
+        finally
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
 }

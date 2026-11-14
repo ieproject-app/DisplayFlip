@@ -12,11 +12,14 @@ namespace DisplayFlip.Windows;
 internal static class ScreenFallback
 {
     private const int DM_POSITION = 0x00000020;
+    private const int DM_DISPLAYORIENTATION = 0x00000080;
     private const int DM_PELSWIDTH = 0x00080000;
     private const int DM_PELSHEIGHT = 0x00100000;
     private const int DM_BITSPERPEL = 0x00040000;
-    private const int DM_DISPLAYFREQUENCY = 0x00400000;
-    private const int CDS_GLOBALPARAMS = 0x00000003;
+    private const uint CDS_UPDATEREGISTRY = 0x00000001;
+    private const uint CDS_SET_PRIMARY = 0x00000010;
+    private const uint CDS_NORESET = 0x10000000;
+    private const int ENUM_CURRENT_SETTINGS = -1;
     private const int DISP_CHANGE_SUCCESSFUL = 0;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -29,7 +32,7 @@ internal static class ScreenFallback
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct POINTL
+    internal struct POINTL
     {
         public int x;
         public int y;
@@ -59,53 +62,62 @@ internal static class ScreenFallback
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX lpmi);
 
-    [StructLayout(LayoutKind.Explicit, Size = 220, CharSet = CharSet.Unicode)]
-    private struct DEVMODE
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct DEVMODE
     {
-        [FieldOffset(0)]
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmDeviceName;
-        [FieldOffset(64)] public short dmSpecVersion;
-        [FieldOffset(66)] public short dmDriverVersion;
-        [FieldOffset(68)] public short dmSize;
-        [FieldOffset(70)] public short dmDriverExtra;
-        [FieldOffset(72)] public uint dmFields;
-        // Union offset 76: paper fields XOR position fields
-        [FieldOffset(76)] public short dmOrientation;
-        [FieldOffset(78)] public short dmPaperSize;
-        [FieldOffset(80)] public short dmPaperLength;
-        [FieldOffset(82)] public short dmPaperWidth;
-        [FieldOffset(84)] public short dmScale;
-        [FieldOffset(86)] public short dmCopies;
-        [FieldOffset(88)] public short dmDefaultSource;
-        [FieldOffset(90)] public short dmPrintQuality;
-        [FieldOffset(76)] public POINTL dmPosition;
-        [FieldOffset(84)] public uint dmDisplayOrientation;
-        [FieldOffset(88)] public uint dmDisplayFixedOutput;
-        [FieldOffset(92)] public short dmColor;
-        [FieldOffset(94)] public short dmDuplex;
-        [FieldOffset(96)] public short dmYResolution;
-        [FieldOffset(98)] public short dmTTOption;
-        [FieldOffset(100)] public short dmCollate;
-        [FieldOffset(102)]
+        public short dmSpecVersion;
+        public short dmDriverVersion;
+        public short dmSize;
+        public short dmDriverExtra;
+        public uint dmFields;
+        public POINTL dmPosition;
+        public uint dmDisplayOrientation;
+        public uint dmDisplayFixedOutput;
+        public short dmColor;
+        public short dmDuplex;
+        public short dmYResolution;
+        public short dmTTOption;
+        public short dmCollate;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmFormName;
-        [FieldOffset(166)] public ushort dmLogPixels;
-        [FieldOffset(168)] public uint dmBitsPerPel;
-        [FieldOffset(172)] public uint dmPelsWidth;
-        [FieldOffset(176)] public uint dmPelsHeight;
-        [FieldOffset(184)] public uint dmDisplayFlags;
-        [FieldOffset(188)] public uint dmDisplayFreq;
-        [FieldOffset(192)] public uint dmICMMethod;
-        [FieldOffset(196)] public uint dmICMIntent;
-        [FieldOffset(200)] public uint dmMediaType;
-        [FieldOffset(204)] public uint dmDitherType;
-        [FieldOffset(208)] public uint dmReserved1;
-        [FieldOffset(212)] public uint dmReserved2;
-        [FieldOffset(216)] public uint dmPanningWidth;
-        [FieldOffset(220)] public uint dmPanningHeight;
+        public ushort dmLogPixels;
+        public uint dmBitsPerPel;
+        public uint dmPelsWidth;
+        public uint dmPelsHeight;
+        public uint dmDisplayFlags;
+        public uint dmDisplayFreq;
+        public uint dmICMMethod;
+        public uint dmICMIntent;
+        public uint dmMediaType;
+        public uint dmDitherType;
+        public uint dmReserved1;
+        public uint dmReserved2;
+        public uint dmPanningWidth;
+        public uint dmPanningHeight;
     }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct DISPLAY_DEVICE
+    {
+        public uint cb;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string DeviceName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceString;
+        public uint StateFlags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceID;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceKey;
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern bool EnumDisplayDevices(string? lpDevice, uint iDevNum, ref DISPLAY_DEVICE lpDisplayDevice, uint dwFlags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern bool EnumDisplaySettingsEx(string lpszDeviceName, int iModeNum, ref DEVMODE lpDevMode, uint dwFlags);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern int ChangeDisplaySettingsEx(string lpszDeviceName, ref DEVMODE lpDevMode, IntPtr hwnd, uint dwflags, IntPtr lParam);
+
+    [DllImport("user32.dll", EntryPoint = "ChangeDisplaySettingsExW", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern int CommitDisplaySettings(string? lpszDeviceName, IntPtr lpDevMode, IntPtr hwnd, uint dwflags, IntPtr lParam);
 
     public static List<DisplayMonitor> ReadTopologies()
     {
@@ -128,71 +140,160 @@ internal static class ScreenFallback
         EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, callback, IntPtr.Zero);
 
         var monitors = new List<DisplayMonitor>();
-        foreach (var (hMonitor, rc, deviceName) in list)
+        foreach (var (_, rc, deviceName) in list)
         {
             int width = rc.Right - rc.Left;
             int height = rc.Bottom - rc.Top;
             if (width <= 0) width = 1920;
             if (height <= 0) height = 1080;
-            string stableKey = BuildStableKey(hMonitor, deviceName, rc, width, height);
+            string stableKey = BuildStableKey(deviceName);
             string friendly = !string.IsNullOrWhiteSpace(deviceName) ? deviceName : $"Monitor {monitors.Count + 1}";
-            bool isPrimary = rc.Left == 0 && rc.Top == 0;
+            var orient = width >= height ? DisplayFlip.Core.Orientation.Landscape : DisplayFlip.Core.Orientation.Portrait;
+            if (!string.IsNullOrWhiteSpace(deviceName))
+            {
+                var dev = new DEVMODE { dmSize = (short)Marshal.SizeOf<DEVMODE>() };
+                if (EnumDisplaySettingsEx(deviceName, ENUM_CURRENT_SETTINGS, ref dev, 0))
+                {
+                    orient = dev.dmDisplayOrientation switch
+                    {
+                        1 => DisplayFlip.Core.Orientation.Portrait,
+                        2 => DisplayFlip.Core.Orientation.Rotated,
+                        3 => DisplayFlip.Core.Orientation.Unhandled,
+                        _ => width >= height ? DisplayFlip.Core.Orientation.Landscape : DisplayFlip.Core.Orientation.Portrait
+                    };
+                }
+            }
             monitors.Add(new DisplayMonitor(
                 StableKey: stableKey,
                 FriendlyName: friendly,
                 Position: new Position(rc.Left, rc.Top, width, height),
                 ResolutionWidth: width,
                 ResolutionHeight: height,
-                Orientation: width >= height ? DisplayFlip.Core.Orientation.Landscape : DisplayFlip.Core.Orientation.Portrait,
+                Orientation: orient,
                 IsEnabled: true));
         }
-        // Ensure primary is at (0,0) by legalizing; primary flag derives from position anyway
         return monitors;
+    }
+
+    public static List<(int Width, int Height)> GetSupportedResolutions(string deviceKeyOrName, int currentWidth = 1920, int currentHeight = 1080)
+    {
+        string deviceName = (deviceKeyOrName ?? string.Empty).Split('|')[0].Trim();
+        var set = new HashSet<(int Width, int Height)>();
+        if (currentWidth > 0 && currentHeight > 0)
+            set.Add((currentWidth, currentHeight));
+
+        if (deviceName.StartsWith("\\\\.\\DISPLAY", StringComparison.OrdinalIgnoreCase))
+        {
+            for (int i = 0; i < 512; i++)
+            {
+                var dev = new DEVMODE { dmSize = (short)Marshal.SizeOf<DEVMODE>() };
+                if (!EnumDisplaySettingsEx(deviceName, i, ref dev, 0))
+                    break;
+                if (dev.dmPelsWidth >= 800 && dev.dmPelsHeight >= 600)
+                    set.Add(((int)dev.dmPelsWidth, (int)dev.dmPelsHeight));
+            }
+        }
+
+        if (set.Count <= 1)
+        {
+            set.Add((1920, 1080));
+            set.Add((1680, 1050));
+            set.Add((1600, 900));
+            set.Add((1366, 768));
+            set.Add((1280, 720));
+        }
+
+        return set
+            .OrderByDescending(r => r.Width * r.Height)
+            .ThenByDescending(r => r.Width)
+            .ToList();
     }
 
     public static (bool ok, string message) ApplyTopologies(IReadOnlyList<DisplayMonitor> desired)
     {
         if (desired.Count == 0)
             return (false, "No desired monitors.");
-        string firstDevice = null!;
-        // Device name is stored in FriendlyName for fallback path (see ReadTopologies)
-        // Find current device names to map desired order: desired[i].FriendlyName is device name
-        // Apply sequentially with CDS_GLOBALPARAMS so the whole set settles together
-        foreach (var d in desired)
+
+        int stagedCount = 0;
+        // Stage the primary monitor (0,0) FIRST with CDS_SET_PRIMARY before moving any
+        // secondary monitors so Win32 drivers never see a transient state with no primary at (0,0).
+        var ordered = desired
+            .OrderByDescending(d => d.Position.X == 0 && d.Position.Y == 0)
+            .ToList();
+        foreach (var d in ordered)
         {
-            string deviceName = d.FriendlyName;
-            if (!deviceName.StartsWith("\\\\.\\DISPLAY"))
+            string deviceName = d.StableKey.Split('|')[0];
+            if (!deviceName.StartsWith("\\\\.\\DISPLAY", StringComparison.OrdinalIgnoreCase))
             {
-                // FriendlyName may be StableKey-derived for CCD path; fallback apply needs device name.
-                // Fall through to best effort using index mapping by position order.
-                continue;
+                if (d.FriendlyName.StartsWith("\\\\.\\DISPLAY", StringComparison.OrdinalIgnoreCase))
+                    deviceName = d.FriendlyName;
+                else
+                    continue;
             }
-            var dev = new DEVMODE
+
+            var dev = new DEVMODE { dmSize = (short)Marshal.SizeOf<DEVMODE>() };
+            if (!EnumDisplaySettingsEx(deviceName, ENUM_CURRENT_SETTINGS, ref dev, 0))
             {
-                dmSize = (short)Marshal.SizeOf(typeof(DEVMODE)),
-                dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL,
-                dmPosition = new POINTL { x = d.Position.X, y = d.Position.Y },
-                dmPelsWidth = (uint)d.Position.Width,
-                dmPelsHeight = (uint)d.Position.Height,
-                dmBitsPerPel = 32
+                dev = new DEVMODE
+                {
+                    dmSize = (short)Marshal.SizeOf<DEVMODE>(),
+                    dmBitsPerPel = 32
+                };
+                dev.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
+            }
+            else
+            {
+                dev.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT;
+            }
+
+            uint desiredOrient = d.Orientation switch
+            {
+                DisplayFlip.Core.Orientation.Portrait => 1u,
+                DisplayFlip.Core.Orientation.Rotated => 2u,
+                DisplayFlip.Core.Orientation.Unhandled => 3u,
+                _ => 0u
             };
-            int res = ChangeDisplaySettingsEx(deviceName, ref dev, IntPtr.Zero, CDS_GLOBALPARAMS, IntPtr.Zero);
+            if (dev.dmDisplayOrientation != desiredOrient)
+            {
+                dev.dmDisplayOrientation = desiredOrient;
+                dev.dmFields |= DM_DISPLAYORIENTATION;
+            }
+
+            dev.dmPosition = new POINTL { x = d.Position.X, y = d.Position.Y };
+            dev.dmPelsWidth = (uint)d.Position.Width;
+            dev.dmPelsHeight = (uint)d.Position.Height;
+
+            bool isPrimary = d.Position.X == 0 && d.Position.Y == 0;
+            uint flags = CDS_UPDATEREGISTRY | CDS_NORESET | (isPrimary ? CDS_SET_PRIMARY : 0u);
+            int res = ChangeDisplaySettingsEx(deviceName, ref dev, IntPtr.Zero, flags, IntPtr.Zero);
             if (res != DISP_CHANGE_SUCCESSFUL)
-                return (false, $"ChangeDisplaySettingsEx for {deviceName} failed: {res}");
-            firstDevice = deviceName;
+                return (false, $"ChangeDisplaySettingsEx stage for {deviceName} failed: {res}");
+            stagedCount++;
         }
-        if (firstDevice == null)
+
+        if (stagedCount == 0)
             return (false, "ChangeDisplaySettingsEx skipped: device names not available for fallback apply.");
+
+        int commitRes = CommitDisplaySettings(null, IntPtr.Zero, IntPtr.Zero, 0, IntPtr.Zero);
+        if (commitRes != DISP_CHANGE_SUCCESSFUL)
+            return (false, $"ChangeDisplaySettingsEx commit failed: {commitRes}");
+
         return (true, "Applied via ChangeDisplaySettingsEx fallback.");
     }
 
-    private static string BuildStableKey(IntPtr hMonitor, string deviceName, RECT rc, int width, int height)
+    private static string BuildStableKey(string deviceName)
     {
-        // Try WMI-assisted identity by handle order is complex; device name + geometry is stable within a boot
-        // and unique per monitor. For cross-boot stability users rely on FriendlyName suffix text + geometry.
-        // Include HMONITOR handle hash as tiebreaker when deviceName collides.
-        var prefix = !string.IsNullOrWhiteSpace(deviceName) ? deviceName : "DISPLAY";
-        // hMonitor.ToInt64() differs per boot but is unique per monitor within this boot; include low bits
-        return $"{prefix}|{rc.Left},{rc.Top}|{width}x{height}|{hMonitor.ToInt64() & 0xFFFF}";
+        var prefix = !string.IsNullOrWhiteSpace(deviceName) ? deviceName.Trim() : "DISPLAY";
+        try
+        {
+            var mon = new DISPLAY_DEVICE { cb = (uint)Marshal.SizeOf<DISPLAY_DEVICE>() };
+            if (EnumDisplayDevices(prefix, 0, ref mon, 0) && !string.IsNullOrWhiteSpace(mon.DeviceID))
+                return $"{prefix}|{mon.DeviceID.Trim()}";
+        }
+        catch
+        {
+            // Fall through to device name only.
+        }
+        return prefix;
     }
 }

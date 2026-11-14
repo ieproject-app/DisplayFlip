@@ -132,6 +132,53 @@ public sealed class CcdTopologyAdapter
         return ScreenFallback.ApplyTopologies(legal);
     }
 
+    /// <summary>
+    /// Applies a 2D monitor arrangement (supporting free drag-and-drop X/Y offsets and top/bottom/side-by-side layouts).
+    /// </summary>
+    public (bool ok, string message) ApplyArrangement(IReadOnlyList<MonitorDisplay> desired, string? primaryStableKey = null)
+    {
+        var normalized = DisplayTopology.NormalizeArrangement(desired, primaryStableKey);
+        if (normalized.Count == 0)
+            return (false, "Tidak ada monitor untuk diterapkan.");
+
+        ReadTopologies(out var paths, out var modes);
+        if (paths.Count == 0 || modes.Count == 0)
+            return ScreenFallback.ApplyTopologies(normalized);
+
+        var (paths2, modes2, built) = BuildTopology(normalized);
+        if (built && paths2.Count > 0)
+        {
+            var (validOk, _) = Validate(paths2, modes2);
+            if (validOk)
+            {
+                var status = NativeMethods.SetDisplayConfigNative(
+                    (uint)paths2.Count, paths2.ToArray(),
+                    (uint)modes2.Count, modes2.ToArray(),
+                    NativeMethods.SDC_APPLY);
+                if (status == NativeMethods.ERROR_SUCCESS)
+                    return (true, "Applied");
+            }
+        }
+        return ScreenFallback.ApplyTopologies(normalized);
+    }
+
+    public List<(int Width, int Height)> GetSupportedResolutions(MonitorDisplay monitor)
+    {
+        var key = monitor.StableKey.StartsWith("\\\\.\\DISPLAY", StringComparison.OrdinalIgnoreCase)
+            ? monitor.StableKey
+            : monitor.FriendlyName;
+        var raw = ScreenFallback.GetSupportedResolutions(key, monitor.Position.Width, monitor.Position.Height);
+        bool wantPortrait = monitor.Orientation is DisplayFlip.Core.Orientation.Portrait or DisplayFlip.Core.Orientation.Unhandled;
+        return raw
+            .Select(r => wantPortrait
+                ? (Width: Math.Min(r.Width, r.Height), Height: Math.Max(r.Width, r.Height))
+                : (Width: Math.Max(r.Width, r.Height), Height: Math.Min(r.Width, r.Height)))
+            .Distinct()
+            .OrderByDescending(r => r.Width * r.Height)
+            .ThenByDescending(r => r.Width)
+            .ToList();
+    }
+
     public (List<NativeMethods.DISPLAYCONFIG_PATH_INFO> paths,
             List<NativeMethods.DISPLAYCONFIG_MODE_INFO> modes,
             bool ok) BuildTopology(List<MonitorDisplay> desired)
@@ -142,13 +189,22 @@ public sealed class CcdTopologyAdapter
 
         var sortedCurrent = current.OrderBy(m => m.Position.X).ToList();
         var sortedDesired = desired.OrderBy(m => m.Position.X).ToList();
+        var desiredByKey = desired.ToDictionary(m => m.StableKey);
 
-        for (int i = 0; i < Math.Min(sortedCurrent.Count, sortedDesired.Count); i++)
+        for (int i = 0; i < sortedCurrent.Count; i++)
         {
-            var desiredPos = sortedDesired[i].Position;
-            if (i < paths.Count && i < modes.Count)
+            var cur = sortedCurrent[i];
+            var target = desiredByKey.TryGetValue(cur.StableKey, out var matched)
+                ? matched
+                : (i < sortedDesired.Count ? sortedDesired[i] : null);
+            if (target == null)
+                continue;
+
+            var desiredPos = target.Position;
+            int origIdx = current.IndexOf(cur);
+            if (origIdx >= 0 && origIdx < paths.Count && origIdx < modes.Count)
             {
-                var idx = (int)paths[i].sourceInfo.modeInfoIdx;
+                var idx = (int)paths[origIdx].sourceInfo.modeInfoIdx;
                 if (idx >= 0 && idx < modes.Count)
                 {
                     var old = modes[idx];

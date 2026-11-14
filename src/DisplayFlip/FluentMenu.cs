@@ -97,7 +97,7 @@ public sealed class FluentMenu : ContextMenuStrip
         Region = new Region(path);
     }
 
-    private static bool DwmRoundCorners(IntPtr hwnd)
+    internal static bool DwmRoundCorners(IntPtr hwnd)
     {
         try
         {
@@ -199,10 +199,12 @@ public sealed class FluentMenuItem : ToolStripMenuItem
 {
     public char? Glyph { get; set; }
     public string? SecondaryLine { get; set; }
+    public string? ShortcutHint { get; set; }
     public bool CheckBox { get; set; }
     public bool Radio { get; set; }
     public bool RadioChecked { get; set; }
     public bool BadgePrimary { get; set; }
+    internal bool IsMouseDown { get; private set; }
 
     public FluentMenuItem(string text, int height)
     {
@@ -213,6 +215,36 @@ public sealed class FluentMenuItem : ToolStripMenuItem
 
     public FluentMenuItem(string text) : this(text, FluentTheme.ItemHeight)
     {
+    }
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Left && Enabled)
+        {
+            IsMouseDown = true;
+            Invalidate();
+        }
+        base.OnMouseDown(e);
+    }
+
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        if (IsMouseDown)
+        {
+            IsMouseDown = false;
+            Invalidate();
+        }
+        base.OnMouseUp(e);
+    }
+
+    protected override void OnMouseLeave(EventArgs e)
+    {
+        if (IsMouseDown)
+        {
+            IsMouseDown = false;
+            Invalidate();
+        }
+        base.OnMouseLeave(e);
     }
 }
 
@@ -284,7 +316,8 @@ internal sealed class FluentStripRenderer : ToolStripProfessionalRenderer
                 using var path = FluentMenu.RoundedRect(box, 4);
                 using var brush = new SolidBrush(pal.Accent);
                 g.FillPath(brush, path);
-                g.DrawImage(FluentIcons.Render(FluentIcons.Check, 10, Color.White),
+                Color checkFg = pal.Accent.GetBrightness() > 0.55f ? Color.Black : Color.White;
+                g.DrawImage(FluentIcons.Render(FluentIcons.Check, 10, checkFg),
                     box.X + 3, box.Y + 3);
             }
             else
@@ -339,6 +372,16 @@ internal sealed class FluentStripRenderer : ToolStripProfessionalRenderer
         int right = bounds.Right - 6;
         if (item.HasDropDownItems)
             right -= FluentTheme.SmallIconSize + 4;
+        if (!string.IsNullOrWhiteSpace(item.ShortcutHint) && !item.HasDropDownItems)
+        {
+            var hintSize = TextRenderer.MeasureText(g, item.ShortcutHint, FluentTheme.CaptionFont,
+                new Size(120, bounds.Height), TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix);
+            int hx = right - hintSize.Width;
+            TextRenderer.DrawText(g, item.ShortcutHint, FluentTheme.CaptionFont,
+                new Rectangle(hx, bounds.Y, hintSize.Width, bounds.Height),
+                pal.TextSecondary, TextFormatFlags.SingleLine | TextFormatFlags.VerticalCenter | TextFormatFlags.Right | TextFormatFlags.NoPrefix);
+            right = hx - 8;
+        }
         if (!string.IsNullOrEmpty(item.SecondaryLine))
         {
             // Baris dua teks (mis. subteks "Perlu 2+ monitor"): label di atas, subteks di bawah.
@@ -370,7 +413,6 @@ internal sealed class FluentStripRenderer : ToolStripProfessionalRenderer
 
     private static bool IsPressed(ToolStripItem item)
     {
-        // Pressed hanya terbaca dari subclass; fallback: tidak ditekan.
-        return false;
+        return item is FluentMenuItem fi && fi.IsMouseDown;
     }
 }

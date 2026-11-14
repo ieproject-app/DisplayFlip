@@ -21,7 +21,10 @@ public sealed record FluentPalette(
     Color RadioBorder,
     Color CautionBackground,
     Color CautionIcon,
-    Color BadgeAccent);
+    Color BadgeAccent,
+    Color ShellBackground,
+    Color WellBackground,
+    Color SubtleFill);
 
 public static class FluentTheme
 {
@@ -47,7 +50,10 @@ public static class FluentTheme
         RadioBorder: Color.FromArgb(0x6B, 0x6B, 0x6B),
         CautionBackground: CautionBackgroundLight,
         CautionIcon: CautionIconLight,
-        BadgeAccent: Color.FromArgb(0xF2, 0xB1, 0x34));
+        BadgeAccent: Color.FromArgb(0xF2, 0xB1, 0x34),
+        ShellBackground: Color.FromArgb(0xEB, 0xEB, 0xEB),
+        WellBackground: Color.FromArgb(0xE6, 0xE6, 0xE6),
+        SubtleFill: Color.FromArgb(0xFB, 0xFB, 0xFB));
 
     private static readonly FluentPalette Dark = new(
         Background: Color.FromArgb(0x20, 0x20, 0x20),
@@ -61,11 +67,15 @@ public static class FluentTheme
         RadioBorder: Color.FromArgb(0xC7, 0xC7, 0xC7),
         CautionBackground: CautionBackgroundDark,
         CautionIcon: CautionIconDark,
-        BadgeAccent: Color.FromArgb(0xF2, 0xB1, 0x34));
+        BadgeAccent: Color.FromArgb(0xF2, 0xB1, 0x34),
+        ShellBackground: Color.FromArgb(0x1C, 0x1C, 0x1C),
+        WellBackground: Color.FromArgb(0x17, 0x17, 0x17),
+        SubtleFill: Color.FromArgb(0x32, 0x32, 0x32));
 
     // Metrik (effective px pada 100%).
     public const int FlyoutWidth = 240;
     public const int SubmenuWidth = 260;
+    public const int DialogWidth = 420;
     public const int MenuPadding = 6;
     public const int ItemHeight = 32;
     public const int MonitorRowHeight = 44;
@@ -73,6 +83,8 @@ public static class FluentTheme
     public const int SmallIconSize = 12;
     public const int RadiusMenu = 8;
     public const int RadiusItem = 4;
+    public const int FontSizeTitle = 20;
+    public const int FontSizeSubtitle = 14;
     public const int FontSizeBody = 12;
     public const int FontSizeCaption = 11;
 
@@ -97,6 +109,33 @@ public static class FluentTheme
     {
         try
         {
+            using var key = Registry.CurrentUser.OpenSubKey(
+                @"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent");
+            if (key?.GetValue("AccentPalette") is byte[] pal && pal.Length >= 24)
+            {
+                // Index 2 = Light1, Index 3 = Base Accent, Index 4 = Dark1
+                int idx = dark ? 3 : 3;
+                var baseCol = Color.FromArgb(pal[idx * 4], pal[idx * 4 + 1], pal[idx * 4 + 2]);
+                if (dark && baseCol.GetBrightness() < 0.38f)
+                {
+                    idx = 2;
+                    baseCol = Color.FromArgb(pal[idx * 4], pal[idx * 4 + 1], pal[idx * 4 + 2]);
+                }
+                else if (!dark && baseCol.GetBrightness() > 0.72f)
+                {
+                    idx = 4;
+                    baseCol = Color.FromArgb(pal[idx * 4], pal[idx * 4 + 1], pal[idx * 4 + 2]);
+                }
+                if (baseCol.GetBrightness() is > 0.15f and < 0.92f)
+                    return baseCol;
+            }
+        }
+        catch
+        {
+            // Fall through to DWM colorization.
+        }
+        try
+        {
             int hr = DwmGetColorizationColor(out uint c, out _);
             if (hr == 0)
             {
@@ -104,7 +143,7 @@ public static class FluentTheme
                     (int)((c >> 16) & 0xFF),
                     (int)((c >> 8) & 0xFF),
                     (int)(c & 0xFF));
-                if (col.GetBrightness() is > 0.02f and < 0.98f)
+                if (col.GetBrightness() is > 0.25f and < 0.92f)
                     return col;
             }
         }
@@ -126,11 +165,21 @@ public static class FluentTheme
         }
     }
 
+    private static Font? s_title;
+    private static Font? s_subtitle;
     private static Font? s_body;
     private static Font? s_bodySemibold;
     private static Font? s_caption;
+    private static Font? s_displayNumber;
+    private static Font? s_mono;
 
     // Font di-cache seumur aplikasi agar paint berulang tidak membocorkan GDI.
+    public static Font TitleFont =>
+        s_title ??= new Font("Segoe UI Variable Display", FontSizeTitle, FontStyle.Bold, GraphicsUnit.Pixel);
+
+    public static Font SubtitleFont =>
+        s_subtitle ??= new Font("Segoe UI Variable Text", FontSizeSubtitle, FontStyle.Regular, GraphicsUnit.Pixel);
+
     public static Font BodyFont =>
         s_body ??= new Font("Segoe UI Variable Text", FontSizeBody, FontStyle.Regular, GraphicsUnit.Pixel);
 
@@ -139,6 +188,12 @@ public static class FluentTheme
 
     public static Font CaptionFont =>
         s_caption ??= new Font("Segoe UI Variable Text", FontSizeCaption, FontStyle.Regular, GraphicsUnit.Pixel);
+
+    public static Font DisplayNumberFont =>
+        s_displayNumber ??= new Font("Segoe UI Variable Display", 26, FontStyle.Bold, GraphicsUnit.Pixel);
+
+    public static Font MonoFont =>
+        s_mono ??= new Font("Consolas", 11, FontStyle.Regular, GraphicsUnit.Pixel);
 
     public static double ContrastRatio(Color a, Color b)
     {

@@ -48,6 +48,8 @@ public sealed class TrayStabilityTests
             Path.Combine(root, "src", "DisplayFlip", "FluentMenu.cs"),
             Path.Combine(root, "src", "DisplayFlip", "FluentTheme.cs"),
             Path.Combine(root, "src", "DisplayFlip", "FluentIcons.cs"),
+            Path.Combine(root, "src", "DisplayFlip", "FluentDialogs.cs"),
+            Path.Combine(root, "src", "DisplayFlip", "FluentSettingsForm.cs"),
         };
         foreach (var f in files)
         {
@@ -60,6 +62,11 @@ public sealed class TrayStabilityTests
         var tray = File.ReadAllText(Path.Combine(root, "src", "DisplayFlip", "TrayHost.cs"));
         tray.Should().Contain("\"Tukar kiri-kanan\"");
         tray.Should().Contain("\"Jadikan primary\"");
+        tray.Should().Contain("\"Multi-layar\"");
+        tray.Should().Contain("\"Hanya Layar 1\"");
+        tray.Should().Contain("\"Hanya Layar 2\"");
+        tray.Should().Contain("\"Perluas (Extend)\"");
+        tray.Should().Contain("\"Duplikat (Clone)\"");
         tray.Should().Contain("\"Simpan layout sekarang\"");
         tray.Should().Contain("\"Terapkan profil\"");
     }
