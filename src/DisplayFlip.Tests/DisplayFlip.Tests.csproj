@@ -6,8 +6,11 @@
     <RootNamespace>DisplayFlip.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
   <ItemGroup>
+    <Using Include="System.IO" />
+    <Using Remove="System.Windows.Shapes" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
     <PackageReference Include="xunit" Version="2.9.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.0" />
@@ -17,5 +20,6 @@
     <ProjectReference Include="..\DisplayFlip.Core\DisplayFlip.Core.csproj" />
     <ProjectReference Include="..\DisplayFlip.Windows\DisplayFlip.Windows.csproj" />
     <ProjectReference Include="..\DisplayFlip\DisplayFlip.csproj" />
+    <ProjectReference Include="..\DisplayFlip.Wpf\DisplayFlip.Wpf.csproj" />
   </ItemGroup>
 </Project>

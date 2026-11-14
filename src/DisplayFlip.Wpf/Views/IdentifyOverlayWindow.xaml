@@ -4,6 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="DisplayFlip — Identifikasi Layar"
+    Width="220"
+    Height="130"
     WindowStyle="None"
     AllowsTransparency="True"
     Background="Transparent"
@@ -13,33 +15,30 @@
     Focusable="False"
     WindowStartupLocation="Manual">
 
-    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+    <Grid Margin="6">
         <Border
-            MinWidth="200"
-            MinHeight="170"
-            Padding="32,24"
             Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
             BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
             BorderThickness="1.5"
-            CornerRadius="16">
+            CornerRadius="12">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="28" ShadowDepth="4" Opacity="0.35" />
+                <DropShadowEffect BlurRadius="20" ShadowDepth="3" Opacity="0.4" />
             </Border.Effect>
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,8">
                 <ui:TextBlock
                     x:Name="DisplayNumberText"
                     HorizontalAlignment="Center"
-                    FontSize="72"
+                    FontSize="56"
                     FontWeight="Bold"
                     Foreground="{DynamicResource AccentFillColorDefaultBrush}"
                     Text="1" />
                 <ui:TextBlock
                     x:Name="DisplaySubtitleText"
-                    Margin="0,6,0,0"
+                    Margin="0,2,0,0"
                     HorizontalAlignment="Center"
                     Appearance="Secondary"
-                    FontTypography="Body"
-                    Text="Layar 1 • Utama" />
+                    FontTypography="Caption"
+                    Text="Layar 1 • Layar Utama" />
             </StackPanel>
         </Border>
     </Grid>

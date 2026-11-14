@@ -103,10 +103,38 @@ public sealed class MonitorCanvasControl : FrameworkElement
     {
         if (d is MonitorCanvasControl canvas)
         {
-            canvas._guideLines.Clear();
-            canvas._isDragging = false;
-            canvas._draggingKey = null;
-            canvas.InvalidateVisual();
+            canvas.CancelDrag();
+        }
+    }
+
+    public void CancelDrag()
+    {
+        if (IsMouseCaptured)
+            ReleaseMouseCapture();
+
+        _guideLines.Clear();
+        _isDragging = false;
+        _draggingKey = null;
+        Cursor = Cursors.Arrow;
+        InvalidateVisual();
+    }
+
+    protected override void OnLostMouseCapture(MouseEventArgs e)
+    {
+        base.OnLostMouseCapture(e);
+        if (_isDragging || _draggingKey != null)
+        {
+            CancelDrag();
+        }
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Key == Key.Escape && (_isDragging || _draggingKey != null))
+        {
+            CancelDrag();
+            e.Handled = true;
         }
     }
 
@@ -282,22 +310,52 @@ public sealed class MonitorCanvasControl : FrameworkElement
             : rect.Y + (rect.Height - numText.Height) / 2 - 4;
         dc.DrawText(numText, new Point(numX, numY));
 
-        // Primary badge
+        // Primary badge (Pill badge if room, otherwise star icon)
         if (isPrimary)
         {
-            var starTypeface = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
-            var starText = new FormattedText(
-                "★",
-                CultureInfo.CurrentUICulture,
-                FlowDirection.LeftToRight,
-                starTypeface,
-                isCompact ? 10 : 13,
-                accentBrush,
-                dpi);
+            if (rect.Width >= 115 && !isCompact)
+            {
+                var badgeTypeface = new Typeface(new FontFamily("Segoe UI Variable Text, Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+                var badgeText = new FormattedText(
+                    "★ Utama",
+                    CultureInfo.CurrentUICulture,
+                    FlowDirection.LeftToRight,
+                    badgeTypeface,
+                    9.5,
+                    accentBrush,
+                    dpi);
 
-            double starX = rect.Right - starText.Width - 6;
-            double starY = rect.Y + 5;
-            dc.DrawText(starText, new Point(starX, starY));
+                double badgePadH = 5;
+                double badgePadV = 2;
+                double badgeW = badgeText.Width + badgePadH * 2;
+                double badgeH = badgeText.Height + badgePadV * 2;
+                double badgeX = rect.Right - badgeW - 6;
+                double badgeY = rect.Y + 5;
+
+                var badgeBgColor = (accentBrush as SolidColorBrush)?.Color ?? Color.FromRgb(0x00, 0x78, 0xD4);
+                var badgeBg = new SolidColorBrush(Color.FromArgb(40, badgeBgColor.R, badgeBgColor.G, badgeBgColor.B));
+                var badgePen = new Pen(new SolidColorBrush(Color.FromArgb(90, badgeBgColor.R, badgeBgColor.G, badgeBgColor.B)), 0.8);
+                badgePen.Freeze();
+
+                dc.DrawRoundedRectangle(badgeBg, badgePen, new Rect(badgeX, badgeY, badgeW, badgeH), 3, 3);
+                dc.DrawText(badgeText, new Point(badgeX + badgePadH, badgeY + badgePadV));
+            }
+            else
+            {
+                var starTypeface = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+                var starText = new FormattedText(
+                    "★",
+                    CultureInfo.CurrentUICulture,
+                    FlowDirection.LeftToRight,
+                    starTypeface,
+                    isCompact ? 10 : 13,
+                    accentBrush,
+                    dpi);
+
+                double starX = rect.Right - starText.Width - 6;
+                double starY = rect.Y + 5;
+                dc.DrawText(starText, new Point(starX, starY));
+            }
         }
 
         // Title and Resolution labels when tile has sufficient space
@@ -307,8 +365,9 @@ public sealed class MonitorCanvasControl : FrameworkElement
 
             // Header title (friendly name)
             string shortTitle = DisplayHelper.CleanDeviceName(m.FriendlyName);
-            if (shortTitle.Length > 16)
-                shortTitle = shortTitle[..13] + "...";
+            int maxChars = rect.Width >= 130 ? 14 : 9;
+            if (shortTitle.Length > maxChars)
+                shortTitle = shortTitle[..(maxChars - 3)] + "...";
 
             var titleText = new FormattedText(
                 shortTitle,
@@ -319,7 +378,8 @@ public sealed class MonitorCanvasControl : FrameworkElement
                 secondaryTextBrush,
                 dpi);
 
-            if (titleText.Width <= rect.Width - (isPrimary ? 24 : 12))
+            double maxTitleWidth = rect.Width - (isPrimary ? (rect.Width >= 115 ? 65 : 24) : 12);
+            if (titleText.Width <= maxTitleWidth && maxTitleWidth > 20)
             {
                 dc.DrawText(titleText, new Point(rect.X + 6, rect.Y + 5));
             }
@@ -472,12 +532,13 @@ public sealed class MonitorCanvasControl : FrameworkElement
         {
             double scale = Math.Max(0.005, _lastScale);
             int snapThresholdDesktop = (int)Math.Clamp(Math.Round(12.0 / scale), 40, 240);
+            int effectiveSnap = IsSnapEnabled ? snapThresholdDesktop : 0;
 
             var updated = Monitors
                 .Select(m => m.StableKey == draggedKey ? m with { Position = snappedPos } : m)
                 .ToList();
 
-            var normalized = DisplayTopology.NormalizeArrangement(updated, PrimaryMonitorKey, snapThresholdDesktop);
+            var normalized = DisplayTopology.NormalizeArrangement(updated, PrimaryMonitorKey, effectiveSnap);
             ArrangementChanged?.Invoke(this, normalized);
         }
 

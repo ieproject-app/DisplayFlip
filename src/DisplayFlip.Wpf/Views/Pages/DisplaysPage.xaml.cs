@@ -84,12 +84,17 @@ public partial class DisplaysPage : Page
                 string cleanName = DisplayHelper.CleanDeviceName(sel.FriendlyName);
                 bool isPrimary = sel.StableKey == _primaryMonitorKey || (sel.Position.X == 0 && sel.Position.Y == 0);
 
+                int hz = DisplayHelper.GetCurrentRefreshRate(sel.StableKey, sel.FriendlyName);
+                string hzText = hz > 0 ? $" @ {hz} Hz" : string.Empty;
+
                 SelectedMonitorTitle.Text = $"Layar {numStr} ({cleanName})";
-                SelectedMonitorSubtitle.Text = $"Resolusi {sel.Position.Width} × {sel.Position.Height} • Posisi ({sel.Position.X}, {sel.Position.Y}) • {(isPrimary ? "Layar Utama" : "Layar Sekunder")}";
+                SelectedMonitorSubtitle.Text = $"Resolusi {sel.Position.Width} × {sel.Position.Height}{hzText} • Posisi ({sel.Position.X}, {sel.Position.Y}) • {(isPrimary ? "Layar Utama" : "Layar Sekunder")}";
 
                 BtnSetPrimary.IsEnabled = !isPrimary && _canvasMonitors.Count > 1;
-                BtnSoloDisplay.IsEnabled = _canvasMonitors.Count >= 2;
-                BtnSoloDisplay.Content = $"Hanya Layar {numStr} Saja";
+
+                bool isEligibleSolo = int.TryParse(numStr, out int dn) ? (dn == 1 || dn == 2) : (idx <= 2);
+                BtnSoloDisplay.IsEnabled = _canvasMonitors.Count >= 2 && isEligibleSolo;
+                BtnSoloDisplay.Content = isEligibleSolo ? $"Hanya Layar {numStr} Saja" : "Hanya Layar Ini (Solo)";
 
                 // Orientasi
                 OrientationComboBox.IsEnabled = true;
@@ -182,6 +187,7 @@ public partial class DisplaysPage : Page
         if (ok)
         {
             _hasUnappliedChanges = false;
+            await Task.Delay(150);
             RefreshMonitorsFromSystem();
             ShowInfoBar("Susunan Diterapkan", "Susunan posisi monitor berhasil diterapkan ke sistem Windows.", InfoBarSeverity.Success);
         }
@@ -215,7 +221,10 @@ public partial class DisplaysPage : Page
 
         int idx = _canvasMonitors.IndexOf(sel) + 1;
         string numStr = DisplayHelper.ExtractDisplayNumber(sel.StableKey, sel.FriendlyName, idx);
-        int targetDisplay = int.TryParse(numStr, out int dn) && (dn == 1 || dn == 2) ? dn : (idx <= 1 ? 1 : 2);
+        if (!int.TryParse(numStr, out int targetDisplay) || (targetDisplay != 1 && targetDisplay != 2))
+        {
+            targetDisplay = idx <= 1 ? 1 : 2;
+        }
 
         var (ok, msg) = ProjectionDispatcher.TriggerSolo(targetDisplay);
         if (ok)
@@ -259,6 +268,8 @@ public partial class DisplaysPage : Page
         var updated = sel with
         {
             Orientation = newOrient,
+            ResolutionWidth = newW,
+            ResolutionHeight = newH,
             Position = new Position(oldPos.X, oldPos.Y, newW, newH)
         };
 
@@ -401,7 +412,10 @@ public partial class DisplaysPage : Page
         var win = Window.GetWindow(this);
         var host = win != null ? ContentDialogHost.GetForWindow(win) : null;
         if (host == null)
+        {
+            ShowInfoBar("Dialog Error", "Tidak dapat membuka dialog konfirmasi hapus profil.", InfoBarSeverity.Error);
             return;
+        }
 
         var dialog = new ContentDialog(host)
         {
@@ -417,12 +431,19 @@ public partial class DisplaysPage : Page
             DefaultButton = ContentDialogButton.Close
         };
 
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary)
+        try
         {
-            _store.Delete(profile.Name);
-            RefreshProfiles();
-            ShowInfoBar("Profil Dihapus", $"Profil '{profile.Name}' telah dihapus dari daftar.", InfoBarSeverity.Success);
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                _store.Delete(profile.Name);
+                RefreshProfiles();
+                ShowInfoBar("Profil Dihapus", $"Profil '{profile.Name}' telah dihapus dari daftar.", InfoBarSeverity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowInfoBar("Error Dialog Hapus", ex.Message, InfoBarSeverity.Error);
         }
     }
 
@@ -431,7 +452,10 @@ public partial class DisplaysPage : Page
         var win = Window.GetWindow(this);
         var host = win != null ? ContentDialogHost.GetForWindow(win) : null;
         if (host == null)
+        {
+            ShowInfoBar("Dialog Error", "Tidak dapat membuka dialog simpan profil baru.", InfoBarSeverity.Error);
             return;
+        }
 
         var nameBox = new Wpf.Ui.Controls.TextBox
         {
@@ -456,32 +480,39 @@ public partial class DisplaysPage : Page
             DefaultButton = ContentDialogButton.Primary
         };
 
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary)
+        try
         {
-            string profileName = nameBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(profileName))
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
             {
-                ShowInfoBar("Nama Profil Kosong", "Nama profil tidak boleh kosong.", InfoBarSeverity.Warning);
-                return;
-            }
+                string profileName = nameBox.Text.Trim();
+                if (string.IsNullOrWhiteSpace(profileName))
+                {
+                    ShowInfoBar("Nama Profil Kosong", "Nama profil tidak boleh kosong.", InfoBarSeverity.Warning);
+                    return;
+                }
 
-            if (profileName.Length > 100)
-            {
-                ShowInfoBar("Nama Terlalu Panjang", "Nama profil maksimal 100 karakter.", InfoBarSeverity.Warning);
-                return;
-            }
+                if (profileName.Length > 100)
+                {
+                    ShowInfoBar("Nama Terlalu Panjang", "Nama profil maksimal 100 karakter.", InfoBarSeverity.Warning);
+                    return;
+                }
 
-            try
-            {
-                _profileService.SaveArrangementAs(profileName, _canvasMonitors, _primaryMonitorKey);
-                RefreshProfiles();
-                ShowInfoBar("Profil Disimpan", $"Profil tata letak '{profileName}' berhasil disimpan.", InfoBarSeverity.Success);
+                try
+                {
+                    _profileService.SaveArrangementAs(profileName, _canvasMonitors, _primaryMonitorKey);
+                    RefreshProfiles();
+                    ShowInfoBar("Profil Disimpan", $"Profil tata letak '{profileName}' berhasil disimpan.", InfoBarSeverity.Success);
+                }
+                catch (Exception ex)
+                {
+                    ShowInfoBar("Gagal Menyimpan Profil", ex.Message, InfoBarSeverity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                ShowInfoBar("Gagal Menyimpan Profil", ex.Message, InfoBarSeverity.Error);
-            }
+        }
+        catch (Exception ex)
+        {
+            ShowInfoBar("Error Dialog Simpan", ex.Message, InfoBarSeverity.Error);
         }
     }
 
