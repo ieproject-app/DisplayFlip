@@ -76,5 +76,7 @@
                 <ui:ImageIcon Source="pack://application:,,,/DisplayFlip.ico" />
             </ui:TitleBar.Icon>
         </ui:TitleBar>
+
+        <ui:ContentDialogHost x:Name="RootContentDialogHost" />
     </Grid>
 </ui:FluentWindow>

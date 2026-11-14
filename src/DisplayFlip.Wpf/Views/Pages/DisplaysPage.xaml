@@ -5,84 +5,238 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:controls="clr-namespace:DisplayFlip.UI.Controls"
     Title="Layar &amp; Profil"
-    d:DesignHeight="600"
-    d:DesignWidth="700"
+    d:DesignHeight="1000"
+    d:DesignWidth="850"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
     <StackPanel Margin="32,24,32,32">
+        <!-- Judul Halaman & Deskripsi -->
         <ui:TextBlock
             FontTypography="Title"
             Text="Layar &amp; Profil" />
         <ui:TextBlock
-            Margin="0,4,0,20"
+            Margin="0,4,0,16"
             Appearance="Secondary"
             FontTypography="Body"
             Text="Atur susunan posisi monitor, orientasi, resolusi, dan simpan profil tata letak multi-layar." />
 
+        <!-- Status InfoBar Notifikasi -->
         <ui:InfoBar
-            Title="Kerangka WPF-UI Aktif"
-            IsOpen="True"
-            IsClosable="False"
-            Severity="Informational"
-            Message="Jendela Settings WPF telah berjalan dengan backdrop Mica dan tema sistem. Kanvas interaktif drag-and-drop monitor 2D akan dimigrasikan pada Tahap 3." />
+            x:Name="PageInfoBar"
+            Margin="0,0,0,16"
+            IsOpen="False"
+            IsClosable="True" />
 
+        <!-- BAGIAN 1: Kanvas Tata Letak Monitor -->
         <ui:TextBlock
-            Margin="0,24,0,12"
+            Margin="0,4,0,12"
             FontTypography="Subtitle"
             Text="Tata Letak Monitor" />
 
+        <ui:Card Padding="16" Margin="0,0,0,16">
+            <StackPanel>
+                <!-- Info Header Kanvas -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Kanvas Multi-Monitor 2D" />
+                        <ui:TextBlock Appearance="Secondary" Text="Klik monitor untuk konfigurasi atau geser kotak monitor untuk mengatur susunan koordinat." />
+                    </StackPanel>
+                    <ui:Badge
+                        x:Name="MonitorCountBadge"
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Appearance="Info"
+                        Content="0 Layar Terdeteksi" />
+                </Grid>
+
+                <!-- Kontrol Kanvas Interaktif -->
+                <controls:MonitorCanvasControl
+                    x:Name="MonitorCanvas"
+                    Height="260"
+                    Margin="0,0,0,16" />
+
+                <!-- Toolbar Aksi Cepat -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Kiri: Identifikasi & Snap Toggle -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <ui:Button
+                            x:Name="BtnIdentify"
+                            Appearance="Secondary"
+                            Content="Identifikasi Layar"
+                            Click="OnIdentifyClicked"
+                            Margin="0,0,16,0">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Eye24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+
+                        <ui:ToggleSwitch
+                            x:Name="ToggleSnap"
+                            Content="Rapatkan ke Tepi (Snap)"
+                            IsChecked="True"
+                            Checked="OnSnapToggled"
+                            Unchecked="OnSnapToggled" />
+                    </StackPanel>
+
+                    <!-- Kanan: Reset & Terapkan Perubahan -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <ui:Button
+                            x:Name="BtnReset"
+                            Appearance="Secondary"
+                            Content="Reset Tata Letak"
+                            IsEnabled="False"
+                            Click="OnResetClicked"
+                            Margin="0,0,8,0">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="ArrowReset24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+
+                        <ui:Button
+                            x:Name="BtnApply"
+                            Appearance="Primary"
+                            Content="Terapkan Perubahan"
+                            IsEnabled="False"
+                            Click="OnApplyClicked">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Checkmark24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </ui:Card>
+
+        <!-- BAGIAN 2: Konfigurasi Monitor Terpilih -->
+        <ui:TextBlock
+            Margin="0,8,0,12"
+            FontTypography="Subtitle"
+            Text="Konfigurasi Monitor Terpilih" />
+
+        <!-- Card: Identitas & Aksi Cepat Monitor Terpilih -->
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Kanvas Monitor 2D" />
-                    <ui:TextBlock Appearance="Secondary" Text="Area pratinjau dan pengaturan posisi koordinat monitor secara visual." />
+                    <ui:TextBlock x:Name="SelectedMonitorTitle" FontTypography="BodyStrong" Text="Pilih sebuah monitor di kanvas" />
+                    <ui:TextBlock x:Name="SelectedMonitorSubtitle" Appearance="Secondary" Text="Klik kotak nomor monitor di kanvas atas untuk mengatur properti layar." />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
                 <ui:SymbolIcon Symbol="Desktop24" />
             </ui:CardControl.Icon>
-            <ui:Button
-                Appearance="Primary"
-                Content="Identifikasi Layar"
-                IsEnabled="False" />
+            <StackPanel Orientation="Horizontal">
+                <ui:Button
+                    x:Name="BtnSetPrimary"
+                    Content="Jadikan Layar Utama"
+                    IsEnabled="False"
+                    Click="OnSetPrimaryClicked"
+                    Margin="0,0,8,0">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="Star24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+                <ui:Button
+                    x:Name="BtnSoloDisplay"
+                    Content="Hanya Layar Ini (Solo)"
+                    IsEnabled="False"
+                    Click="OnSoloDisplayClicked">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="FullScreenMaximize24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+            </StackPanel>
         </ui:CardControl>
 
+        <!-- Card: Orientasi Layar -->
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Orientasi &amp; Resolusi" />
-                    <ui:TextBlock Appearance="Secondary" Text="Konfigurasi orientasi lanskap/potret dan resolusi layar yang dipilih." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Orientasi Tampilan" />
+                    <ui:TextBlock Appearance="Secondary" Text="Pilih orientasi layar lanskap atau potret untuk monitor yang dipilih." />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
                 <ui:SymbolIcon Symbol="ArrowRotateClockwise24" />
             </ui:CardControl.Icon>
-            <ui:Button
-                Content="Pilih Monitor"
-                IsEnabled="False" />
+            <ComboBox
+                x:Name="OrientationComboBox"
+                Width="190"
+                IsEnabled="False"
+                SelectionChanged="OnOrientationSelectionChanged">
+                <ComboBoxItem Content="Lanskap" Tag="Landscape" />
+                <ComboBoxItem Content="Potret" Tag="Portrait" />
+                <ComboBoxItem Content="Lanskap Dibalik" Tag="Rotated" />
+                <ComboBoxItem Content="Potret Dibalik" Tag="Unhandled" />
+            </ComboBox>
         </ui:CardControl>
 
-        <ui:TextBlock
-            Margin="0,16,0,12"
-            FontTypography="Subtitle"
-            Text="Profil Tersimpan" />
-
-        <ui:CardControl Margin="0,0,0,12">
+        <!-- Card: Resolusi Layar -->
+        <ui:CardControl Margin="0,0,0,16">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Preset Profil Multi-Monitor" />
-                    <ui:TextBlock Appearance="Secondary" Text="Daftar profil tata letak layar yang tersimpan di disk." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Resolusi Layar" />
+                    <ui:TextBlock Appearance="Secondary" Text="Pilih resolusi piksel tampilan yang didukung oleh monitor yang dipilih." />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
-                <ui:SymbolIcon Symbol="Save24" />
+                <ui:SymbolIcon Symbol="ScaleFill24" />
             </ui:CardControl.Icon>
-            <ui:Button
-                Appearance="Secondary"
-                Content="+ Simpan Profil Baru"
-                IsEnabled="False" />
+            <ComboBox
+                x:Name="ResolutionComboBox"
+                Width="190"
+                IsEnabled="False"
+                SelectionChanged="OnResolutionSelectionChanged" />
         </ui:CardControl>
+
+        <!-- BAGIAN 3: Manajemen Profil Tampilan -->
+        <Grid Margin="0,8,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ui:TextBlock
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                FontTypography="Subtitle"
+                Text="Profil Tata Letak Tersimpan" />
+            <ui:Button
+                x:Name="BtnSaveNewProfile"
+                Grid.Column="1"
+                Appearance="Primary"
+                Content="+ Simpan Profil Baru"
+                Click="OnSaveNewProfileClicked">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Add24" />
+                </ui:Button.Icon>
+            </ui:Button>
+        </Grid>
+
+        <!-- Kontainer Daftar Profil Tersimpan -->
+        <StackPanel x:Name="ProfilesContainer" Margin="0,0,0,16">
+            <ui:CardControl x:Name="EmptyProfilesCard" Margin="0,0,0,12">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Belum ada profil tersimpan" />
+                        <ui:TextBlock Appearance="Secondary" Text="Simpan susunan multi-layar saat ini dengan mengklik '+ Simpan Profil Baru'." />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Save24" />
+                </ui:CardControl.Icon>
+            </ui:CardControl>
+        </StackPanel>
     </StackPanel>
 </Page>
