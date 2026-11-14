@@ -1,0 +1,93 @@
+<Page
+    x:Class="DisplayFlip.UI.Views.Pages.GeneralPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Umum &amp; Ikon"
+    d:DesignHeight="600"
+    d:DesignWidth="700"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="32,24,32,32">
+            <ui:TextBlock
+                FontTypography="Title"
+                Text="Umum &amp; Ikon" />
+            <ui:TextBlock
+                Margin="0,4,0,20"
+                Appearance="Secondary"
+                FontTypography="Body"
+                Text="Preferensi startup sistem, tampilan ikon taskbar/tray, dan direktori penyimpanan." />
+
+            <ui:TextBlock
+                Margin="0,12,0,12"
+                FontTypography="Subtitle"
+                Text="Perilaku Aplikasi" />
+
+            <ui:CardControl Margin="0,0,0,12">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Jalan otomatis saat Windows start" />
+                        <ui:TextBlock Appearance="Secondary" Text="Mulai DisplayFlip di latar belakang saat login." />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Power24" />
+                </ui:CardControl.Icon>
+                <ui:ToggleSwitch IsChecked="True" IsEnabled="False" />
+            </ui:CardControl>
+
+            <ui:CardControl Margin="0,0,0,12">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Terapkan tata letak otomatis setelah drag" />
+                        <ui:TextBlock Appearance="Secondary" Text="Langsung terapkan posisi monitor begitu selesai menggeser di kanvas." />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Flash24" />
+                </ui:CardControl.Icon>
+                <ui:ToggleSwitch IsChecked="False" IsEnabled="False" />
+            </ui:CardControl>
+
+            <ui:TextBlock
+                Margin="0,16,0,12"
+                FontTypography="Subtitle"
+                Text="Gaya Ikon Tray" />
+
+            <ui:CardControl Margin="0,0,0,12">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Ikon System Tray" />
+                        <ui:TextBlock Appearance="Secondary" Text="Pilih gaya visual ikon di area notifikasi taskbar." />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Color24" />
+                </ui:CardControl.Icon>
+                <ui:TextBlock Appearance="Secondary" Text="Fluent Glass Dual (Aktif)" />
+            </ui:CardControl>
+
+            <ui:TextBlock
+                Margin="0,16,0,12"
+                FontTypography="Subtitle"
+                Text="Penyimpanan" />
+
+            <ui:CardControl Margin="0,0,0,12">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Lokasi Penyimpanan Profil" />
+                        <ui:TextBlock Appearance="Secondary" Text="%APPDATA%\DisplayFlip\profiles.json" />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Folder24" />
+                </ui:CardControl.Icon>
+                <ui:Button Content="Buka Folder" IsEnabled="False" />
+            </ui:CardControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

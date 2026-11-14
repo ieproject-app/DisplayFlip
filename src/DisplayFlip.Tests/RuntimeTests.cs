@@ -26,6 +26,7 @@ public sealed class RuntimeTests
             Path.Combine(root, "src", "DisplayFlip", "DisplayFlip.csproj"),
             Path.Combine(root, "src", "DisplayFlip.Core", "DisplayFlip.Core.csproj"),
             Path.Combine(root, "src", "DisplayFlip.Windows", "DisplayFlip.Windows.csproj"),
+            Path.Combine(root, "src", "DisplayFlip.Wpf", "DisplayFlip.Wpf.csproj"),
         };
         foreach (var f in files)
         {
@@ -69,5 +70,16 @@ public sealed class RuntimeTests
             return;
         }
         File.ReadAllText(runtimeConfig).Should().Contain("\"rollForward\": \"Major\"");
+    }
+
+    [Fact]
+    public void WpfCsproj_Declares_WpfUiPackageAndNet10()
+    {
+        var root = FindRepoRoot();
+        var csproj = Path.Combine(root, "src", "DisplayFlip.Wpf", "DisplayFlip.Wpf.csproj");
+        File.Exists(csproj).Should().BeTrue();
+        var content = File.ReadAllText(csproj);
+        content.Should().Contain("<TargetFramework>net10.0-windows</TargetFramework>");
+        content.Should().Contain("<PackageReference Include=\"WPF-UI\" Version=\"4.3.0\" />");
     }
 }

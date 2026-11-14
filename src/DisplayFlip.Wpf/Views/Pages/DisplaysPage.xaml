@@ -1,0 +1,90 @@
+<Page
+    x:Class="DisplayFlip.UI.Views.Pages.DisplaysPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Layar &amp; Profil"
+    d:DesignHeight="600"
+    d:DesignWidth="700"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="32,24,32,32">
+            <ui:TextBlock
+                FontTypography="Title"
+                Text="Layar &amp; Profil" />
+            <ui:TextBlock
+                Margin="0,4,0,20"
+                Appearance="Secondary"
+                FontTypography="Body"
+                Text="Atur susunan posisi monitor, orientasi, resolusi, dan simpan profil tata letak multi-layar." />
+
+            <ui:InfoBar
+                Title="Kerangka WPF-UI Aktif"
+                IsOpen="True"
+                IsClosable="False"
+                Severity="Informational"
+                Message="Jendela Settings WPF telah berjalan dengan backdrop Mica dan tema sistem. Kanvas interaktif drag-and-drop monitor 2D akan dimigrasikan pada Tahap 3." />
+
+            <ui:TextBlock
+                Margin="0,24,0,12"
+                FontTypography="Subtitle"
+                Text="Tata Letak Monitor" />
+
+            <ui:CardControl Margin="0,0,0,12">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Kanvas Monitor 2D" />
+                        <ui:TextBlock Appearance="Secondary" Text="Area pratinjau dan pengaturan posisi koordinat monitor secara visual." />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Desktop24" />
+                </ui:CardControl.Icon>
+                <ui:Button
+                    Appearance="Primary"
+                    Content="Identifikasi Layar"
+                    IsEnabled="False" />
+            </ui:CardControl>
+
+            <ui:CardControl Margin="0,0,0,12">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Orientasi &amp; Resolusi" />
+                        <ui:TextBlock Appearance="Secondary" Text="Konfigurasi orientasi lanskap/potret dan resolusi layar yang dipilih." />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="ArrowRotateClockwise24" />
+                </ui:CardControl.Icon>
+                <ui:Button
+                    Content="Pilih Monitor"
+                    IsEnabled="False" />
+            </ui:CardControl>
+
+            <ui:TextBlock
+                Margin="0,16,0,12"
+                FontTypography="Subtitle"
+                Text="Profil Tersimpan" />
+
+            <ui:CardControl Margin="0,0,0,12">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Preset Profil Multi-Monitor" />
+                        <ui:TextBlock Appearance="Secondary" Text="Daftar profil tata letak layar yang tersimpan di disk." />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Save24" />
+                </ui:CardControl.Icon>
+                <ui:Button
+                    Appearance="Secondary"
+                    Content="+ Simpan Profil Baru"
+                    IsEnabled="False" />
+            </ui:CardControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

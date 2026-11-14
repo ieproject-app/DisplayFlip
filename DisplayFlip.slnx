@@ -3,6 +3,7 @@
     <Project Path="src/DisplayFlip.Core/DisplayFlip.Core.csproj" />
     <Project Path="src/DisplayFlip.Tests/DisplayFlip.Tests.csproj" />
     <Project Path="src/DisplayFlip.Windows/DisplayFlip.Windows.csproj" />
+    <Project Path="src/DisplayFlip.Wpf/DisplayFlip.Wpf.csproj" />
     <Project Path="src/DisplayFlip/DisplayFlip.csproj" />
   </Folder>
 </Solution>
