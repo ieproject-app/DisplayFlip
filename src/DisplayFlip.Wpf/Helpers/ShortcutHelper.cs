@@ -67,7 +67,15 @@ public static class ShortcutHelper
             }
             else
             {
-                keyPart = NormalizeKeyToken(token);
+                // Jika sudah ada tombol utama (misal "Ctrl+A+B"), format shortcut tidak valid
+                if (keyPart != null)
+                    return string.Empty;
+
+                var normalizedKey = NormalizeKeyToken(token);
+                if (string.IsNullOrEmpty(normalizedKey))
+                    return string.Empty;
+
+                keyPart = normalizedKey;
             }
         }
 
@@ -84,10 +92,10 @@ public static class ShortcutHelper
         return string.Join("+", parts);
     }
 
-    private static string NormalizeKeyToken(string token)
+    private static string? NormalizeKeyToken(string token)
     {
         if (string.IsNullOrWhiteSpace(token))
-            return string.Empty;
+            return null;
 
         // Angka tunggal 0-9
         if (token.Length == 1 && char.IsDigit(token[0]))
@@ -97,18 +105,22 @@ public static class ShortcutHelper
         if (token.Length == 1 && char.IsLetter(token[0]))
             return char.ToUpperInvariant(token[0]).ToString();
 
-        // Numpad digit
-        if (token.StartsWith("numpad", StringComparison.OrdinalIgnoreCase) && token.Length > 6)
-            return "Num" + token.Substring(6);
+        // Placeholder pending input perekam shortcut
+        if (token == "?")
+            return "?";
 
-        if (token.StartsWith("num", StringComparison.OrdinalIgnoreCase) && token.Length > 3)
-            return "Num" + token.Substring(3);
+        // Numpad digit (Num0 - Num9)
+        if (token.StartsWith("numpad", StringComparison.OrdinalIgnoreCase) && token.Length == 7 && char.IsDigit(token[6]))
+            return "Num" + token[6];
+
+        if (token.StartsWith("num", StringComparison.OrdinalIgnoreCase) && token.Length == 4 && char.IsDigit(token[3]))
+            return "Num" + token[3];
 
         // Tombol fungsi F1 - F24
         if (token.Length >= 2 && (token[0] == 'f' || token[0] == 'F') && int.TryParse(token.Substring(1), out int fNum) && fNum is >= 1 and <= 24)
             return "F" + fNum;
 
-        // Tombol navigasi / arah
+        // Tombol navigasi / arah / khusus
         if (token.Equals("left", StringComparison.OrdinalIgnoreCase)) return "Left";
         if (token.Equals("right", StringComparison.OrdinalIgnoreCase)) return "Right";
         if (token.Equals("up", StringComparison.OrdinalIgnoreCase)) return "Up";
@@ -119,12 +131,13 @@ public static class ShortcutHelper
         if (token.Equals("pagedown", StringComparison.OrdinalIgnoreCase) || token.Equals("next", StringComparison.OrdinalIgnoreCase)) return "PageDown";
         if (token.Equals("insert", StringComparison.OrdinalIgnoreCase)) return "Insert";
         if (token.Equals("delete", StringComparison.OrdinalIgnoreCase) || token.Equals("del", StringComparison.OrdinalIgnoreCase)) return "Delete";
+        if (token.Equals("back", StringComparison.OrdinalIgnoreCase) || token.Equals("backspace", StringComparison.OrdinalIgnoreCase)) return "Back";
         if (token.Equals("space", StringComparison.OrdinalIgnoreCase)) return "Space";
         if (token.Equals("tab", StringComparison.OrdinalIgnoreCase)) return "Tab";
         if (token.Equals("enter", StringComparison.OrdinalIgnoreCase) || token.Equals("return", StringComparison.OrdinalIgnoreCase)) return "Enter";
         if (token.Equals("esc", StringComparison.OrdinalIgnoreCase) || token.Equals("escape", StringComparison.OrdinalIgnoreCase)) return "Escape";
 
-        return char.ToUpperInvariant(token[0]) + (token.Length > 1 ? token.Substring(1).ToLowerInvariant() : string.Empty);
+        return null;
     }
 
     /// <summary>
@@ -224,6 +237,8 @@ public static class ShortcutHelper
             Key.PageUp => "PageUp",
             Key.PageDown => "PageDown",
             Key.Insert => "Insert",
+            Key.Delete => "Delete",
+            Key.Back => "Back",
             Key.Tab => "Tab",
             Key.Space => "Space",
             Key.Return => "Enter",
@@ -298,6 +313,9 @@ public static class ShortcutHelper
         string keyKind,
         string shortcut)
     {
+        if (keyKind is not ("mirror" or "primary" or "identify" or "solo1" or "solo2" or "extend"))
+            return (false, null);
+
         string clean = Normalize(shortcut);
         string? freedFrom = null;
 
@@ -327,17 +345,17 @@ public static class ShortcutHelper
             }
 
             string mirror = keyKind == "mirror" ? clean
-                : (string.Equals(Normalize(cfg.MirrorShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.MirrorShortcut);
+                : (!string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.MirrorShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.MirrorShortcut);
             string primary = keyKind == "primary" ? clean
-                : (string.Equals(Normalize(cfg.CyclePrimaryShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.CyclePrimaryShortcut);
+                : (!string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.CyclePrimaryShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.CyclePrimaryShortcut);
             string identify = keyKind == "identify" ? clean
-                : (string.Equals(Normalize(cfg.IdentifyShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.IdentifyShortcut);
+                : (!string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.IdentifyShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.IdentifyShortcut);
             string solo1 = keyKind == "solo1" ? clean
-                : (string.Equals(Normalize(cfg.Solo1Shortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.Solo1Shortcut);
+                : (!string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.Solo1Shortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.Solo1Shortcut);
             string solo2 = keyKind == "solo2" ? clean
-                : (string.Equals(Normalize(cfg.Solo2Shortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.Solo2Shortcut);
+                : (!string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.Solo2Shortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.Solo2Shortcut);
             string extend = keyKind == "extend" ? clean
-                : (string.Equals(Normalize(cfg.ExtendShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.ExtendShortcut);
+                : (!string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.ExtendShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.ExtendShortcut);
 
             var profiles = string.IsNullOrEmpty(clean)
                 ? cfg.Profiles
@@ -369,6 +387,9 @@ public static class ShortcutHelper
         string profileName,
         string shortcut)
     {
+        if (string.IsNullOrWhiteSpace(profileName))
+            return (false, null);
+
         var prof = store.Find(profileName);
         if (prof == null)
             return (false, null);
@@ -403,12 +424,12 @@ public static class ShortcutHelper
 
                 return cfg with
                 {
-                    MirrorShortcut = string.Equals(Normalize(cfg.MirrorShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.MirrorShortcut,
-                    CyclePrimaryShortcut = string.Equals(Normalize(cfg.CyclePrimaryShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.CyclePrimaryShortcut,
-                    IdentifyShortcut = string.Equals(Normalize(cfg.IdentifyShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.IdentifyShortcut,
-                    Solo1Shortcut = string.Equals(Normalize(cfg.Solo1Shortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.Solo1Shortcut,
-                    Solo2Shortcut = string.Equals(Normalize(cfg.Solo2Shortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.Solo2Shortcut,
-                    ExtendShortcut = string.Equals(Normalize(cfg.ExtendShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.ExtendShortcut,
+                    MirrorShortcut = !string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.MirrorShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.MirrorShortcut,
+                    CyclePrimaryShortcut = !string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.CyclePrimaryShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.CyclePrimaryShortcut,
+                    IdentifyShortcut = !string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.IdentifyShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.IdentifyShortcut,
+                    Solo1Shortcut = !string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.Solo1Shortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.Solo1Shortcut,
+                    Solo2Shortcut = !string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.Solo2Shortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.Solo2Shortcut,
+                    ExtendShortcut = !string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.ExtendShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.ExtendShortcut,
                     Profiles = cfg.Profiles.Select(p =>
                         !string.Equals(p.Name, profileName, StringComparison.OrdinalIgnoreCase) &&
                         string.Equals(Normalize(p.Shortcut), clean, StringComparison.OrdinalIgnoreCase)
@@ -483,7 +504,15 @@ public static class ShortcutHelper
                 FontWeight = FontWeights.SemiBold,
                 TextAlignment = TextAlignment.Center
             };
-            tb.SetResourceReference(WpfTextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+
+            if (keycaps[i] == "?")
+            {
+                tb.SetResourceReference(WpfTextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
+            }
+            else
+            {
+                tb.SetResourceReference(WpfTextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+            }
 
             border.Child = tb;
             panel.Children.Add(border);

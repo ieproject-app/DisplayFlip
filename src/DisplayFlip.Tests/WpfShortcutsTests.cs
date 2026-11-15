@@ -45,9 +45,16 @@ public class WpfShortcutsTests
     [InlineData("ctrl+alt+numpad2", "Ctrl+Alt+Num2")]
     [InlineData("ctrl+alt+left", "Ctrl+Alt+Left")]
     [InlineData("ctrl+alt+enter", "Ctrl+Alt+Enter")]
+    [InlineData("ctrl+alt+del", "Ctrl+Alt+Delete")]
+    [InlineData("ctrl+alt+delete", "Ctrl+Alt+Delete")]
+    [InlineData("ctrl+alt+backspace", "Ctrl+Alt+Back")]
+    [InlineData("ctrl+alt+back", "Ctrl+Alt+Back")]
     [InlineData("f9", "F9")]
     [InlineData("F12", "F12")]
     [InlineData("  ctrl + alt + f  ", "Ctrl+Alt+F")]
+    [InlineData("Ctrl+A+B", "")]
+    [InlineData("Ctrl+99999", "")]
+    [InlineData("InvalidMod+F9", "")]
     [InlineData("", "")]
     [InlineData("   ", "")]
     [InlineData(null, "")]
@@ -146,6 +153,36 @@ public class WpfShortcutsTests
 
         ok.Should().BeTrue();
         formatted.Should().Be("Ctrl+Alt+Left");
+        error.Should().BeNull();
+    }
+
+    [Fact]
+    public void TryParseWpfKey_WithDeleteKeyAndModifiers_ReturnsCanonicalShortcut()
+    {
+        bool ok = ShortcutHelper.TryParseWpfKey(
+            Key.Delete,
+            ModifierKeys.Control | ModifierKeys.Shift,
+            isWinPressed: false,
+            out string formatted,
+            out string? error);
+
+        ok.Should().BeTrue();
+        formatted.Should().Be("Ctrl+Shift+Delete");
+        error.Should().BeNull();
+    }
+
+    [Fact]
+    public void TryParseWpfKey_WithBackKeyAndModifiers_ReturnsCanonicalShortcut()
+    {
+        bool ok = ShortcutHelper.TryParseWpfKey(
+            Key.Back,
+            ModifierKeys.Control | ModifierKeys.Alt,
+            isWinPressed: false,
+            out string formatted,
+            out string? error);
+
+        ok.Should().BeTrue();
+        formatted.Should().Be("Ctrl+Alt+Back");
         error.Should().BeNull();
     }
 
@@ -469,6 +506,76 @@ public class WpfShortcutsTests
 
             var reloaded = store.Find("Profil Reset");
             reloaded!.Shortcut.Should().BeEmpty();
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void ApplyGlobalShortcut_WithInvalidKeyKind_ReturnsFalseAndLeavesStoreUntouched()
+    {
+        var (store, path) = CreateTempStore();
+        try
+        {
+            store.UpdateSettings(cfg => cfg with { MirrorShortcut = "Ctrl+Alt+F" });
+
+            var (changed, freedFrom) = ShortcutHelper.ApplyGlobalShortcut(store, "unknown_action", "Ctrl+Alt+F");
+
+            changed.Should().BeFalse();
+            freedFrom.Should().BeNull();
+
+            var reloaded = store.Load();
+            reloaded.MirrorShortcut.Should().Be("Ctrl+Alt+F"); // Untouched!
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void ApplyGlobalShortcut_ClearingOneAction_DoesNotAffectOtherActions()
+    {
+        var (store, path) = CreateTempStore();
+        try
+        {
+            store.UpdateSettings(cfg => cfg with
+            {
+                MirrorShortcut = "Ctrl+Alt+F",
+                Solo1Shortcut = "Ctrl+Alt+1"
+            });
+
+            var (changed, freedFrom) = ShortcutHelper.ApplyGlobalShortcut(store, "mirror", "");
+
+            changed.Should().BeTrue();
+            freedFrom.Should().BeNull();
+
+            var reloaded = store.Load();
+            reloaded.MirrorShortcut.Should().BeEmpty();
+            reloaded.Solo1Shortcut.Should().Be("Ctrl+Alt+1"); // Intact!
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Theory]
+    [InlineData("NonExistentProfile")]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void ApplyProfileShortcut_WithInvalidOrMissingProfile_ReturnsFalse(string? profileName)
+    {
+        var (store, path) = CreateTempStore();
+        try
+        {
+            var (changed, freedFrom) = ShortcutHelper.ApplyProfileShortcut(store, profileName!, "Ctrl+Alt+1");
+
+            changed.Should().BeFalse();
+            freedFrom.Should().BeNull();
         }
         finally
         {

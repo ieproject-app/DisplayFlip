@@ -24,6 +24,7 @@ public partial class ShortcutsPage : Page
 
     private void OnPageLoaded(object sender, RoutedEventArgs e)
     {
+        PageInfoBar.IsOpen = false;
         RefreshShortcutsData();
     }
 
@@ -181,6 +182,7 @@ public partial class ShortcutsPage : Page
         };
         boxBorder.SetResourceReference(Border.BackgroundProperty, "ControlFillColorDefaultBrush");
         boxBorder.SetResourceReference(Border.BorderBrushProperty, "AccentFillColorDefaultBrush");
+        boxBorder.MouseDown += (_, _) => boxBorder.Focus();
 
         var boxContentHost = new ContentPresenter
         {
@@ -313,6 +315,7 @@ public partial class ShortcutsPage : Page
             boxContentHost.Content = ShortcutHelper.CreateKeycapsBadge(string.Join("+", parts));
             errorBlock.Visibility = Visibility.Collapsed;
             conflictInfoBar.IsOpen = false;
+            dialog.IsPrimaryButtonEnabled = false;
         }
 
         void ShowError(string err)
@@ -332,6 +335,8 @@ public partial class ShortcutsPage : Page
             if (key == Key.Tab && Keyboard.Modifiers == ModifierKeys.None)
                 return;
             if (key == Key.Return && Keyboard.Modifiers == ModifierKeys.None)
+                return;
+            if (key == Key.Space && Keyboard.Modifiers == ModifierKeys.None && Keyboard.FocusedElement is System.Windows.Controls.Primitives.ButtonBase)
                 return;
 
             e.Handled = true;
@@ -369,10 +374,19 @@ public partial class ShortcutsPage : Page
 
         dialog.PreviewKeyUp += (_, _) =>
         {
-            if (isShowingPending && Keyboard.Modifiers == ModifierKeys.None && !Keyboard.IsKeyDown(Key.LWin) && !Keyboard.IsKeyDown(Key.RWin))
+            if (isShowingPending)
             {
-                isShowingPending = false;
-                UpdateUi();
+                var remainingMods = Keyboard.Modifiers;
+                bool remainingWin = Keyboard.IsKeyDown(Key.LWin) || Keyboard.IsKeyDown(Key.RWin);
+                if (remainingMods == ModifierKeys.None && !remainingWin)
+                {
+                    isShowingPending = false;
+                    UpdateUi();
+                }
+                else
+                {
+                    ShowPendingModifiers(remainingMods, remainingWin);
+                }
             }
         };
 
@@ -393,15 +407,22 @@ public partial class ShortcutsPage : Page
     {
         string? freedFrom = null;
         bool isProfile = targetId.StartsWith("profile:");
+        bool changed;
 
         if (isProfile)
         {
             string profileName = targetId.Substring("profile:".Length);
-            (_, freedFrom) = ShortcutHelper.ApplyProfileShortcut(_store, profileName, shortcut);
+            (changed, freedFrom) = ShortcutHelper.ApplyProfileShortcut(_store, profileName, shortcut);
         }
         else
         {
-            (_, freedFrom) = ShortcutHelper.ApplyGlobalShortcut(_store, targetId, shortcut);
+            (changed, freedFrom) = ShortcutHelper.ApplyGlobalShortcut(_store, targetId, shortcut);
+        }
+
+        if (!changed)
+        {
+            ShowInfoBar("Gagal Menyimpan", $"Tidak dapat memperbarui pintasan untuk '{targetTitle}'.", InfoBarSeverity.Error);
+            return;
         }
 
         RefreshShortcutsData();
