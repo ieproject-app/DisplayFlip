@@ -80,7 +80,15 @@ public partial class DisplaysPage : Page
 
             BtnApply.IsEnabled = _hasUnappliedChanges;
             BtnReset.IsEnabled = _hasUnappliedChanges;
-            MonitorCountBadge.Content = $"{_canvasMonitors.Count} Layar Terdeteksi";
+
+            if (_canvasMonitors.Count == 0)
+            {
+                CanvasSubtitleText.Text = "0 layar aktif • Tidak ada monitor aktif terdeteksi.";
+            }
+            else
+            {
+                CanvasSubtitleText.Text = $"{_canvasMonitors.Count} layar aktif • Klik monitor untuk konfigurasi atau geser kotak monitor untuk mengatur susunan koordinat.";
+            }
 
             var sel = _canvasMonitors.FirstOrDefault(m => m.StableKey == _selectedMonitorKey);
             if (sel != null)
@@ -159,12 +167,51 @@ public partial class DisplaysPage : Page
         UpdateUiFromState();
     }
 
-    private void OnCanvasArrangementChanged(object? sender, IReadOnlyList<DisplayMonitor> newArrangement)
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        base.OnPreviewKeyDown(e);
+        if (e.Key is System.Windows.Input.Key.Left or System.Windows.Input.Key.Right or System.Windows.Input.Key.Up or System.Windows.Input.Key.Down)
+        {
+            if (System.Windows.Input.Keyboard.FocusedElement is not ComboBox && System.Windows.Input.Keyboard.FocusedElement is not System.Windows.Controls.TextBox)
+            {
+                if (MonitorCanvas != null && MonitorCanvas.Nudge(e.Key))
+                {
+                    e.Handled = true;
+                }
+            }
+        }
+    }
+
+    private async void OnCanvasArrangementChanged(object? sender, IReadOnlyList<DisplayMonitor> newArrangement)
     {
         _canvasMonitors = newArrangement.ToList();
-        _hasUnappliedChanges = true;
-        UpdateUiFromState();
-        ShowInfoBar("Susunan Monitor Diubah", "Susunan posisi monitor diperbarui di kanvas. Klik 'Terapkan Perubahan' atau simpan ke profil baru.", InfoBarSeverity.Informational);
+        bool autoApply = GeneralHelper.GetAutoApplyDrag(_store);
+        if (autoApply)
+        {
+            _hasUnappliedChanges = false;
+            UpdateUiFromState();
+            BtnApply.IsEnabled = false;
+            BtnReset.IsEnabled = false;
+            var (ok, msg) = await Task.Run(() => _adapter.ApplyArrangement(_canvasMonitors, _primaryMonitorKey));
+            if (ok)
+            {
+                await Task.Delay(150);
+                RefreshMonitorsFromSystem();
+                ShowInfoBar("Susunan Diterapkan Otomatis", "Susunan posisi monitor berhasil langsung diterapkan ke sistem Windows.", InfoBarSeverity.Success);
+            }
+            else
+            {
+                _hasUnappliedChanges = true;
+                UpdateUiFromState();
+                ShowInfoBar("Gagal Menerapkan Susunan", msg, InfoBarSeverity.Error);
+            }
+        }
+        else
+        {
+            _hasUnappliedChanges = true;
+            UpdateUiFromState();
+            ShowInfoBar("Susunan Monitor Diubah", "Susunan posisi monitor diperbarui di kanvas. Klik 'Terapkan Perubahan' atau simpan ke profil baru.", InfoBarSeverity.Informational);
+        }
     }
 
     private void OnIdentifyClicked(object sender, RoutedEventArgs e)

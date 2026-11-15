@@ -39,26 +39,15 @@
         <ui:Card Padding="16" Margin="0,0,0,16">
             <StackPanel>
                 <!-- Info Header Kanvas -->
-                <Grid Margin="0,0,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Margin="0,0,16,0">
-                        <ui:TextBlock FontTypography="BodyStrong" Text="Kanvas Multi-Monitor 2D" />
-                        <ui:TextBlock
-                            Appearance="Secondary"
-                            Text="Klik monitor untuk konfigurasi atau geser kotak monitor untuk mengatur susunan koordinat."
-                            TextWrapping="Wrap" />
-                    </StackPanel>
-                    <ui:Badge
-                        x:Name="MonitorCountBadge"
-                        Grid.Column="1"
+                <StackPanel Margin="0,0,0,12">
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Kanvas Multi-Monitor 2D" />
+                    <ui:TextBlock
+                        x:Name="CanvasSubtitleText"
                         Margin="0,2,0,0"
-                        VerticalAlignment="Top"
-                        Appearance="Info"
-                        Content="0 Layar Terdeteksi" />
-                </Grid>
+                        Appearance="Secondary"
+                        Text="Klik monitor untuk konfigurasi atau geser kotak monitor untuk mengatur susunan koordinat."
+                        TextWrapping="Wrap" />
+                </StackPanel>
 
                 <!-- Kontrol Kanvas Interaktif -->
                 <controls:MonitorCanvasControl

@@ -62,6 +62,7 @@ Download the latest binaries from the [**v1.0.0 Release Page**](https://github.c
 | Page | Light Mode | Dark Mode |
 | :--- | :---: | :---: |
 | **Displays & Profiles**<br>*(2D Canvas, Monitor Labels, Snap & Profiles)* | ![Displays Light](docs/screenshots/01_layar_dan_profil_light.png) | ![Displays Dark](docs/screenshots/05_layar_dan_profil_dark.png) |
+| **System Tray Quick Settings**<br>*(Quick Swap, Modes, Profiles & Identify)* | ![Tray Light](docs/screenshots/09_menu_cepat_tray_light.png) | ![Tray Dark](docs/screenshots/10_menu_cepat_tray_dark.png) |
 | **Keyboard Shortcuts**<br>*(Global Actions & Per-Profile Hotkeys)* | ![Shortcuts Light](docs/screenshots/02_pintasan_keyboard_light.png) | ![Shortcuts Dark](docs/screenshots/06_pintasan_keyboard_dark.png) |
 | **General & Icons**<br>*(Auto-Start, Theme & Tray Icon Styles)* | ![General Light](docs/screenshots/03_umum_dan_ikon_light.png) | ![General Dark](docs/screenshots/07_umum_dan_ikon_dark.png) |
 | **About & CLI**<br>*(Runtime Info & Interactive CLI Cards)* | ![About Light](docs/screenshots/04_tentang_dan_cli_light.png) | ![About Dark](docs/screenshots/08_tentang_dan_cli_dark.png) |

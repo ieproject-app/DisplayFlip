@@ -100,6 +100,7 @@ public sealed class MonitorCanvasControl : FrameworkElement
     private Point _dragMouseStart;
     private Position _dragMonitorOriginalPos;
     private Position _dragSnappedDesktopPos;
+    private Position _dragRawDesktopPos;
     private string? _hoveredKey;
 
     private double _lastScale = 0.08;
@@ -107,6 +108,11 @@ public sealed class MonitorCanvasControl : FrameworkElement
     private int _lastMinY;
     private double _lastOffsetX;
     private double _lastOffsetY;
+
+    public bool IsDragging => _isDragging;
+    public string? DraggingKey => _draggingKey;
+    public Position DragRawDesktopPos => _dragRawDesktopPos;
+    public Position DragSnappedDesktopPos => _dragSnappedDesktopPos;
 
     public MonitorCanvasControl()
     {
@@ -150,6 +156,15 @@ public sealed class MonitorCanvasControl : FrameworkElement
         {
             CancelDrag();
             e.Handled = true;
+            return;
+        }
+
+        if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down)
+        {
+            if (Nudge(e.Key))
+            {
+                e.Handled = true;
+            }
         }
     }
 
@@ -196,8 +211,8 @@ public sealed class MonitorCanvasControl : FrameworkElement
 
         double avgW = monitors.Average(m => (double)m.Position.Width);
         double avgH = monitors.Average(m => (double)m.Position.Height);
-        double viewW = totalW + avgW * 0.4;
-        double viewH = totalH + avgH * 0.4;
+        double viewW = totalW + avgW * 0.8;
+        double viewH = totalH + avgH * 0.8;
         double scale = Math.Max(0.005, Math.Min(availW / viewW, availH / viewH));
 
         double drawnW = totalW * scale;
@@ -244,7 +259,7 @@ public sealed class MonitorCanvasControl : FrameworkElement
             }
         }
 
-        // Render dragged floating tile on top
+        // Render dragged floating tile and ghost snap preview on top
         if (_isDragging && _draggingKey != null)
         {
             var draggedMon = monitors.FirstOrDefault(m => m.StableKey == _draggingKey);
@@ -253,12 +268,48 @@ public sealed class MonitorCanvasControl : FrameworkElement
                 int idx = monitors.ToList().IndexOf(draggedMon) + 1;
                 int dispNum = int.TryParse(DisplayHelper.ExtractDisplayNumber(draggedMon.StableKey, draggedMon.FriendlyName, idx), out int dn) ? dn : idx;
 
-                double fx = offsetX + (_dragSnappedDesktopPos.X - minX) * scale + 2;
-                double fy = offsetY + (_dragSnappedDesktopPos.Y - minY) * scale + 2;
                 double fw = Math.Max(56, draggedMon.Position.Width * scale - 4);
                 double fh = Math.Max(40, draggedMon.Position.Height * scale - 4);
 
-                var floatingRect = new Rect(fx, fy, fw, fh);
+                // 1. Ghost snap preview (dashed border box indicating magnetic snap target)
+                if (IsSnapEnabled)
+                {
+                    double sx = offsetX + (_dragSnappedDesktopPos.X - minX) * scale + 2;
+                    double sy = offsetY + (_dragSnappedDesktopPos.Y - minY) * scale + 2;
+                    double clampedSx = Math.Clamp(sx, 4, Math.Max(4, w - fw - 4));
+                    double clampedSy = Math.Clamp(sy, 4, Math.Max(4, h - fh - 4));
+                    var ghostRect = new Rect(clampedSx, clampedSy, fw, fh);
+
+                    var accentBrush = GetThemeBrush("AccentFillColorDefaultBrush", new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD4)));
+                    var accentColor = (accentBrush as SolidColorBrush)?.Color ?? Color.FromRgb(0x00, 0x78, 0xD4);
+                    var ghostBg = new SolidColorBrush(Color.FromArgb(24, accentColor.R, accentColor.G, accentColor.B));
+                    var ghostPen = new Pen(new SolidColorBrush(Color.FromArgb(170, accentColor.R, accentColor.G, accentColor.B)), 1.5)
+                    {
+                        DashStyle = new DashStyle(new double[] { 4, 3 }, 0)
+                    };
+                    ghostPen.Freeze();
+                    ghostBg.Freeze();
+                    dc.DrawRoundedRectangle(ghostBg, ghostPen, ghostRect, 6, 6);
+
+                    var ghostTypeface = new Typeface(new FontFamily("Segoe UI Variable Display, Segoe UI"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+                    var ghostNum = new FormattedText(
+                        dispNum.ToString(),
+                        CultureInfo.CurrentUICulture,
+                        FlowDirection.LeftToRight,
+                        ghostTypeface,
+                        fw < 80 || fh < 60 ? 16 : 24,
+                        new SolidColorBrush(Color.FromArgb(100, accentColor.R, accentColor.G, accentColor.B)),
+                        dpi);
+                    dc.DrawText(ghostNum, new Point(ghostRect.X + (ghostRect.Width - ghostNum.Width) / 2, ghostRect.Y + (ghostRect.Height - ghostNum.Height) / 2));
+                }
+
+                // 2. Dragged floating tile moving 1:1 smoothly with mouse cursor at _dragRawDesktopPos
+                double fx = offsetX + (_dragRawDesktopPos.X - minX) * scale + 2;
+                double fy = offsetY + (_dragRawDesktopPos.Y - minY) * scale + 2;
+                double clampedFx = Math.Clamp(fx, 4, Math.Max(4, w - fw - 4));
+                double clampedFy = Math.Clamp(fy, 4, Math.Max(4, h - fh - 4));
+                var floatingRect = new Rect(clampedFx, clampedFy, fw, fh);
+
                 DrawMonitorTile(dc, floatingRect, draggedMon, dispNum, isFloating: true, dpi);
             }
         }
@@ -448,6 +499,7 @@ public sealed class MonitorCanvasControl : FrameworkElement
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonDown(e);
+        Focus();
 
         var pt = e.GetPosition(this);
         for (int i = _hitBoxes.Count - 1; i >= 0; i--)
@@ -455,13 +507,7 @@ public sealed class MonitorCanvasControl : FrameworkElement
             var (rect, mon, _) = _hitBoxes[i];
             if (rect.Contains(pt))
             {
-                SelectedMonitorKey = mon.StableKey;
-                _draggingKey = mon.StableKey;
-                _dragMouseStart = pt;
-                _dragMonitorOriginalPos = mon.Position;
-                _dragSnappedDesktopPos = mon.Position;
-                _isDragging = false;
-
+                StartDrag(mon.StableKey, pt);
                 CaptureMouse();
                 MonitorSelected?.Invoke(this, mon.StableKey);
                 InvalidateVisual();
@@ -470,71 +516,63 @@ public sealed class MonitorCanvasControl : FrameworkElement
         }
     }
 
-    protected override void OnMouseMove(MouseEventArgs e)
+    public void StartDrag(string monitorKey, Point startPoint)
     {
-        base.OnMouseMove(e);
+        var mon = Monitors?.FirstOrDefault(m => m.StableKey == monitorKey);
+        if (mon == null)
+            return;
 
-        var pt = e.GetPosition(this);
+        SelectedMonitorKey = monitorKey;
+        _draggingKey = monitorKey;
+        _dragMouseStart = startPoint;
+        _dragMonitorOriginalPos = mon.Position;
+        _dragSnappedDesktopPos = mon.Position;
+        _dragRawDesktopPos = mon.Position;
+        _isDragging = false;
+    }
+
+    public void UpdateDrag(Point currentPoint)
+    {
         var monitors = Monitors;
+        if (_draggingKey == null || monitors == null || monitors.Count < 2)
+            return;
 
-        if (_draggingKey != null && e.LeftButton == MouseButtonState.Pressed && monitors != null && monitors.Count >= 2)
+        double dxPx = currentPoint.X - _dragMouseStart.X;
+        double dyPx = currentPoint.Y - _dragMouseStart.Y;
+
+        if (!_isDragging && (Math.Abs(dxPx) >= 4 || Math.Abs(dyPx) >= 4))
         {
-            double dxPx = pt.X - _dragMouseStart.X;
-            double dyPx = pt.Y - _dragMouseStart.Y;
-
-            if (!_isDragging && (Math.Abs(dxPx) >= 4 || Math.Abs(dyPx) >= 4))
-            {
-                _isDragging = true;
-                Cursor = Cursors.SizeAll;
-            }
-
-            if (_isDragging)
-            {
-                double scale = Math.Max(0.005, _lastScale);
-                int snapThresholdDesktop = (int)Math.Clamp(Math.Round(12.0 / scale), 40, 240);
-                int rawDesktopX = _dragMonitorOriginalPos.X + (int)Math.Round(dxPx / scale);
-                int rawDesktopY = _dragMonitorOriginalPos.Y + (int)Math.Round(dyPx / scale);
-
-                if (IsSnapEnabled)
-                {
-                    _dragSnappedDesktopPos = DisplayTopology.SnapMonitorPosition(
-                        monitors, _draggingKey, rawDesktopX, rawDesktopY, snapThresholdDesktop);
-                    ComputeAlignmentGuides(scale);
-                }
-                else
-                {
-                    _dragSnappedDesktopPos = new Position(rawDesktopX, rawDesktopY, _dragMonitorOriginalPos.Width, _dragMonitorOriginalPos.Height);
-                    _guideLines.Clear();
-                }
-
-                InvalidateVisual();
-                return;
-            }
+            _isDragging = true;
+            Cursor = Cursors.SizeAll;
         }
 
-        // Hover test
-        string? hitKey = null;
-        foreach (var (rect, mon, _) in _hitBoxes)
+        if (_isDragging)
         {
-            if (rect.Contains(pt))
-            {
-                hitKey = mon.StableKey;
-                break;
-            }
-        }
+            double scale = Math.Max(0.005, _lastScale);
+            int snapThresholdDesktop = (int)Math.Clamp(Math.Round(12.0 / scale), 40, 240);
+            int rawDesktopX = _dragMonitorOriginalPos.X + (int)Math.Round(dxPx / scale);
+            int rawDesktopY = _dragMonitorOriginalPos.Y + (int)Math.Round(dyPx / scale);
 
-        if (hitKey != _hoveredKey)
-        {
-            _hoveredKey = hitKey;
-            Cursor = hitKey != null ? Cursors.Hand : Cursors.Arrow;
+            _dragRawDesktopPos = new Position(rawDesktopX, rawDesktopY, _dragMonitorOriginalPos.Width, _dragMonitorOriginalPos.Height);
+
+            if (IsSnapEnabled)
+            {
+                _dragSnappedDesktopPos = DisplayTopology.SnapMonitorPosition(
+                    monitors, _draggingKey, rawDesktopX, rawDesktopY, snapThresholdDesktop);
+                ComputeAlignmentGuides(scale);
+            }
+            else
+            {
+                _dragSnappedDesktopPos = _dragRawDesktopPos;
+                _guideLines.Clear();
+            }
+
             InvalidateVisual();
         }
     }
 
-    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+    public void EndDrag()
     {
-        base.OnMouseLeftButtonUp(e);
-
         if (IsMouseCaptured)
             ReleaseMouseCapture();
 
@@ -562,6 +600,100 @@ public sealed class MonitorCanvasControl : FrameworkElement
         }
 
         InvalidateVisual();
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+
+        var pt = e.GetPosition(this);
+        if (_draggingKey != null && e.LeftButton == MouseButtonState.Pressed)
+        {
+            UpdateDrag(pt);
+            return;
+        }
+
+        // Hover test
+        string? hitKey = null;
+        foreach (var (rect, mon, _) in _hitBoxes)
+        {
+            if (rect.Contains(pt))
+            {
+                hitKey = mon.StableKey;
+                break;
+            }
+        }
+
+        if (hitKey != _hoveredKey)
+        {
+            _hoveredKey = hitKey;
+            Cursor = hitKey != null ? Cursors.Hand : Cursors.Arrow;
+            InvalidateVisual();
+        }
+    }
+
+    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+    {
+        base.OnMouseLeftButtonUp(e);
+        EndDrag();
+    }
+
+    public bool Nudge(Key key)
+    {
+        if (_isDragging || string.IsNullOrEmpty(SelectedMonitorKey) || Monitors == null || Monitors.Count < 2)
+            return false;
+
+        var sel = Monitors.FirstOrDefault(m => m.StableKey == SelectedMonitorKey);
+        if (sel == null)
+            return false;
+
+        int dx = 0;
+        int dy = 0;
+        double scale = Math.Max(0.005, _lastScale);
+        int step = (int)Math.Clamp(Math.Round(16.0 / scale), 64, 320);
+
+        switch (key)
+        {
+            case Key.Left:
+                dx = -step;
+                break;
+            case Key.Right:
+                dx = step;
+                break;
+            case Key.Up:
+                dy = -step;
+                break;
+            case Key.Down:
+                dy = step;
+                break;
+            default:
+                return false;
+        }
+
+        int rawX = sel.Position.X + dx;
+        int rawY = sel.Position.Y + dy;
+
+        int snapThreshold = (int)Math.Clamp(Math.Round(10.0 / scale), 40, 240);
+        Position newPos;
+        if (IsSnapEnabled)
+        {
+            newPos = DisplayTopology.SnapMonitorPosition(
+                Monitors, sel.StableKey, rawX, rawY, snapThreshold);
+        }
+        else
+        {
+            newPos = new Position(rawX, rawY, sel.Position.Width, sel.Position.Height);
+        }
+
+        int effectiveSnap = IsSnapEnabled ? snapThreshold : 0;
+        var updated = Monitors
+            .Select(m => m.StableKey == sel.StableKey ? m with { Position = newPos } : m)
+            .ToList();
+
+        var normalized = DisplayTopology.NormalizeArrangement(updated, PrimaryMonitorKey, effectiveSnap);
+        ArrangementChanged?.Invoke(this, normalized);
+        InvalidateVisual();
+        return true;
     }
 
     private void ComputeAlignmentGuides(double scale)

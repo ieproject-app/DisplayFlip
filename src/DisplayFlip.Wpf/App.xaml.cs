@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DisplayFlip.UI.Helpers;
@@ -11,6 +12,7 @@ using DisplayFlip.UI.Views;
 using DisplayFlip.UI.Views.Pages;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
+using TextBlock = Wpf.Ui.Controls.TextBlock;
 
 namespace DisplayFlip.UI;
 
@@ -227,12 +229,245 @@ public partial class App : Application
 
         winDark.AllowExplicitExit();
         winDark.Close();
+
+        // 9. Menu Cepat System Tray (Light)
+        ApplicationThemeManager.Apply(ApplicationTheme.Light);
+        var trayLightWin = BuildTrayShowcaseWindow(isDark: false);
+        trayLightWin.Show();
+        await Task.Delay(500);
+        SaveScreenshot(trayLightWin, Path.Combine(outDir, "09_menu_cepat_tray_light.png"));
+        trayLightWin.Close();
+
+        // 10. Menu Cepat System Tray (Dark)
+        ApplicationThemeManager.Apply(ApplicationTheme.Dark);
+        var trayDarkWin = BuildTrayShowcaseWindow(isDark: true);
+        trayDarkWin.Show();
+        await Task.Delay(500);
+        SaveScreenshot(trayDarkWin, Path.Combine(outDir, "10_menu_cepat_tray_dark.png"));
+        trayDarkWin.Close();
+    }
+
+    private static Window BuildTrayShowcaseWindow(bool isDark)
+    {
+        var win = new Window
+        {
+            WindowStyle = WindowStyle.None,
+            AllowsTransparency = false,
+            Background = isDark
+                ? new SolidColorBrush(Color.FromRgb(0x1C, 0x1C, 0x1E))
+                : new SolidColorBrush(Color.FromRgb(0xF0, 0xF2, 0xF5)),
+            Width = 520,
+            Height = 520,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+            ShowInTaskbar = false
+        };
+
+        var rootGrid = new Grid();
+        rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(44) });
+        rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
+
+        var header = new TextBlock
+        {
+            Text = "DisplayFlip • Menu Cepat System Tray",
+            FontSize = 13,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = isDark ? new SolidColorBrush(Color.FromRgb(0xA0, 0xA0, 0xA0)) : new SolidColorBrush(Color.FromRgb(0x60, 0x60, 0x60)),
+            Margin = new Thickness(24, 16, 24, 0),
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        Grid.SetRow(header, 0);
+        rootGrid.Children.Add(header);
+
+        var flyoutCard = new Border
+        {
+            Width = 320,
+            Background = isDark ? new SolidColorBrush(Color.FromRgb(0x2C, 0x2C, 0x2E)) : Brushes.White,
+            BorderBrush = isDark ? new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x46)) : new SolidColorBrush(Color.FromRgb(0xDC, 0xDE, 0xE2)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(6),
+            VerticalAlignment = VerticalAlignment.Bottom,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 0, 48, 12),
+            Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                BlurRadius = 16,
+                ShadowDepth = 4,
+                Direction = 270,
+                Opacity = isDark ? 0.45 : 0.15,
+                Color = Colors.Black
+            }
+        };
+
+        var menuStack = new StackPanel();
+
+        UIElement CreateMenuItem(SymbolRegular symbol, string text, bool hasSubmenu = false, bool isBold = false)
+        {
+            var itemBorder = new Border
+            {
+                Background = Brushes.Transparent,
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(10, 8, 10, 8),
+                Margin = new Thickness(0, 1, 0, 1)
+            };
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            if (hasSubmenu)
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+
+            var icon = new SymbolIcon
+            {
+                Symbol = symbol,
+                FontSize = 16,
+                Foreground = isDark ? new SolidColorBrush(Color.FromRgb(0x00, 0xA2, 0xED)) : new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD4)),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            Grid.SetColumn(icon, 0);
+            grid.Children.Add(icon);
+
+            var label = new TextBlock
+            {
+                Text = text,
+                FontSize = 13,
+                FontWeight = isBold ? FontWeights.SemiBold : FontWeights.Normal,
+                Foreground = isDark ? Brushes.White : new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A)),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(label, 1);
+            grid.Children.Add(label);
+
+            if (hasSubmenu)
+            {
+                var chevron = new SymbolIcon
+                {
+                    Symbol = SymbolRegular.ChevronRight20,
+                    FontSize = 14,
+                    Foreground = isDark ? new SolidColorBrush(Color.FromRgb(0x80, 0x80, 0x80)) : new SolidColorBrush(Color.FromRgb(0x90, 0x90, 0x90)),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetColumn(chevron, 2);
+                grid.Children.Add(chevron);
+            }
+
+            itemBorder.Child = grid;
+            return itemBorder;
+        }
+
+        UIElement CreateSeparator()
+        {
+            return new Separator
+            {
+                Margin = new Thickness(6, 4, 6, 4),
+                Background = isDark ? new SolidColorBrush(Color.FromRgb(0x3E, 0x3E, 0x42)) : new SolidColorBrush(Color.FromRgb(0xE4, 0xE6, 0xEB))
+            };
+        }
+
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.ArrowSwap24, "Tukar Kiri-Kanan (Quick Swap)"));
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Eye24, "Identifikasi Layar"));
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Desktop24, "Multi-Layar", hasSubmenu: true));
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Folder24, "Profil Tampilan", hasSubmenu: true));
+        menuStack.Children.Add(CreateSeparator());
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Settings24, "Buka Pengaturan DisplayFlip", isBold: true));
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Dismiss24, "Keluar"));
+
+        flyoutCard.Child = menuStack;
+        Grid.SetRow(flyoutCard, 1);
+        rootGrid.Children.Add(flyoutCard);
+
+        var taskbar = new Border
+        {
+            Background = isDark ? new SolidColorBrush(Color.FromRgb(0x20, 0x20, 0x22)) : new SolidColorBrush(Color.FromRgb(0xFA, 0xFA, 0xFC)),
+            BorderBrush = isDark ? new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x36)) : new SolidColorBrush(Color.FromRgb(0xE0, 0xE2, 0xE6)),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(24, 0, 24, 0)
+        };
+
+        var tbGrid = new Grid();
+        tbGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        tbGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var tbNote = new TextBlock
+        {
+            Text = "Taskbar Windows 11",
+            FontSize = 11,
+            Foreground = isDark ? new SolidColorBrush(Color.FromRgb(0x70, 0x70, 0x70)) : new SolidColorBrush(Color.FromRgb(0xA0, 0xA0, 0xA0)),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(tbNote, 0);
+        tbGrid.Children.Add(tbNote);
+
+        var trayCluster = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+
+        trayCluster.Children.Add(new SymbolIcon
+        {
+            Symbol = SymbolRegular.ChevronUp20,
+            FontSize = 16,
+            Margin = new Thickness(6, 0, 8, 0),
+            Foreground = isDark ? Brushes.LightGray : Brushes.DarkGray
+        });
+
+        var trayIconBorder = new Border
+        {
+            Background = isDark ? new SolidColorBrush(Color.FromRgb(0x35, 0x35, 0x38)) : new SolidColorBrush(Color.FromRgb(0xE4, 0xE8, 0xF0)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD4)),
+            BorderThickness = new Thickness(1.5),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(6, 4, 6, 4),
+            Margin = new Thickness(4, 0, 8, 0)
+        };
+        trayIconBorder.Child = new SymbolIcon
+        {
+            Symbol = SymbolRegular.DesktopPulse24,
+            FontSize = 18,
+            Foreground = new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD4))
+        };
+        trayCluster.Children.Add(trayIconBorder);
+
+        trayCluster.Children.Add(new SymbolIcon
+        {
+            Symbol = SymbolRegular.Speaker224,
+            FontSize = 16,
+            Margin = new Thickness(6, 0, 6, 0),
+            Foreground = isDark ? Brushes.LightGray : Brushes.DarkGray
+        });
+        trayCluster.Children.Add(new SymbolIcon
+        {
+            Symbol = SymbolRegular.Wifi124,
+            FontSize = 16,
+            Margin = new Thickness(6, 0, 10, 0),
+            Foreground = isDark ? Brushes.LightGray : Brushes.DarkGray
+        });
+
+        trayCluster.Children.Add(new TextBlock
+        {
+            Text = "12:00\n15/11/2026",
+            FontSize = 10,
+            TextAlignment = TextAlignment.Right,
+            Foreground = isDark ? Brushes.White : Brushes.Black,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        Grid.SetColumn(trayCluster, 1);
+        tbGrid.Children.Add(trayCluster);
+
+        taskbar.Child = tbGrid;
+        Grid.SetRow(taskbar, 2);
+        rootGrid.Children.Add(taskbar);
+
+        win.Content = rootGrid;
+        return win;
     }
 
     private static void SaveScreenshot(Window window, string path)
     {
-        int w = (int)Math.Max(window.ActualWidth, 1000);
-        int h = (int)Math.Max(window.ActualHeight, 720);
+        int w = (int)(window.ActualWidth > 0 ? window.ActualWidth : window.Width);
+        int h = (int)(window.ActualHeight > 0 ? window.ActualHeight : window.Height);
+        if (w <= 0) w = 1000;
+        if (h <= 0) h = 720;
 
         bool isDark = path.Contains("_dark.png", StringComparison.OrdinalIgnoreCase);
         var bgBrush = isDark
