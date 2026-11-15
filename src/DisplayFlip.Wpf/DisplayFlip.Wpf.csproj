@@ -43,7 +43,7 @@
     <InternalsVisibleTo Include="DisplayFlip.Tests" />
   </ItemGroup>
 
-  <!-- Post-publish target: Pastikan alias DisplayFlip.exe dibuat otomatis di publish folder -->
+  <!-- Post-publish target: Pastikan alias DisplayFlip.exe dibuat otomatis di publish folder dan bersihkan file intermediate Wpf.exe -->
   <Target Name="CreateDisplayFlipExeAlias" AfterTargets="Publish">
     <Copy SourceFiles="$(PublishDir)DisplayFlip.Wpf.exe"
           DestinationFiles="$(PublishDir)DisplayFlip.exe"
@@ -53,6 +53,8 @@
           DestinationFiles="$(PublishDir)DisplayFlip.pdb"
           Condition="Exists('$(PublishDir)DisplayFlip.Wpf.pdb')"
           OverwriteReadOnlyFiles="true" />
+    <Delete Files="$(PublishDir)DisplayFlip.Wpf.exe;$(PublishDir)DisplayFlip.Wpf.pdb"
+            Condition="Exists('$(PublishDir)DisplayFlip.exe')" />
   </Target>
 
 </Project>

@@ -41,9 +41,12 @@ public static class CliRunner
     /// </summary>
     public static int Run(string[] args)
     {
-        if (!Console.IsOutputRedirected || !Console.IsErrorRedirected)
+        if (AttachConsole(ATTACH_PARENT_PROCESS))
         {
-            AttachConsole(ATTACH_PARENT_PROCESS);
+            var stdOut = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
+            Console.SetOut(stdOut);
+            var stdErr = new StreamWriter(Console.OpenStandardError()) { AutoFlush = true };
+            Console.SetError(stdErr);
         }
 
         var actions = DisplayActionService.Instance;
