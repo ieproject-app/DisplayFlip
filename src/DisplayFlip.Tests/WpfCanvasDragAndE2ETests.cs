@@ -314,6 +314,120 @@ public class WpfCanvasDragAndE2ETests
         });
     }
 
+    [Fact]
+    public void CanvasDrag_GhostSnapPreview_DoesNotOverlapStationaryMonitorWhenDraggedLeft()
+    {
+        ExecuteOnSta(() =>
+        {
+            var monitors = CreateDualMonitors();
+            var canvas = new MonitorCanvasControl
+            {
+                Monitors = monitors,
+                SelectedMonitorKey = "MON2",
+                PrimaryMonitorKey = "MON1",
+                IsSnapEnabled = true
+            };
+
+            // Start dragging MON2 and drag it far to the left of MON1
+            canvas.StartDrag("MON2", new Point(300, 100));
+            canvas.UpdateDrag(new Point(50, 100)); // Dragged 250px left
+
+            double canvasW = 800;
+            double canvasH = 260;
+
+            // Compute ghost preview rectangle and MON1 stationary rectangle
+            var ghostRect = canvas.GetGhostPreviewRect(canvasW, canvasH);
+            var mon1Rect = canvas.GetTileRect("MON1", canvasW, canvasH);
+
+            ghostRect.Should().NotBe(Rect.Empty);
+            mon1Rect.Should().NotBe(Rect.Empty);
+
+            // Snapped target should be adjacent to the left of MON1
+            canvas.DragSnappedDesktopPos.X.Should().Be(-1920);
+
+            // Visual ghost box must NOT be clipped off screen (X >= 4)
+            ghostRect.X.Should().BeGreaterOrEqualTo(4, "Ghost preview must not be clipped off the left canvas boundary");
+
+            // Visual ghost box right edge must NOT overlap MON1 left edge
+            ghostRect.Right.Should().BeLessThanOrEqualTo(mon1Rect.X + 0.5, "Ghost preview must sit adjacent to MON1 without overlapping it");
+        });
+    }
+
+    [Fact]
+    public void CanvasDrag_AlignmentGuides_GeneratedForAbuttingSeamsAndWithinCanvasBounds()
+    {
+        ExecuteOnSta(() =>
+        {
+            var monitors = CreateDualMonitors();
+            var canvas = new MonitorCanvasControl
+            {
+                Monitors = monitors,
+                SelectedMonitorKey = "MON2",
+                PrimaryMonitorKey = "MON1",
+                IsSnapEnabled = true
+            };
+
+            canvas.StartDrag("MON2", new Point(200, 100));
+            // Move MON2 to snap right adjacent to MON1
+            canvas.UpdateDrag(new Point(205, 100));
+
+            // Guidelines should be computed
+            canvas.GuideLinesCount.Should().BeGreaterThan(0, "Magnetic snapping should generate alignment guidelines");
+
+            double canvasW = 800;
+            double canvasH = 260;
+            foreach (var (p1, p2) in canvas.GuideLines)
+            {
+                p1.X.Should().BeInRange(-100, canvasW + 100);
+                p2.X.Should().BeInRange(-100, canvasW + 100);
+                p1.Y.Should().BeInRange(-100, canvasH + 100);
+                p2.Y.Should().BeInRange(-100, canvasH + 100);
+            }
+        });
+    }
+
+    [Fact]
+    public void CanvasDrag_4KAnd8KNonLinearSetup_AccommodatesMassiveDisplaysWithoutClipping()
+    {
+        ExecuteOnSta(() =>
+        {
+            var mon4k = new DisplayMonitor(
+                StableKey: "MON_4K",
+                FriendlyName: "4K Primary",
+                Position: new Position(0, 0, 3840, 2160),
+                ResolutionWidth: 3840,
+                ResolutionHeight: 2160,
+                Orientation: CoreOrientation.Landscape,
+                IsEnabled: true);
+
+            var mon8k = new DisplayMonitor(
+                StableKey: "MON_8K",
+                FriendlyName: "8K Secondary",
+                Position: new Position(3840, 0, 7680, 4320),
+                ResolutionWidth: 7680,
+                ResolutionHeight: 4320,
+                Orientation: CoreOrientation.Landscape,
+                IsEnabled: true);
+
+            var canvas = new MonitorCanvasControl
+            {
+                Monitors = new List<DisplayMonitor> { mon4k, mon8k },
+                SelectedMonitorKey = "MON_8K",
+                PrimaryMonitorKey = "MON_4K",
+                IsSnapEnabled = true
+            };
+
+            canvas.StartDrag("MON_8K", new Point(400, 150));
+            canvas.UpdateDrag(new Point(100, 150));
+
+            var ghostRect = canvas.GetGhostPreviewRect(800, 260);
+            ghostRect.Should().NotBe(Rect.Empty);
+            ghostRect.X.Should().BeGreaterOrEqualTo(4);
+            ghostRect.Width.Should().BeGreaterThan(50);
+            ghostRect.Height.Should().BeGreaterThan(40);
+        });
+    }
+
     private static void ExecuteOnSta(Action action)
     {
         Exception? caught = null;

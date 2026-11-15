@@ -113,6 +113,93 @@ public sealed class MonitorCanvasControl : FrameworkElement
     public string? DraggingKey => _draggingKey;
     public Position DragRawDesktopPos => _dragRawDesktopPos;
     public Position DragSnappedDesktopPos => _dragSnappedDesktopPos;
+    public int GuideLinesCount => _guideLines.Count;
+    public IReadOnlyList<(Point Start, Point End)> GuideLines => _guideLines;
+
+    public Rect GetGhostPreviewRect(double canvasW, double canvasH)
+    {
+        var monitors = Monitors;
+        if (!_isDragging || _draggingKey == null || monitors == null || monitors.Count == 0)
+            return Rect.Empty;
+
+        var draggedMon = monitors.FirstOrDefault(m => m.StableKey == _draggingKey);
+        if (draggedMon == null)
+            return Rect.Empty;
+
+        int minX = monitors.Min(m => m.Position.X);
+        int minY = monitors.Min(m => m.Position.Y);
+        int maxR = monitors.Max(m => m.Position.Right);
+        int maxB = monitors.Max(m => m.Position.Bottom);
+        double totalW = Math.Max(1, maxR - minX);
+        double totalH = Math.Max(1, maxB - minY);
+
+        double padX = 24;
+        double padY = 20;
+        double availW = Math.Max(10, canvasW - padX * 2);
+        double availH = Math.Max(10, canvasH - padY * 2);
+
+        double maxW = monitors.Max(m => (double)m.Position.Width);
+        double maxH = monitors.Max(m => (double)m.Position.Height);
+        double viewW = totalW + maxW * 2.0;
+        double viewH = totalH + maxH * 0.9;
+        double scale = Math.Max(0.005, Math.Min(availW / viewW, availH / viewH));
+
+        double drawnW = totalW * scale;
+        double drawnH = totalH * scale;
+        double offsetX = padX + (availW - drawnW) / 2;
+        double offsetY = padY + (availH - drawnH) / 2;
+
+        double fw = Math.Max(56, draggedMon.Position.Width * scale - 4);
+        double fh = Math.Max(40, draggedMon.Position.Height * scale - 4);
+
+        double sx = offsetX + (_dragSnappedDesktopPos.X - minX) * scale + 2;
+        double sy = offsetY + (_dragSnappedDesktopPos.Y - minY) * scale + 2;
+        double clampedSx = Math.Clamp(sx, 4, Math.Max(4, canvasW - fw - 4));
+        double clampedSy = Math.Clamp(sy, 4, Math.Max(4, canvasH - fh - 4));
+
+        return new Rect(clampedSx, clampedSy, fw, fh);
+    }
+
+    public Rect GetTileRect(string stableKey, double canvasW, double canvasH)
+    {
+        var monitors = Monitors;
+        if (monitors == null || monitors.Count == 0)
+            return Rect.Empty;
+
+        var m = monitors.FirstOrDefault(mon => mon.StableKey == stableKey);
+        if (m == null)
+            return Rect.Empty;
+
+        int minX = monitors.Min(mon => mon.Position.X);
+        int minY = monitors.Min(mon => mon.Position.Y);
+        int maxR = monitors.Max(mon => mon.Position.Right);
+        int maxB = monitors.Max(mon => mon.Position.Bottom);
+        double totalW = Math.Max(1, maxR - minX);
+        double totalH = Math.Max(1, maxB - minY);
+
+        double padX = 24;
+        double padY = 20;
+        double availW = Math.Max(10, canvasW - padX * 2);
+        double availH = Math.Max(10, canvasH - padY * 2);
+
+        double maxW = monitors.Max(mon => (double)mon.Position.Width);
+        double maxH = monitors.Max(mon => (double)mon.Position.Height);
+        double viewW = totalW + maxW * 2.0;
+        double viewH = totalH + maxH * 0.9;
+        double scale = Math.Max(0.005, Math.Min(availW / viewW, availH / viewH));
+
+        double drawnW = totalW * scale;
+        double drawnH = totalH * scale;
+        double offsetX = padX + (availW - drawnW) / 2;
+        double offsetY = padY + (availH - drawnH) / 2;
+
+        double x = offsetX + (m.Position.X - minX) * scale;
+        double y = offsetY + (m.Position.Y - minY) * scale;
+        double mw = Math.Max(56, m.Position.Width * scale - 4);
+        double mh = Math.Max(40, m.Position.Height * scale - 4);
+
+        return new Rect(x + 2, y + 2, mw, mh);
+    }
 
     public MonitorCanvasControl()
     {
@@ -209,10 +296,10 @@ public sealed class MonitorCanvasControl : FrameworkElement
         double availW = Math.Max(10, w - padX * 2);
         double availH = Math.Max(10, h - padY * 2);
 
-        double avgW = monitors.Average(m => (double)m.Position.Width);
-        double avgH = monitors.Average(m => (double)m.Position.Height);
-        double viewW = totalW + avgW * 0.8;
-        double viewH = totalH + avgH * 0.8;
+        double maxW = monitors.Max(m => (double)m.Position.Width);
+        double maxH = monitors.Max(m => (double)m.Position.Height);
+        double viewW = totalW + maxW * 2.0;
+        double viewH = totalH + maxH * 0.9;
         double scale = Math.Max(0.005, Math.Min(availW / viewW, availH / viewH));
 
         double drawnW = totalW * scale;
@@ -255,7 +342,9 @@ public sealed class MonitorCanvasControl : FrameworkElement
 
             foreach (var (p1, p2) in _guideLines)
             {
-                dc.DrawLine(guidePen, p1, p2);
+                var cp1 = new Point(Math.Clamp(p1.X, 2, Math.Max(2, w - 2)), Math.Clamp(p1.Y, 2, Math.Max(2, h - 2)));
+                var cp2 = new Point(Math.Clamp(p2.X, 2, Math.Max(2, w - 2)), Math.Clamp(p2.Y, 2, Math.Max(2, h - 2)));
+                dc.DrawLine(guidePen, cp1, cp2);
             }
         }
 
@@ -358,7 +447,7 @@ public sealed class MonitorCanvasControl : FrameworkElement
         dc.DrawRoundedRectangle(tileFill, tilePen, rect, 6, 6);
 
         // Center Display Number
-        bool isCompact = rect.Width < 80 || rect.Height < 60;
+        bool isCompact = rect.Width < 80 || rect.Height < 54;
         double numFontSize = isCompact ? 18 : 28;
         var numTypeface = new Typeface(new FontFamily("Segoe UI Variable Display, Segoe UI"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
         var numText = new FormattedText(
@@ -731,6 +820,26 @@ public sealed class MonitorCanvasControl : FrameworkElement
             if (sp.Y + sp.Height / 2 == ap.Y + ap.Height / 2)
             {
                 double y = _lastOffsetY + (sp.Y + sp.Height / 2.0 - _lastMinY) * scale;
+                double x1 = _lastOffsetX + (Math.Min(sp.X, ap.X) - _lastMinX) * scale;
+                double x2 = _lastOffsetX + (Math.Max(sp.Right, ap.Right) - _lastMinX) * scale;
+                _guideLines.Add((new Point(x1 - 8, y), new Point(x2 + 8, y)));
+            }
+
+            // Abutting horizontal seam (left to right or right to left)
+            if (sp.Right == ap.X || sp.X == ap.Right)
+            {
+                int seamX = sp.Right == ap.X ? ap.X : sp.X;
+                double x = _lastOffsetX + (seamX - _lastMinX) * scale;
+                double y1 = _lastOffsetY + (Math.Min(sp.Y, ap.Y) - _lastMinY) * scale;
+                double y2 = _lastOffsetY + (Math.Max(sp.Bottom, ap.Bottom) - _lastMinY) * scale;
+                _guideLines.Add((new Point(x, y1 - 8), new Point(x, y2 + 8)));
+            }
+
+            // Abutting vertical seam (top to bottom or bottom to top)
+            if (sp.Bottom == ap.Y || sp.Y == ap.Bottom)
+            {
+                int seamY = sp.Bottom == ap.Y ? ap.Y : sp.Y;
+                double y = _lastOffsetY + (seamY - _lastMinY) * scale;
                 double x1 = _lastOffsetX + (Math.Min(sp.X, ap.X) - _lastMinX) * scale;
                 double x2 = _lastOffsetX + (Math.Max(sp.Right, ap.Right) - _lastMinX) * scale;
                 _guideLines.Add((new Point(x1 - 8, y), new Point(x2 + 8, y)));

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using DisplayFlip.Core;
 using DisplayFlip.UI.Helpers;
 using DisplayFlip.UI.Services;
@@ -26,6 +27,7 @@ public partial class DisplaysPage : Page
     private string? _selectedMonitorKey;
     private bool _hasUnappliedChanges;
     private bool _isUpdatingUi;
+    private bool _isApplyingArrangement;
 
     public DisplaysPage()
     {
@@ -77,6 +79,7 @@ public partial class DisplaysPage : Page
             MonitorCanvas.PrimaryMonitorKey = _primaryMonitorKey;
             MonitorCanvas.SelectedMonitorKey = _selectedMonitorKey;
             MonitorCanvas.IsSnapEnabled = ToggleSnap.IsChecked == true;
+            MonitorCanvas.ShowMonitorNames = ToggleMonitorNames?.IsChecked == true;
 
             BtnApply.IsEnabled = _hasUnappliedChanges;
             BtnReset.IsEnabled = _hasUnappliedChanges;
@@ -172,7 +175,7 @@ public partial class DisplaysPage : Page
         base.OnPreviewKeyDown(e);
         if (e.Key is System.Windows.Input.Key.Left or System.Windows.Input.Key.Right or System.Windows.Input.Key.Up or System.Windows.Input.Key.Down)
         {
-            if (System.Windows.Input.Keyboard.FocusedElement is not ComboBox && System.Windows.Input.Keyboard.FocusedElement is not System.Windows.Controls.TextBox)
+            if (!IsTextInputOrComboFocused())
             {
                 if (MonitorCanvas != null && MonitorCanvas.Nudge(e.Key))
                 {
@@ -182,28 +185,63 @@ public partial class DisplaysPage : Page
         }
     }
 
+    private static bool IsTextInputOrComboFocused()
+    {
+        var focused = System.Windows.Input.Keyboard.FocusedElement;
+        if (focused == null) return false;
+        if (focused is System.Windows.Controls.TextBox || focused is Wpf.Ui.Controls.TextBox ||
+            focused is System.Windows.Controls.ComboBox || focused is System.Windows.Controls.ComboBoxItem ||
+            focused is System.Windows.Controls.Primitives.TextBoxBase)
+        {
+            return true;
+        }
+
+        if (focused is DependencyObject d)
+        {
+            var parent = VisualTreeHelper.GetParent(d);
+            while (parent != null)
+            {
+                if (parent is System.Windows.Controls.ComboBox || parent is System.Windows.Controls.TextBox)
+                    return true;
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+        }
+        return false;
+    }
+
     private async void OnCanvasArrangementChanged(object? sender, IReadOnlyList<DisplayMonitor> newArrangement)
     {
         _canvasMonitors = newArrangement.ToList();
         bool autoApply = GeneralHelper.GetAutoApplyDrag(_store);
         if (autoApply)
         {
-            _hasUnappliedChanges = false;
-            UpdateUiFromState();
-            BtnApply.IsEnabled = false;
-            BtnReset.IsEnabled = false;
-            var (ok, msg) = await Task.Run(() => _adapter.ApplyArrangement(_canvasMonitors, _primaryMonitorKey));
-            if (ok)
+            if (_isApplyingArrangement)
+                return;
+
+            _isApplyingArrangement = true;
+            try
             {
-                await Task.Delay(150);
-                RefreshMonitorsFromSystem();
-                ShowInfoBar("Susunan Diterapkan Otomatis", "Susunan posisi monitor berhasil langsung diterapkan ke sistem Windows.", InfoBarSeverity.Success);
-            }
-            else
-            {
-                _hasUnappliedChanges = true;
+                _hasUnappliedChanges = false;
                 UpdateUiFromState();
-                ShowInfoBar("Gagal Menerapkan Susunan", msg, InfoBarSeverity.Error);
+                BtnApply.IsEnabled = false;
+                BtnReset.IsEnabled = false;
+                var (ok, msg) = await Task.Run(() => _adapter.ApplyArrangement(_canvasMonitors, _primaryMonitorKey));
+                if (ok)
+                {
+                    await Task.Delay(150);
+                    RefreshMonitorsFromSystem();
+                    ShowInfoBar("Susunan Diterapkan Otomatis", "Susunan posisi monitor berhasil langsung diterapkan ke sistem Windows.", InfoBarSeverity.Success);
+                }
+                else
+                {
+                    _hasUnappliedChanges = true;
+                    UpdateUiFromState();
+                    ShowInfoBar("Gagal Menerapkan Susunan", msg, InfoBarSeverity.Error);
+                }
+            }
+            finally
+            {
+                _isApplyingArrangement = false;
             }
         }
         else
