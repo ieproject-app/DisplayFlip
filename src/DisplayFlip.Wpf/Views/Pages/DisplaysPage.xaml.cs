@@ -174,7 +174,14 @@ public partial class DisplaysPage : Page
 
     private void OnSnapToggled(object sender, RoutedEventArgs e)
     {
-        MonitorCanvas.IsSnapEnabled = ToggleSnap.IsChecked == true;
+        if (MonitorCanvas != null)
+            MonitorCanvas.IsSnapEnabled = ToggleSnap.IsChecked == true;
+    }
+
+    private void OnMonitorNamesToggled(object sender, RoutedEventArgs e)
+    {
+        if (MonitorCanvas != null)
+            MonitorCanvas.ShowMonitorNames = ToggleMonitorNames.IsChecked == true;
     }
 
     private void OnResetClicked(object sender, RoutedEventArgs e)

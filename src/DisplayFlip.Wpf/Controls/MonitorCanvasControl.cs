@@ -50,6 +50,15 @@ public sealed class MonitorCanvasControl : FrameworkElement
                 true,
                 FrameworkPropertyMetadataOptions.AffectsRender));
 
+    public static readonly DependencyProperty ShowMonitorNamesProperty =
+        DependencyProperty.Register(
+            nameof(ShowMonitorNames),
+            typeof(bool),
+            typeof(MonitorCanvasControl),
+            new FrameworkPropertyMetadata(
+                true,
+                FrameworkPropertyMetadataOptions.AffectsRender));
+
     public IReadOnlyList<DisplayMonitor> Monitors
     {
         get => (IReadOnlyList<DisplayMonitor>)GetValue(MonitorsProperty);
@@ -72,6 +81,12 @@ public sealed class MonitorCanvasControl : FrameworkElement
     {
         get => (bool)GetValue(IsSnapEnabledProperty);
         set => SetValue(IsSnapEnabledProperty, value);
+    }
+
+    public bool ShowMonitorNames
+    {
+        get => (bool)GetValue(ShowMonitorNamesProperty);
+        set => SetValue(ShowMonitorNamesProperty, value);
     }
 
     public event EventHandler<string>? MonitorSelected;
@@ -363,25 +378,29 @@ public sealed class MonitorCanvasControl : FrameworkElement
         {
             var captionTypeface = new Typeface(new FontFamily("Segoe UI Variable Text, Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
-            // Header title (friendly name)
-            string shortTitle = DisplayHelper.CleanDeviceName(m.FriendlyName);
-            int maxChars = rect.Width >= 130 ? 14 : 9;
-            if (shortTitle.Length > maxChars)
-                shortTitle = shortTitle[..(maxChars - 3)] + "...";
-
-            var titleText = new FormattedText(
-                shortTitle,
-                CultureInfo.CurrentUICulture,
-                FlowDirection.LeftToRight,
-                captionTypeface,
-                10,
-                secondaryTextBrush,
-                dpi);
-
-            double maxTitleWidth = rect.Width - (isPrimary ? (rect.Width >= 115 ? 65 : 24) : 12);
-            if (titleText.Width <= maxTitleWidth && maxTitleWidth > 20)
+            // Header title (monitor name, controlled by ShowMonitorNames toggle)
+            if (ShowMonitorNames)
             {
-                dc.DrawText(titleText, new Point(rect.X + 6, rect.Y + 5));
+                string monitorLabel = DisplayHelper.GetCanvasMonitorLabel(m.FriendlyName, m.StableKey);
+                double maxTitleWidth = rect.Width - (isPrimary ? (rect.Width >= 115 ? 68 : 26) : 14);
+                if (maxTitleWidth > 24)
+                {
+                    var titleText = new FormattedText(
+                        monitorLabel,
+                        CultureInfo.CurrentUICulture,
+                        FlowDirection.LeftToRight,
+                        captionTypeface,
+                        10,
+                        secondaryTextBrush,
+                        dpi)
+                    {
+                        MaxTextWidth = maxTitleWidth,
+                        MaxLineCount = 1,
+                        Trimming = TextTrimming.CharacterEllipsis
+                    };
+
+                    dc.DrawText(titleText, new Point(rect.X + 6, rect.Y + 5));
+                }
             }
 
             // Footer (resolution or snap position)

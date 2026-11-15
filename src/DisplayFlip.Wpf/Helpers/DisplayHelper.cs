@@ -119,6 +119,29 @@ public static class DisplayHelper
     }
 
     /// <summary>
+    /// Formats a concise, human-readable monitor label for the 2D canvas, enriching raw
+    /// DISPLAYn identifiers with the hardware model ID from StableKey when available.
+    /// </summary>
+    public static string GetCanvasMonitorLabel(string? friendlyName, string? stableKey)
+    {
+        string clean = CleanDeviceName(friendlyName);
+        if (!string.IsNullOrWhiteSpace(stableKey)
+            && System.Text.RegularExpressions.Regex.IsMatch(clean, @"^DISPLAY\d+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                stableKey,
+                @"MONITOR\\([^\\|]+)\\",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success && !string.IsNullOrWhiteSpace(match.Groups[1].Value))
+            {
+                return $"{clean} ({match.Groups[1].Value.Trim()})";
+            }
+        }
+
+        return clean;
+    }
+
+    /// <summary>
     /// Queries the current refresh rate (in Hz) for the specified display device.
     /// Returns 0 if unable to retrieve.
     /// </summary>

@@ -134,4 +134,39 @@ public class WpfDisplaysTests
         normalizedSnapped.First(m => m.StableKey == "MON2").Position.X.Should().Be(1920);
         normalizedSnapped.First(m => m.StableKey == "MON2").Position.Y.Should().Be(0);
     }
+
+    [Fact]
+    public void GetCanvasMonitorLabel_EnrichesRawDisplayWithHardwareModelId()
+    {
+        var label = DisplayFlip.UI.Helpers.DisplayHelper.GetCanvasMonitorLabel(
+            @"\\.\DISPLAY2",
+            @"\\.\DISPLAY2|MONITOR\MSI40B7\{4d36e96e-e325-11ce-bfc1-08002be10318}\0004");
+
+        label.Should().Be("DISPLAY2 (MSI40B7)");
+    }
+
+    [Fact]
+    public void GetCanvasMonitorLabel_PreservesHumanReadableFriendlyName()
+    {
+        var label = DisplayFlip.UI.Helpers.DisplayHelper.GetCanvasMonitorLabel(
+            "MSI MP243X",
+            @"\\.\DISPLAY2|MONITOR\MSI40B7\{4d36e96e-e325-11ce-bfc1-08002be10318}\0004");
+
+        label.Should().Be("MSI MP243X");
+    }
+
+    [Fact]
+    public void DisplaysPageXaml_WrapsCanvasSubtitle_AndIncludesMonitorNameToggle()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "DisplayFlip.slnx")))
+            dir = dir.Parent;
+
+        dir.Should().NotBeNull();
+        var xamlPath = Path.Combine(dir!.FullName, "src", "DisplayFlip.Wpf", "Views", "Pages", "DisplaysPage.xaml");
+        var xaml = File.ReadAllText(xamlPath);
+
+        xaml.Should().Contain("TextWrapping=\"Wrap\"");
+        xaml.Should().Contain("x:Name=\"ToggleMonitorNames\"");
+    }
 }

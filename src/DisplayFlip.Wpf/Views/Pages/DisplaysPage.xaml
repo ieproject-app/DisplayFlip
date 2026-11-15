@@ -44,14 +44,18 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
+                    <StackPanel Grid.Column="0" Margin="0,0,16,0">
                         <ui:TextBlock FontTypography="BodyStrong" Text="Kanvas Multi-Monitor 2D" />
-                        <ui:TextBlock Appearance="Secondary" Text="Klik monitor untuk konfigurasi atau geser kotak monitor untuk mengatur susunan koordinat." />
+                        <ui:TextBlock
+                            Appearance="Secondary"
+                            Text="Klik monitor untuk konfigurasi atau geser kotak monitor untuk mengatur susunan koordinat."
+                            TextWrapping="Wrap" />
                     </StackPanel>
                     <ui:Badge
                         x:Name="MonitorCountBadge"
                         Grid.Column="1"
-                        VerticalAlignment="Center"
+                        Margin="0,2,0,0"
+                        VerticalAlignment="Top"
                         Appearance="Info"
                         Content="0 Layar Terdeteksi" />
                 </Grid>
@@ -65,19 +69,18 @@
                 <!-- Toolbar Aksi Cepat -->
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Kiri: Identifikasi & Snap Toggle -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Kiri: Identifikasi, Snap Toggle & Nama Monitor Toggle -->
+                    <WrapPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                         <ui:Button
                             x:Name="BtnIdentify"
                             Appearance="Secondary"
                             Content="Identifikasi Layar"
                             Click="OnIdentifyClicked"
-                            Margin="0,0,16,0">
+                            Margin="0,4,16,4">
                             <ui:Button.Icon>
                                 <ui:SymbolIcon Symbol="Eye24" />
                             </ui:Button.Icon>
@@ -87,12 +90,21 @@
                             x:Name="ToggleSnap"
                             Content="Rapatkan ke Tepi (Snap)"
                             IsChecked="True"
+                            Margin="0,4,16,4"
                             Checked="OnSnapToggled"
                             Unchecked="OnSnapToggled" />
-                    </StackPanel>
+
+                        <ui:ToggleSwitch
+                            x:Name="ToggleMonitorNames"
+                            Content="Nama Monitor"
+                            IsChecked="True"
+                            Margin="0,4,0,4"
+                            Checked="OnMonitorNamesToggled"
+                            Unchecked="OnMonitorNamesToggled" />
+                    </WrapPanel>
 
                     <!-- Kanan: Reset & Terapkan Perubahan -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <ui:Button
                             x:Name="BtnReset"
                             Appearance="Secondary"
