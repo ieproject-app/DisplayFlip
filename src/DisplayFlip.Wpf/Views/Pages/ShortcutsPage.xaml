@@ -6,63 +6,177 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="Pintasan Keyboard"
-    d:DesignHeight="600"
-    d:DesignWidth="700"
+    d:DesignHeight="950"
+    d:DesignWidth="800"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
     <StackPanel Margin="32,24,32,32">
+        <!-- Judul & Deskripsi Halaman -->
         <ui:TextBlock
             FontTypography="Title"
             Text="Pintasan Keyboard" />
         <ui:TextBlock
-            Margin="0,4,0,20"
+            Margin="0,4,0,16"
             Appearance="Secondary"
             FontTypography="Body"
-            Text="Atur tombol pintas global untuk aksi cepat multi-layar dan pergantian profil." />
+            Text="Atur tombol pintas global untuk aksi cepat multi-layar dan pergantian profil tata letak." />
 
+        <!-- Status InfoBar Notifikasi -->
+        <ui:InfoBar
+            x:Name="PageInfoBar"
+            Margin="0,0,0,16"
+            IsOpen="False"
+            IsClosable="True" />
+
+        <!-- BAGIAN 1: Aksi Cepat Global -->
         <ui:TextBlock
-            Margin="0,12,0,12"
+            Margin="0,4,0,12"
             FontTypography="Subtitle"
             Text="Aksi Cepat Global" />
 
+        <!-- 1. Balik / Tukar Posisi Layar -->
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Tukar Kiri-Kanan" />
-                    <ui:TextBlock Appearance="Secondary" Text="Tukar posisi horizontal antar dua monitor secara instan." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Balik / Tukar Posisi Layar" />
+                    <ui:TextBlock Appearance="Secondary" Text="Tukar posisi horizontal antar dua monitor secara instan (default: Ctrl+Alt+F)." />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
                 <ui:SymbolIcon Symbol="ArrowSwap24" />
             </ui:CardControl.Icon>
-            <ui:Button Content="Win + Ctrl + Shift + X" IsEnabled="False" />
+            <ui:Button
+                x:Name="BtnShortcutMirror"
+                Appearance="Secondary"
+                Padding="12,6"
+                Click="OnGlobalShortcutClicked"
+                Tag="mirror" />
         </ui:CardControl>
 
+        <!-- 2. Siklus Layar Utama -->
+        <ui:CardControl Margin="0,0,0,12">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Siklus Layar Utama" />
+                    <ui:TextBlock Appearance="Secondary" Text="Pindahkan monitor utama secara bergiliran ke layar berikutnya (default: Ctrl+Alt+P)." />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="ArrowRepeatAll24" />
+            </ui:CardControl.Icon>
+            <ui:Button
+                x:Name="BtnShortcutPrimary"
+                Appearance="Secondary"
+                Padding="12,6"
+                Click="OnGlobalShortcutClicked"
+                Tag="primary" />
+        </ui:CardControl>
+
+        <!-- 3. Identifikasi Layar -->
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
                     <ui:TextBlock FontTypography="BodyStrong" Text="Identifikasi Layar" />
-                    <ui:TextBlock Appearance="Secondary" Text="Tampilkan nomor monitor fisik besar di tengah layar." />
+                    <ui:TextBlock Appearance="Secondary" Text="Tampilkan nomor monitor fisik besar di setiap sudut layar (default: Ctrl+Alt+I)." />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
                 <ui:SymbolIcon Symbol="Eye24" />
             </ui:CardControl.Icon>
-            <ui:Button Content="Win + Ctrl + Shift + I" IsEnabled="False" />
+            <ui:Button
+                x:Name="BtnShortcutIdentify"
+                Appearance="Secondary"
+                Padding="12,6"
+                Click="OnGlobalShortcutClicked"
+                Tag="identify" />
         </ui:CardControl>
 
+        <!-- 4. Hanya Layar 1 -->
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Buka Pengaturan" />
-                    <ui:TextBlock Appearance="Secondary" Text="Buka jendela pengaturan DisplayFlip dari mana saja." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Hanya Layar 1 (Solo Display 1)" />
+                    <ui:TextBlock Appearance="Secondary" Text="Hanya menampilkan layar monitor 1 (internal/utama) dan mematikan layar lainnya." />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
-                <ui:SymbolIcon Symbol="Settings24" />
+                <ui:SymbolIcon Symbol="Desktop24" />
             </ui:CardControl.Icon>
-            <ui:Button Content="Win + Ctrl + Shift + S" IsEnabled="False" />
+            <ui:Button
+                x:Name="BtnShortcutSolo1"
+                Appearance="Secondary"
+                Padding="12,6"
+                Click="OnGlobalShortcutClicked"
+                Tag="solo1" />
+        </ui:CardControl>
+
+        <!-- 5. Hanya Layar 2 -->
+        <ui:CardControl Margin="0,0,0,12">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Hanya Layar 2 (Solo Display 2)" />
+                    <ui:TextBlock Appearance="Secondary" Text="Hanya menampilkan layar monitor 2 (eksternal) dan mematikan layar lainnya." />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Desktop24" />
+            </ui:CardControl.Icon>
+            <ui:Button
+                x:Name="BtnShortcutSolo2"
+                Appearance="Secondary"
+                Padding="12,6"
+                Click="OnGlobalShortcutClicked"
+                Tag="solo2" />
+        </ui:CardControl>
+
+        <!-- 6. Bentangkan Layar -->
+        <ui:CardControl Margin="0,0,0,12">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Perluas Multi-Layar (Extend Displays)" />
+                    <ui:TextBlock Appearance="Secondary" Text="Mengaktifkan kembali seluruh monitor dalam mode bentangkan / perluas (Extend)." />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="FullScreenMaximize24" />
+            </ui:CardControl.Icon>
+            <ui:Button
+                x:Name="BtnShortcutExtend"
+                Appearance="Secondary"
+                Padding="12,6"
+                Click="OnGlobalShortcutClicked"
+                Tag="extend" />
+        </ui:CardControl>
+
+        <!-- BAGIAN 2: Pintasan Profil Tersimpan -->
+        <ui:TextBlock
+            Margin="0,16,0,4"
+            FontTypography="Subtitle"
+            Text="Pintasan Profil Tersimpan" />
+        <ui:TextBlock
+            Margin="0,0,0,12"
+            Appearance="Secondary"
+            FontTypography="Body"
+            Text="Atur kombinasi tombol cepat untuk beralih langsung ke susunan profil monitor yang telah disimpan." />
+
+        <!-- Daftar Profil Dinamis -->
+        <StackPanel x:Name="ProfilesShortcutsPanel" />
+
+        <!-- State Kosong jika belum ada profil -->
+        <ui:CardControl
+            x:Name="EmptyProfilesCard"
+            Margin="0,0,0,12"
+            Visibility="Collapsed">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Belum Ada Profil Tersimpan" />
+                    <ui:TextBlock Appearance="Secondary" Text="Simpan profil tata letak di tab Layar &amp; Profil terlebih dahulu untuk mengatur pintasan profil." />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Info24" />
+            </ui:CardControl.Icon>
         </ui:CardControl>
     </StackPanel>
 </Page>
