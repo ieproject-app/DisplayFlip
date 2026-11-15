@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using DisplayFlip.Core;
 using DisplayFlip.UI.Helpers;
+using DisplayFlip.UI.Services;
 using DisplayFlip.Windows;
 using Wpf.Ui.Controls;
 using CoreOrientation = DisplayFlip.Core.Orientation;
@@ -442,6 +443,7 @@ public partial class DisplaysPage : Page
             if (result == ContentDialogResult.Primary)
             {
                 _store.Delete(profile.Name);
+                GlobalHotkeyManager.Instance.ReloadHotkeys();
                 RefreshProfiles();
                 ShowInfoBar("Profil Dihapus", $"Profil '{profile.Name}' telah dihapus dari daftar.", InfoBarSeverity.Success);
             }

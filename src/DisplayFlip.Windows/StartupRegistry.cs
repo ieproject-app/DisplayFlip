@@ -23,7 +23,7 @@ public static class StartupRegistry
             return;
         if (enabled)
         {
-            var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            var exePath = Environment.ProcessPath ?? System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
             if (!string.IsNullOrEmpty(exePath))
                 key.SetValue(ValueName, $"\"{exePath}\" --tray");
         }
