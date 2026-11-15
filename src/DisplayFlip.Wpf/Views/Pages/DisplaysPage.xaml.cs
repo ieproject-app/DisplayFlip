@@ -401,11 +401,14 @@ public partial class DisplaysPage : Page
 
     private async Task ApplyProfileAsync(LayoutProfile profile)
     {
-        var (ok, msg) = await Task.Run(() => _profileService.TryApply(profile.Name, userOptedContinueIfMissing: true));
+        var (ok, isPartial, msg) = await Task.Run(() => DisplayActionService.Instance.ApplyProfileDetailed(profile.Name));
         if (ok)
         {
             RefreshMonitorsFromSystem();
-            ShowInfoBar("Profil Diterapkan", $"Profil '{profile.Name}' berhasil diterapkan.", InfoBarSeverity.Success);
+            ShowInfoBar(
+                isPartial ? "Profil Diterapkan Sebagian" : "Profil Diterapkan",
+                msg,
+                isPartial ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
         }
         else
         {

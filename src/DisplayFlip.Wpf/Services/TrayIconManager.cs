@@ -239,7 +239,7 @@ public sealed class TrayIconManager : IDisposable
         var extendItem = new WpfMenuItem
         {
             Header = "Bentangkan / Extend",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.ArrowExpandAll24, FontSize = 16 }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.FullScreenMaximize24, FontSize = 16 }
         };
         extendItem.Click += (_, _) =>
         {
@@ -280,8 +280,8 @@ public sealed class TrayIconManager : IDisposable
                 };
                 pItem.Click += (_, _) =>
                 {
-                    var (ok, msg) = actions.ApplyProfile(profName);
-                    ShowNotification("DisplayFlip", ok ? $"Profil '{profName}' diterapkan." : msg);
+                    var (_, msg) = actions.ApplyProfile(profName);
+                    ShowNotification("DisplayFlip", msg);
                 };
                 profileParent.Items.Add(pItem);
             }
