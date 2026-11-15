@@ -91,7 +91,7 @@ public sealed class RuntimeTests
         File.Exists(csproj).Should().BeTrue();
         var content = File.ReadAllText(csproj);
         content.Should().Contain("<ApplicationManifest>app.manifest</ApplicationManifest>");
-        content.Should().Contain("<Version>1.0.0</Version>");
+        content.Should().Contain("<Version>1.1.0</Version>");
         content.Should().Contain("<Product>DisplayFlip</Product>");
         content.Should().Contain("<ApplicationIcon>DisplayFlip.ico</ApplicationIcon>");
     }

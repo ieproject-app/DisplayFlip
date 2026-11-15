@@ -4,12 +4,12 @@
 
 **Fast, Native Windows 11 Multi-Monitor Layout & Profile Switcher**
 
-[![Release](https://img.shields.io/badge/Release-v1.0.0-0078D4?style=for-the-badge)](https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.0.0)
+[![Release](https://img.shields.io/badge/Release-v1.1.0-0078D4?style=for-the-badge)](https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0)
 [![.NET 10](https://img.shields.io/badge/.NET-10%20LTS-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Platform](https://img.shields.io/badge/Windows-11%20%2F%2010%20(x64)-0078D6?style=for-the-badge&logo=windows)](https://www.microsoft.com/windows)
 [![UI](https://img.shields.io/badge/UI-WPF--UI%204.3%20Fluent-00B4D8?style=for-the-badge)](#screenshots)
 
-[Website](https://displayflip.snipgeek.com) • [Download v1.0.0](https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.0.0) • [Features](#key-features) • [Screenshots](#screenshots) • [CLI Reference](#cli-reference) • [Build from Source](#build-from-source)
+[Website](https://displayflip.snipgeek.com) • [Download v1.1.0](https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0) • [Features](#key-features) • [Screenshots](#screenshots) • [CLI Reference](#cli-reference) • [Build from Source](#build-from-source)
 
 </div>
 
@@ -21,12 +21,12 @@
 
 ## Download & Installation
 
-Download the latest binaries from the [**v1.0.0 Release Page**](https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.0.0):
+Download the latest binaries from the [**v1.1.0 Release Page**](https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0):
 
 | Package | Size | Requirements | Best For |
 | :--- | :--- | :--- | :--- |
-| **`DisplayFlip-v1.0.0-win-x64.zip`** | ~3 MB (6.77 MB `.exe`) | [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) | **Recommended** for daily use on your main PC |
-| **`DisplayFlip-v1.0.0-Standalone-win-x64.exe`** | ~74 MB | None (Zero dependencies) | **Portable** single-file `.exe` for any Windows 10/11 x64 PC |
+| **`DisplayFlip-v1.1.0-win-x64.zip`** | ~3 MB (6.87 MB `.exe`) | [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) | **Recommended** for daily use on your main PC |
+| **`DisplayFlip-v1.1.0-Standalone-win-x64.exe`** | ~74 MB | None (Zero dependencies) | **Portable** single-file `.exe` for any Windows 10/11 x64 PC |
 
 ### Quick Start
 1. Extract or run `DisplayFlip.exe`.
