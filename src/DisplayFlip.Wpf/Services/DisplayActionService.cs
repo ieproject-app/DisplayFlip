@@ -206,8 +206,18 @@ public sealed class DisplayActionService
             }
         }
 
-        var (remaining, missing) = ProfilePolicy.SplitPresent(profile, activeMonitors.Select(m => m.StableKey));
-        if (remaining.Count == 0)
+        var activeKeys = new HashSet<string>(activeMonitors.Select(m => m.StableKey), StringComparer.Ordinal);
+        var enabledMonitors = profile.Monitors.Where(m => m.IsEnabled).ToList();
+        var (remaining, missing) = ProfilePolicy.SplitPresent(profile, activeKeys);
+
+        int presentCount = enabledMonitors.Count > 0
+            ? enabledMonitors.Count(m => activeKeys.Contains(m.StableKey))
+            : remaining.Count;
+        int missingCount = enabledMonitors.Count > 0
+            ? enabledMonitors.Count - presentCount
+            : missing.Count;
+
+        if (presentCount == 0)
         {
             return (false, false, $"Tidak ada monitor dari profil '{profileName}' yang terhubung saat ini.");
         }
@@ -218,9 +228,9 @@ public sealed class DisplayActionService
             return (false, false, msg);
         }
 
-        if (missing.Count > 0)
+        if (missingCount > 0)
         {
-            return (true, true, $"Profil '{profileName}' diterapkan sebagian ({missing.Count} monitor dari profil tidak terhubung secara fisik).");
+            return (true, true, $"Profil '{profileName}' diterapkan sebagian ({missingCount} monitor dari profil tidak terhubung secara fisik).");
         }
 
         return (true, false, $"Profil '{profileName}' berhasil diterapkan.");

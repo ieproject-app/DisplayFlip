@@ -100,7 +100,7 @@ public sealed class WpfProfileAndIconAuditTests
 
         var usedSymbols = new HashSet<string>(StringComparer.Ordinal);
         var csRegex = new Regex(@"SymbolRegular\.([A-Za-z0-9_]+)", RegexOptions.Compiled);
-        var xamlRegex = new Regex(@"Symbol\s*=\s*""([A-Za-z0-9_]+)""", RegexOptions.Compiled);
+        var xamlRegex = new Regex(@"Symbol\s*=\s*""?([A-Za-z0-9_]+)""?", RegexOptions.Compiled);
 
         foreach (var file in Directory.EnumerateFiles(wpfDir, "*.cs", SearchOption.AllDirectories))
         {
@@ -356,6 +356,109 @@ public sealed class WpfProfileAndIconAuditTests
             var failResult = service.ApplyProfile("Solo");
             failResult.Success.Should().BeFalse();
             failResult.Message.Should().Be("Validation failed");
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ApplyProfile_WhenProfileHasDisabledMonitorDisconnected_DoesNotReportPartial()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"df_test_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var mon1 = MakeMonitor("MON1", 0, 0);
+            var mon2Disabled = MakeMonitor("MON2", 1920, 0) with { IsEnabled = false };
+            var store = CreateTempStoreWithProfile(tempDir, "SingleWithDisabled", mon1, mon2Disabled);
+
+            int dispatchCalls = 0;
+            var service = new DisplayActionService(
+                adapter: null,
+                store: store,
+                readActiveMonitors: () => new[] { mon1 },
+                dispatchProjection: _ =>
+                {
+                    dispatchCalls++;
+                    return (true, "ok");
+                },
+                tryApplyProfile: (_, _) => (true, "Applied"),
+                sleep: _ => { });
+
+            var (success, isPartial, message) = service.ApplyProfileDetailed("SingleWithDisabled");
+
+            success.Should().BeTrue();
+            isPartial.Should().BeFalse();
+            dispatchCalls.Should().Be(0);
+            message.Should().Be("Profil 'SingleWithDisabled' berhasil diterapkan.");
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ApplyProfile_WhenExtendDispatchFails_GracefullyAppliesConnectedMonitorAndReportsPartial()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"df_test_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var mon1 = MakeMonitor("MON1", 0, 0);
+            var mon2 = MakeMonitor("MON2", 1920, 0);
+            var store = CreateTempStoreWithProfile(tempDir, "Dual", mon1, mon2);
+
+            int sleepCalls = 0;
+            var service = new DisplayActionService(
+                adapter: null,
+                store: store,
+                readActiveMonitors: () => new[] { mon1 },
+                dispatchProjection: _ => (false, "DisplaySwitch failed"),
+                tryApplyProfile: (_, continueIfMissing) =>
+                {
+                    continueIfMissing.Should().BeTrue();
+                    return (true, "Applied");
+                },
+                sleep: _ => { sleepCalls++; });
+
+            var (success, isPartial, message) = service.ApplyProfileDetailed("Dual");
+
+            success.Should().BeTrue();
+            isPartial.Should().BeTrue();
+            sleepCalls.Should().Be(0);
+            message.Should().Contain("diterapkan sebagian");
+            message.Should().Contain("1 monitor");
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ApplyProfile_WhenProfileNameIsEmptyOrWhitespace_ReturnsFailure()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"df_test_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var store = new ProfileStore(Path.Combine(tempDir, "profiles.json"));
+            var service = new DisplayActionService(
+                adapter: null,
+                store: store,
+                readActiveMonitors: () => Array.Empty<DisplayMonitor>(),
+                dispatchProjection: _ => (true, "ok"),
+                tryApplyProfile: (_, _) => (true, "ok"),
+                sleep: _ => { });
+
+            var (success, isPartial, message) = service.ApplyProfileDetailed("   ");
+
+            success.Should().BeFalse();
+            isPartial.Should().BeFalse();
+            message.Should().Contain("tidak boleh kosong");
         }
         finally
         {
