@@ -201,41 +201,51 @@ public class WpfCanvasDragAndE2ETests
     {
         ExecuteOnSta(() =>
         {
-            var monitors = CreateDualMonitors();
+            var monitors = new List<DisplayMonitor>
+            {
+                new("MON1", "Dell Primary", new Position(0, 0, 1920, 1080), 1920, 1080, CoreOrientation.Landscape, true),
+                new("MON2", "Dell Secondary", new Position(1920, -417, 1920, 1080), 1920, 1080, CoreOrientation.Landscape, true)
+            };
+
             var canvas = new MonitorCanvasControl
             {
                 Monitors = monitors,
                 SelectedMonitorKey = "MON2",
                 PrimaryMonitorKey = "MON1",
-                IsSnapEnabled = false
+                IsSnapEnabled = true
             };
 
             int changeCount = 0;
-            canvas.ArrangementChanged += (_, _) => changeCount++;
+            canvas.ArrangementChanged += (_, updated) =>
+            {
+                changeCount++;
+                canvas.Monitors = updated;
+            };
 
-            // Right arrow
-            bool handledRight = canvas.Nudge(Key.Right);
-            handledRight.Should().BeTrue();
+            // Pushing further right when already rightmost must NOT fire a no-op change
+            canvas.Nudge(Key.Right).Should().BeFalse();
+            changeCount.Should().Be(0);
+
+            // Left arrow must cross MON1 to the left side (-1920) even with snap enabled
+            canvas.Nudge(Key.Left).Should().BeTrue();
             changeCount.Should().Be(1);
+            canvas.Monitors.First(m => m.StableKey == "MON2").Position.X.Should().Be(-1920);
 
-            // Left arrow
-            bool handledLeft = canvas.Nudge(Key.Left);
-            handledLeft.Should().BeTrue();
+            // Down arrow shifts vertical alignment
+            canvas.Nudge(Key.Down).Should().BeTrue();
             changeCount.Should().Be(2);
 
-            // Down arrow
-            bool handledDown = canvas.Nudge(Key.Down);
-            handledDown.Should().BeTrue();
+            // Up arrow shifts vertical alignment
+            canvas.Nudge(Key.Up).Should().BeTrue();
             changeCount.Should().Be(3);
 
-            // Up arrow
-            bool handledUp = canvas.Nudge(Key.Up);
-            handledUp.Should().BeTrue();
+            // Right arrow now swaps MON2 back across MON1 to the right side (+1920)
+            canvas.Nudge(Key.Right).Should().BeTrue();
             changeCount.Should().Be(4);
+            canvas.Monitors.First(m => m.StableKey == "MON2").Position.X.Should().Be(1920);
 
             // Unhandled key returns false
-            bool handledEnter = canvas.Nudge(Key.Enter);
-            handledEnter.Should().BeFalse();
+            canvas.Nudge(Key.Enter).Should().BeFalse();
             changeCount.Should().Be(4);
         });
     }
@@ -426,6 +436,104 @@ public class WpfCanvasDragAndE2ETests
             ghostRect.Width.Should().BeGreaterThan(50);
             ghostRect.Height.Should().BeGreaterThan(40);
         });
+    }
+
+    [Fact]
+    public void CanvasDrag_LostMouseCaptureMidDragCancels_WhileNormalReleaseCommitsArrangement()
+    {
+        ExecuteOnSta(() =>
+        {
+            var canvas = new MonitorCanvasControl
+            {
+                Monitors = CreateDualMonitors(),
+                SelectedMonitorKey = "MON2",
+                PrimaryMonitorKey = "MON1",
+                IsSnapEnabled = true
+            };
+
+            IReadOnlyList<DisplayMonitor>? committed = null;
+            canvas.ArrangementChanged += (_, updated) => committed = updated;
+
+            // Mid-drag LostMouseCapture (e.g. Alt+Tab) must cancel and NOT commit
+            canvas.StartDrag("MON2", new Point(300, 100));
+            canvas.UpdateDrag(new Point(50, 100));
+            canvas.IsDragging.Should().BeTrue();
+
+            canvas.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, 0)
+            {
+                RoutedEvent = UIElement.LostMouseCaptureEvent
+            });
+
+            canvas.IsDragging.Should().BeFalse();
+            canvas.DraggingKey.Should().BeNull();
+            committed.Should().BeNull();
+
+            // Calling EndDrag right after canceled drag still must not commit
+            canvas.EndDrag();
+            committed.Should().BeNull();
+
+            // Normal drag + real MouseLeftButtonUp (EndDrag) must commit swapped coordinates
+            canvas.StartDrag("MON2", new Point(300, 100));
+            canvas.UpdateDrag(new Point(50, 100));
+            canvas.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left)
+            {
+                RoutedEvent = UIElement.MouseLeftButtonUpEvent
+            });
+
+            canvas.IsDragging.Should().BeFalse();
+            committed.Should().NotBeNull();
+            committed!.First(m => m.StableKey == "MON2").Position.X.Should().Be(-1920);
+        });
+    }
+
+    [Fact]
+    public void DisplaysPage_RefreshData_PreservesUnappliedCanvasArrangement()
+    {
+        ExecuteOnSta(() =>
+        {
+            var page = new DisplaysPage();
+            var customMonitors = new List<DisplayMonitor>
+            {
+                new("TEST_M1", "Test Primary", new Position(0, 0, 1920, 1080), 1920, 1080, CoreOrientation.Landscape, true),
+                new("TEST_M2", "Test Secondary", new Position(1920, -417, 1920, 1080), 1920, 1080, CoreOrientation.Landscape, true)
+            };
+
+            page.MonitorCanvas.Monitors = customMonitors;
+            page.MonitorCanvas.PrimaryMonitorKey = "TEST_M1";
+            page.MonitorCanvas.SelectedMonitorKey = "TEST_M2";
+
+            // Perform a drag across to the left of TEST_M1 (-1920, -417) via MonitorCanvas
+            page.MonitorCanvas.StartDrag("TEST_M2", new Point(360, 100));
+            page.MonitorCanvas.UpdateDrag(new Point(40, 100));
+            page.MonitorCanvas.EndDrag();
+
+            (page.HasUnappliedChanges || page.IsApplyingArrangement).Should().BeTrue();
+            page.CanvasMonitors.Should().Contain(m => m.StableKey == "TEST_M2" && m.Position.X == -1920);
+
+            // Simulate tab switch reload or DisplaySettingsChanged RefreshData()
+            page.RefreshData();
+
+            page.CanvasMonitors.Should().Contain(m => m.StableKey == "TEST_M2" && m.Position.X == -1920);
+        });
+    }
+
+    [Fact]
+    public void SetPrimary_NormalizeArrangement_PreservesVerticalOffset()
+    {
+        var monitors = new List<DisplayMonitor>
+        {
+            new("MON1", "Monitor 1", new Position(0, 0, 1920, 1080), 1920, 1080, CoreOrientation.Landscape, true),
+            new("MON2", "Monitor 2", new Position(1920, -417, 1920, 1080), 1920, 1080, CoreOrientation.Landscape, true)
+        };
+
+        var shifted = DisplayTopology.NormalizeArrangement(monitors, "MON2");
+        var m1 = shifted.First(m => m.StableKey == "MON1");
+        var m2 = shifted.First(m => m.StableKey == "MON2");
+
+        m2.Position.X.Should().Be(0);
+        m2.Position.Y.Should().Be(0);
+        m1.Position.X.Should().Be(-1920);
+        m1.Position.Y.Should().Be(417);
     }
 
     private static void ExecuteOnSta(Action action)

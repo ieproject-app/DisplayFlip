@@ -96,6 +96,7 @@ public sealed class MonitorCanvasControl : FrameworkElement
     private readonly List<(Point Start, Point End)> _guideLines = new();
 
     private bool _isDragging;
+    private bool _isEndingDrag;
     private string? _draggingKey;
     private Point _dragMouseStart;
     private Position _dragMonitorOriginalPos;
@@ -217,20 +218,21 @@ public sealed class MonitorCanvasControl : FrameworkElement
 
     public void CancelDrag()
     {
-        if (IsMouseCaptured)
-            ReleaseMouseCapture();
-
         _guideLines.Clear();
         _isDragging = false;
         _draggingKey = null;
         Cursor = Cursors.Arrow;
+
+        if (IsMouseCaptured)
+            ReleaseMouseCapture();
+
         InvalidateVisual();
     }
 
     protected override void OnLostMouseCapture(MouseEventArgs e)
     {
         base.OnLostMouseCapture(e);
-        if (_isDragging || _draggingKey != null)
+        if (!_isEndingDrag && (_isDragging || _draggingKey != null))
         {
             CancelDrag();
         }
@@ -596,10 +598,15 @@ public sealed class MonitorCanvasControl : FrameworkElement
             var (rect, mon, _) = _hitBoxes[i];
             if (rect.Contains(pt))
             {
+                bool selectionChanged = SelectedMonitorKey != mon.StableKey;
                 StartDrag(mon.StableKey, pt);
                 CaptureMouse();
-                MonitorSelected?.Invoke(this, mon.StableKey);
+                if (selectionChanged)
+                {
+                    MonitorSelected?.Invoke(this, mon.StableKey);
+                }
                 InvalidateVisual();
+                e.Handled = true;
                 break;
             }
         }
@@ -662,30 +669,42 @@ public sealed class MonitorCanvasControl : FrameworkElement
 
     public void EndDrag()
     {
-        if (IsMouseCaptured)
-            ReleaseMouseCapture();
-
-        Cursor = Cursors.Arrow;
         bool wasDragging = _isDragging;
         string? draggedKey = _draggingKey;
         var snappedPos = _dragSnappedDesktopPos;
+        var monitorsSnapshot = Monitors;
 
         _draggingKey = null;
         _isDragging = false;
         _guideLines.Clear();
+        Cursor = Cursors.Arrow;
 
-        if (wasDragging && draggedKey != null && Monitors != null)
+        _isEndingDrag = true;
+        try
+        {
+            if (IsMouseCaptured)
+                ReleaseMouseCapture();
+        }
+        finally
+        {
+            _isEndingDrag = false;
+        }
+
+        if (wasDragging && draggedKey != null && monitorsSnapshot != null)
         {
             double scale = Math.Max(0.005, _lastScale);
             int snapThresholdDesktop = (int)Math.Clamp(Math.Round(12.0 / scale), 40, 240);
             int effectiveSnap = IsSnapEnabled ? snapThresholdDesktop : 0;
 
-            var updated = Monitors
+            var updated = monitorsSnapshot
                 .Select(m => m.StableKey == draggedKey ? m with { Position = snappedPos } : m)
                 .ToList();
 
             var normalized = DisplayTopology.NormalizeArrangement(updated, PrimaryMonitorKey, effectiveSnap);
-            ArrangementChanged?.Invoke(this, normalized);
+            if (!ArePositionsEqual(monitorsSnapshot, normalized))
+            {
+                ArrangementChanged?.Invoke(this, normalized);
+            }
         }
 
         InvalidateVisual();
@@ -696,9 +715,17 @@ public sealed class MonitorCanvasControl : FrameworkElement
         base.OnMouseMove(e);
 
         var pt = e.GetPosition(this);
-        if (_draggingKey != null && e.LeftButton == MouseButtonState.Pressed)
+        if (_draggingKey != null)
         {
-            UpdateDrag(pt);
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                UpdateDrag(pt);
+            }
+            else
+            {
+                EndDrag();
+            }
+            e.Handled = true;
             return;
         }
 
@@ -724,7 +751,11 @@ public sealed class MonitorCanvasControl : FrameworkElement
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonUp(e);
-        EndDrag();
+        if (_draggingKey != null || _isDragging)
+        {
+            EndDrag();
+            e.Handled = true;
+        }
     }
 
     public bool Nudge(Key key)
@@ -732,7 +763,8 @@ public sealed class MonitorCanvasControl : FrameworkElement
         if (_isDragging || string.IsNullOrEmpty(SelectedMonitorKey) || Monitors == null || Monitors.Count < 2)
             return false;
 
-        var sel = Monitors.FirstOrDefault(m => m.StableKey == SelectedMonitorKey);
+        var monitorsSnapshot = Monitors;
+        var sel = monitorsSnapshot.FirstOrDefault(m => m.StableKey == SelectedMonitorKey);
         if (sel == null)
             return false;
 
@@ -763,25 +795,110 @@ public sealed class MonitorCanvasControl : FrameworkElement
         int rawY = sel.Position.Y + dy;
 
         int snapThreshold = (int)Math.Clamp(Math.Round(10.0 / scale), 40, 240);
-        Position newPos;
-        if (IsSnapEnabled)
-        {
-            newPos = DisplayTopology.SnapMonitorPosition(
-                Monitors, sel.StableKey, rawX, rawY, snapThreshold);
-        }
-        else
-        {
-            newPos = new Position(rawX, rawY, sel.Position.Width, sel.Position.Height);
-        }
-
         int effectiveSnap = IsSnapEnabled ? snapThreshold : 0;
-        var updated = Monitors
-            .Select(m => m.StableKey == sel.StableKey ? m with { Position = newPos } : m)
-            .ToList();
 
-        var normalized = DisplayTopology.NormalizeArrangement(updated, PrimaryMonitorKey, effectiveSnap);
+        var normalized = ApplyCandidatePosition(monitorsSnapshot, sel, rawX, rawY, effectiveSnap);
+
+        // If a neighboring monitor blocked/snapped the nudge back to the same spot,
+        // try hopping cleanly across the immediate neighbor in the pressed direction.
+        if (ArePositionsEqual(monitorsSnapshot, normalized) &&
+            TryGetCrossNeighborCoordinates(monitorsSnapshot, sel, key, out int jumpX, out int jumpY))
+        {
+            normalized = ApplyCandidatePosition(monitorsSnapshot, sel, jumpX, jumpY, effectiveSnap);
+        }
+
+        if (ArePositionsEqual(monitorsSnapshot, normalized))
+            return false;
+
         ArrangementChanged?.Invoke(this, normalized);
         InvalidateVisual();
+        return true;
+    }
+
+    private List<DisplayMonitor> ApplyCandidatePosition(
+        IReadOnlyList<DisplayMonitor> source,
+        DisplayMonitor target,
+        int candidateX,
+        int candidateY,
+        int effectiveSnap)
+    {
+        Position newPos = IsSnapEnabled
+            ? DisplayTopology.SnapMonitorPosition(source, target.StableKey, candidateX, candidateY, effectiveSnap)
+            : new Position(candidateX, candidateY, target.Position.Width, target.Position.Height);
+
+        var updated = source
+            .Select(m => m.StableKey == target.StableKey ? m with { Position = newPos } : m)
+            .ToList();
+
+        return DisplayTopology.NormalizeArrangement(updated, PrimaryMonitorKey, effectiveSnap);
+    }
+
+    private static bool TryGetCrossNeighborCoordinates(
+        IReadOnlyList<DisplayMonitor> monitors,
+        DisplayMonitor sel,
+        Key key,
+        out int jumpX,
+        out int jumpY)
+    {
+        jumpX = sel.Position.X;
+        jumpY = sel.Position.Y;
+
+        var others = monitors.Where(m => m.StableKey != sel.StableKey);
+        DisplayMonitor? blocker = key switch
+        {
+            Key.Left => others
+                .Where(o => o.Position.Y < sel.Position.Bottom && o.Position.Bottom > sel.Position.Y && o.Position.X < sel.Position.X)
+                .OrderByDescending(o => o.Position.Right)
+                .FirstOrDefault(),
+            Key.Right => others
+                .Where(o => o.Position.Y < sel.Position.Bottom && o.Position.Bottom > sel.Position.Y && o.Position.Right > sel.Position.Right)
+                .OrderBy(o => o.Position.X)
+                .FirstOrDefault(),
+            Key.Up => others
+                .Where(o => o.Position.X < sel.Position.Right && o.Position.Right > sel.Position.X && o.Position.Y < sel.Position.Y)
+                .OrderByDescending(o => o.Position.Bottom)
+                .FirstOrDefault(),
+            Key.Down => others
+                .Where(o => o.Position.X < sel.Position.Right && o.Position.Right > sel.Position.X && o.Position.Bottom > sel.Position.Bottom)
+                .OrderBy(o => o.Position.Y)
+                .FirstOrDefault(),
+            _ => null
+        };
+
+        if (blocker == null)
+            return false;
+
+        switch (key)
+        {
+            case Key.Left:
+                jumpX = blocker.Position.X - sel.Position.Width;
+                return true;
+            case Key.Right:
+                jumpX = blocker.Position.Right;
+                return true;
+            case Key.Up:
+                jumpY = blocker.Position.Y - sel.Position.Height;
+                return true;
+            case Key.Down:
+                jumpY = blocker.Position.Bottom;
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static bool ArePositionsEqual(IReadOnlyList<DisplayMonitor> a, IReadOnlyList<DisplayMonitor> b)
+    {
+        if (a.Count != b.Count)
+            return false;
+
+        var lookup = b.ToDictionary(m => m.StableKey, m => m.Position);
+        foreach (var mon in a)
+        {
+            if (!lookup.TryGetValue(mon.StableKey, out var pos) || pos != mon.Position)
+                return false;
+        }
+
         return true;
     }
 

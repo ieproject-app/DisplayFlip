@@ -77,7 +77,10 @@ public partial class SettingsWindow : FluentWindow
             if (IsVisible)
             {
                 var displaysPage = _pageService.GetPage<DisplaysPage>();
-                displaysPage?.RefreshData();
+                if (displaysPage != null && !displaysPage.HasUnappliedChanges && !displaysPage.IsApplyingArrangement)
+                {
+                    displaysPage.RefreshData();
+                }
             }
         });
     }
@@ -103,7 +106,10 @@ public partial class SettingsWindow : FluentWindow
         }
 
         var displaysPage = _pageService.GetPage<DisplaysPage>();
-        displaysPage?.RefreshData();
+        if (displaysPage != null && !displaysPage.HasUnappliedChanges && !displaysPage.IsApplyingArrangement)
+        {
+            displaysPage.RefreshData();
+        }
     }
 
     /// <summary>

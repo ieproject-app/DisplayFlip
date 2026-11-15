@@ -97,7 +97,7 @@ DisplayFlip.slnx
 │   ├── DisplayFlip.Windows/     # Win32 CCD (Query/SetDisplayConfig), fallback & startup registry (net10.0-windows)
 │   ├── DisplayFlip.Wpf/         # Primary Windows 11 Fluent UI, Tray, Global Hotkeys & CLI (net10.0-windows)
 │   ├── DisplayFlip/             # Legacy WinForms UI preserved side-by-side
-│   └── DisplayFlip.Tests/       # 287 xUnit tests (topology, profiles, hotkeys, tray, canvas drag & font glyph audit)
+│   └── DisplayFlip.Tests/       # 290 xUnit tests (topology, profiles, hotkeys, tray, canvas drag & font glyph audit)
 ├── docs/screenshots/            # Light & Dark UI showcase captures (including System Tray menu)
 └── publish.ps1                  # Automated single-file release build script
 ```
@@ -113,7 +113,7 @@ DisplayFlip.slnx
 git clone https://github.com/ieproject-app/DisplayFlip.git
 cd DisplayFlip
 
-# 2. Run the full test suite (287 tests)
+# 2. Run the full test suite (290 tests)
 dotnet test DisplayFlip.slnx
 
 # 3. Run the WPF app directly

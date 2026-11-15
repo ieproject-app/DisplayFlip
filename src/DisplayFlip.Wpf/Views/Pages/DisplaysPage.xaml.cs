@@ -23,11 +23,17 @@ public partial class DisplaysPage : Page
     private readonly ProfileService _profileService;
 
     private List<DisplayMonitor> _canvasMonitors = new();
+    private readonly Dictionary<string, List<(int Width, int Height)>> _supportedResolutionsCache = new();
     private string? _primaryMonitorKey;
     private string? _selectedMonitorKey;
     private bool _hasUnappliedChanges;
     private bool _isUpdatingUi;
     private bool _isApplyingArrangement;
+    private bool _pendingReapply;
+
+    public bool HasUnappliedChanges => _hasUnappliedChanges;
+    public bool IsApplyingArrangement => _isApplyingArrangement;
+    public IReadOnlyList<DisplayMonitor> CanvasMonitors => _canvasMonitors;
 
     public DisplaysPage()
     {
@@ -43,12 +49,15 @@ public partial class DisplaysPage : Page
 
     private void OnPageLoaded(object sender, RoutedEventArgs e)
     {
-        RefreshData();
+        RefreshData(resetCanvasToLive: true);
     }
 
-    public void RefreshData()
+    public void RefreshData(bool resetCanvasToLive = true)
     {
-        RefreshMonitorsFromSystem();
+        if (resetCanvasToLive && !_hasUnappliedChanges && !_isApplyingArrangement)
+        {
+            RefreshMonitorsFromSystem();
+        }
         RefreshProfiles();
     }
 
@@ -56,6 +65,7 @@ public partial class DisplaysPage : Page
     {
         var monitors = _adapter.ReadTopologies(out _, out _);
         _canvasMonitors = monitors;
+        _supportedResolutionsCache.Clear();
 
         var primary = monitors.FirstOrDefault(m => m.Position.X == 0 && m.Position.Y == 0)
                       ?? monitors.FirstOrDefault();
@@ -81,8 +91,8 @@ public partial class DisplaysPage : Page
             MonitorCanvas.IsSnapEnabled = ToggleSnap.IsChecked == true;
             MonitorCanvas.ShowMonitorNames = ToggleMonitorNames?.IsChecked == true;
 
-            BtnApply.IsEnabled = _hasUnappliedChanges;
-            BtnReset.IsEnabled = _hasUnappliedChanges;
+            BtnApply.IsEnabled = _hasUnappliedChanges && !_isApplyingArrangement;
+            BtnReset.IsEnabled = _hasUnappliedChanges && !_isApplyingArrangement;
 
             if (_canvasMonitors.Count == 0)
             {
@@ -128,7 +138,12 @@ public partial class DisplaysPage : Page
                 ResolutionComboBox.IsEnabled = true;
                 ResolutionComboBox.Items.Clear();
 
-                var supported = _adapter.GetSupportedResolutions(sel);
+                if (!_supportedResolutionsCache.TryGetValue(sel.StableKey, out var cachedRes))
+                {
+                    cachedRes = _adapter.GetSupportedResolutions(sel);
+                    _supportedResolutionsCache[sel.StableKey] = cachedRes;
+                }
+                var supported = new List<(int Width, int Height)>(cachedRes);
                 if (!supported.Any(r => r.Width == sel.Position.Width && r.Height == sel.Position.Height))
                 {
                     supported.Insert(0, (sel.Position.Width, sel.Position.Height));
@@ -212,43 +227,72 @@ public partial class DisplaysPage : Page
     private async void OnCanvasArrangementChanged(object? sender, IReadOnlyList<DisplayMonitor> newArrangement)
     {
         _canvasMonitors = newArrangement.ToList();
-        bool autoApply = GeneralHelper.GetAutoApplyDrag(_store);
-        if (autoApply)
-        {
-            if (_isApplyingArrangement)
-                return;
+        _hasUnappliedChanges = true;
+        UpdateUiFromState();
 
-            _isApplyingArrangement = true;
-            try
+        if (GeneralHelper.GetAutoApplyDrag(_store))
+        {
+            await ApplyArrangementSerializedAsync(
+                "Susunan Diterapkan Otomatis",
+                "Susunan posisi monitor berhasil langsung diterapkan ke sistem Windows.");
+        }
+        else
+        {
+            ShowInfoBar("Susunan Monitor Diubah", "Susunan posisi monitor diperbarui di kanvas. Klik 'Terapkan Perubahan' atau simpan ke profil baru.", InfoBarSeverity.Informational);
+        }
+    }
+
+    private async Task ApplyArrangementSerializedAsync(string successTitle, string successMessage)
+    {
+        if (_canvasMonitors.Count == 0)
+            return;
+
+        if (_isApplyingArrangement)
+        {
+            _pendingReapply = true;
+            return;
+        }
+
+        _isApplyingArrangement = true;
+        UpdateUiFromState();
+        try
+        {
+            bool appliedOk = false;
+
+            do
             {
+                _pendingReapply = false;
+                var snapshotMonitors = _canvasMonitors.ToList();
+                var snapshotPrimaryKey = _primaryMonitorKey;
+
                 _hasUnappliedChanges = false;
                 UpdateUiFromState();
-                BtnApply.IsEnabled = false;
-                BtnReset.IsEnabled = false;
-                var (ok, msg) = await Task.Run(() => _adapter.ApplyArrangement(_canvasMonitors, _primaryMonitorKey));
-                if (ok)
-                {
-                    await Task.Delay(150);
-                    RefreshMonitorsFromSystem();
-                    ShowInfoBar("Susunan Diterapkan Otomatis", "Susunan posisi monitor berhasil langsung diterapkan ke sistem Windows.", InfoBarSeverity.Success);
-                }
-                else
+
+                var (ok, msg) = await Task.Run(() => _adapter.ApplyArrangement(snapshotMonitors, snapshotPrimaryKey));
+                appliedOk = ok;
+
+                if (!ok)
                 {
                     _hasUnappliedChanges = true;
                     UpdateUiFromState();
                     ShowInfoBar("Gagal Menerapkan Susunan", msg, InfoBarSeverity.Error);
+                    break;
                 }
+
+                await Task.Delay(150);
             }
-            finally
+            while (_pendingReapply);
+
+            if (appliedOk)
             {
-                _isApplyingArrangement = false;
+                RefreshMonitorsFromSystem();
+                ShowInfoBar(successTitle, successMessage, InfoBarSeverity.Success);
             }
         }
-        else
+        finally
         {
-            _hasUnappliedChanges = true;
+            _isApplyingArrangement = false;
             UpdateUiFromState();
-            ShowInfoBar("Susunan Monitor Diubah", "Susunan posisi monitor diperbarui di kanvas. Klik 'Terapkan Perubahan' atau simpan ke profil baru.", InfoBarSeverity.Informational);
         }
     }
 
@@ -277,35 +321,31 @@ public partial class DisplaysPage : Page
 
     private async void OnApplyClicked(object sender, RoutedEventArgs e)
     {
-        if (_canvasMonitors.Count == 0)
-            return;
-
-        BtnApply.IsEnabled = false;
-        var (ok, msg) = await Task.Run(() => _adapter.ApplyArrangement(_canvasMonitors, _primaryMonitorKey));
-        if (ok)
-        {
-            _hasUnappliedChanges = false;
-            await Task.Delay(150);
-            RefreshMonitorsFromSystem();
-            ShowInfoBar("Susunan Diterapkan", "Susunan posisi monitor berhasil diterapkan ke sistem Windows.", InfoBarSeverity.Success);
-        }
-        else
-        {
-            BtnApply.IsEnabled = true;
-            ShowInfoBar("Gagal Menerapkan Susunan", msg, InfoBarSeverity.Error);
-        }
+        await ApplyArrangementSerializedAsync(
+            "Susunan Diterapkan",
+            "Susunan posisi monitor berhasil diterapkan ke sistem Windows.");
     }
 
-    private void OnSetPrimaryClicked(object sender, RoutedEventArgs e)
+    private async void OnSetPrimaryClicked(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrEmpty(_selectedMonitorKey))
             return;
 
         _primaryMonitorKey = _selectedMonitorKey;
-        _canvasMonitors = DisplayTopology.SetPrimary(_canvasMonitors, _selectedMonitorKey);
+        _canvasMonitors = DisplayTopology.NormalizeArrangement(_canvasMonitors, _primaryMonitorKey);
         _hasUnappliedChanges = true;
         UpdateUiFromState();
-        ShowInfoBar("Layar Utama Diubah", "Layar utama telah diubah di kanvas. Klik 'Terapkan Perubahan' untuk menerapkan ke sistem Windows.", InfoBarSeverity.Informational);
+
+        if (GeneralHelper.GetAutoApplyDrag(_store))
+        {
+            await ApplyArrangementSerializedAsync(
+                "Layar Utama Diterapkan",
+                "Layar utama dan koordinat susunan berhasil diterapkan ke sistem Windows.");
+        }
+        else
+        {
+            ShowInfoBar("Layar Utama Diubah", "Layar utama telah diubah di kanvas. Klik 'Terapkan Perubahan' untuk menerapkan ke sistem Windows.", InfoBarSeverity.Informational);
+        }
     }
 
     private void OnSoloDisplayClicked(object sender, RoutedEventArgs e)
