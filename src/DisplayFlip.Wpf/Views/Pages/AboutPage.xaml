@@ -6,61 +6,182 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="Tentang &amp; CLI"
-    d:DesignHeight="600"
-    d:DesignWidth="700"
+    d:DesignHeight="1100"
+    d:DesignWidth="800"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
     <StackPanel Margin="32,24,32,32">
+        <!-- Judul & Deskripsi Halaman -->
         <ui:TextBlock
             FontTypography="Title"
             Text="Tentang &amp; CLI" />
         <ui:TextBlock
-            Margin="0,4,0,20"
+            Margin="0,4,0,16"
             Appearance="Secondary"
             FontTypography="Body"
-            Text="Informasi aplikasi DisplayFlip, status runtime .NET 10, dan dokumentasi perintah baris perintah (CLI)." />
+            Text="Informasi aplikasi DisplayFlip, status runtime komponen sistem, dan dokumentasi perintah baris perintah (CLI)."
+            TextWrapping="Wrap" />
 
-        <ui:CardControl Margin="0,0,0,12">
-            <ui:CardControl.Header>
-                <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="DisplayFlip v1.0" />
-                    <ui:TextBlock Appearance="Secondary" Text="Utilitas manajemen multi-monitor Windows 11 Fluent (.NET 10 &amp; WPF-UI 4.3.0)." />
+        <!-- Status InfoBar Notifikasi -->
+        <ui:InfoBar
+            x:Name="PageInfoBar"
+            Margin="0,0,0,16"
+            IsOpen="False"
+            IsClosable="True" />
+
+        <!-- BAGIAN 1: Identitas & Status Aplikasi -->
+        <ui:Card Padding="24" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Image
+                    Grid.Column="0"
+                    Source="pack://application:,,,/DisplayFlip.ico"
+                    Width="68"
+                    Height="68"
+                    Margin="0,0,24,0"
+                    VerticalAlignment="Center" />
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:TextBlock
+                            FontTypography="TitleLarge"
+                            FontWeight="SemiBold"
+                            Text="DisplayFlip"
+                            Margin="0,0,10,0" />
+                        <ui:Badge
+                            Appearance="Primary"
+                            Content="v2.0 (Windows 11 Fluent Edition)"
+                            VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <ui:TextBlock
+                        Margin="0,0,0,12"
+                        Appearance="Secondary"
+                        FontTypography="Body"
+                        Text="Utilitas manajemen multi-layar modern untuk Windows 11 dengan performa native CCD (Connecting and Configuring Displays) API, mendukung drag-and-drop koordinat 2D presisi, manajemen profil instan, pintasan keyboard global, dan integrasi latar belakang yang senyap."
+                        TextWrapping="Wrap" />
+
+                    <!-- Status Badges Runtime -->
+                    <WrapPanel>
+                        <ui:Badge
+                            Appearance="Success"
+                            Content=".NET 10 LTS"
+                            Margin="0,0,8,6" />
+                        <ui:Badge
+                            Appearance="Success"
+                            Content="WPF-UI 4.3.0"
+                            Margin="0,0,8,6" />
+                        <ui:Badge
+                            Appearance="Info"
+                            Content="Mica Backdrop Active"
+                            Margin="0,0,8,6" />
+                        <ui:Badge
+                            Appearance="Info"
+                            Content="Windows CCD API"
+                            Margin="0,0,8,6" />
+                        <ui:Badge
+                            Appearance="Secondary"
+                            Content="64-bit Architecture"
+                            Margin="0,0,8,6" />
+                    </WrapPanel>
                 </StackPanel>
-            </ui:CardControl.Header>
-            <ui:CardControl.Icon>
-                <ui:SymbolIcon Symbol="AppGeneric24" />
-            </ui:CardControl.Icon>
-            <ui:Badge Appearance="Success" Content="Mica Active" />
-        </ui:CardControl>
-
-        <ui:TextBlock
-            Margin="0,16,0,12"
-            FontTypography="Subtitle"
-            Text="Referensi Perintah CLI" />
-
-        <ui:Card Margin="0,0,0,12" Padding="16">
-            <StackPanel>
-                <ui:TextBlock FontTypography="BodyStrong" Text="Perintah Cepat:" />
-
-                <ui:TextBlock Margin="0,8,0,2" FontFamily="Consolas" Text="displayflip.exe --swap" />
-                <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Tukar posisi horizontal monitor kiri dan kanan" />
-
-                <ui:TextBlock Margin="0,4,0,2" FontFamily="Consolas" Text="displayflip.exe --identify" />
-                <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Munculkan overlay identifikasi nomor monitor fisik" />
-
-                <ui:TextBlock Margin="0,4,0,2" FontFamily="Consolas" Text="displayflip.exe --solo &lt;1|2&gt;" />
-                <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Aktifkan hanya satu monitor (Layar 1 atau Layar 2) secara instan" />
-
-                <ui:TextBlock Margin="0,4,0,2" FontFamily="Consolas" Text="displayflip.exe --apply-profile &lt;nama&gt;" />
-                <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Terapkan konfigurasi tata letak profil yang tersimpan" />
-
-                <ui:TextBlock Margin="0,4,0,2" FontFamily="Consolas" Text="displayflip.exe --list [--json]" />
-                <ui:TextBlock Margin="0,0,0,8" Appearance="Secondary" Text="Daftar nama profil tata letak monitor yang tersimpan" />
-
-                <ui:TextBlock Margin="0,4,0,2" FontFamily="Consolas" Text="displayflip.exe --settings" />
-                <ui:TextBlock Appearance="Secondary" Text="Buka jendela Pengaturan ini" />
-            </StackPanel>
+            </Grid>
         </ui:Card>
+
+        <!-- BAGIAN 2: Dokumentasi & Referensi Perintah CLI -->
+        <ui:TextBlock
+            Margin="0,8,0,4"
+            FontTypography="Subtitle"
+            Text="Dokumentasi &amp; Referensi Perintah CLI" />
+        <ui:TextBlock
+            Margin="0,0,0,16"
+            Appearance="Secondary"
+            FontTypography="Body"
+            Text="Seluruh opsi perintah baris perintah (CLI) yang dapat dijalankan melalui Windows Terminal, PowerShell, Command Prompt, atau skrip automasi. Klik tombol Salin untuk menyalin perintah ke clipboard."
+            TextWrapping="Wrap" />
+
+        <!-- Wadah Kartu CLI Interaktif -->
+        <StackPanel x:Name="CliCommandsPanel" Margin="0,0,0,16" />
+
+        <!-- BAGIAN 3: Tautan Cepat & Sumber Daya -->
+        <ui:TextBlock
+            Margin="0,8,0,12"
+            FontTypography="Subtitle"
+            Text="Tautan Cepat &amp; Sumber Daya" />
+
+        <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Card 1: Dokumentasi Proyek -->
+            <ui:Card Grid.Column="0" Padding="16">
+                <StackPanel>
+                    <ui:SymbolIcon Symbol="Book24" FontSize="24" HorizontalAlignment="Left" Margin="0,0,0,10" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Dokumentasi Proyek" Margin="0,0,0,4" />
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        FontTypography="Caption"
+                        Text="Panduan arsitektur sistem, spesifikasi API CCD, dan catatan rilis."
+                        TextWrapping="Wrap"
+                        Margin="0,0,0,14" />
+                    <ui:Button
+                        x:Name="BtnDocs"
+                        Content="Buka Dokumentasi"
+                        Icon="{ui:SymbolIcon Symbol=Open24}"
+                        HorizontalAlignment="Stretch"
+                        Click="OnOpenDocsClick" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Card 2: Folder Instalasi Aplikasi -->
+            <ui:Card Grid.Column="2" Padding="16">
+                <StackPanel>
+                    <ui:SymbolIcon Symbol="Folder24" FontSize="24" HorizontalAlignment="Left" Margin="0,0,0,10" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Folder Aplikasi" Margin="0,0,0,4" />
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        FontTypography="Caption"
+                        Text="Akses langsung ke folder executable DisplayFlip dan file biner."
+                        TextWrapping="Wrap"
+                        Margin="0,0,0,14" />
+                    <ui:Button
+                        x:Name="BtnAppFolder"
+                        Content="Buka Folder"
+                        Icon="{ui:SymbolIcon Symbol=FolderOpen24}"
+                        HorizontalAlignment="Stretch"
+                        Click="OnOpenAppFolderClick" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Card 3: File Profil Konfigurasi -->
+            <ui:Card Grid.Column="4" Padding="16">
+                <StackPanel>
+                    <ui:SymbolIcon Symbol="Document24" FontSize="24" HorizontalAlignment="Left" Margin="0,0,0,10" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="File Konfigurasi" Margin="0,0,0,4" />
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        FontTypography="Caption"
+                        Text="Buka lokasi penyimpanan profil JSON di AppData pengguna."
+                        TextWrapping="Wrap"
+                        Margin="0,0,0,14" />
+                    <ui:Button
+                        x:Name="BtnConfigFile"
+                        Content="Buka Folder Profil"
+                        Icon="{ui:SymbolIcon Symbol=FolderOpen24}"
+                        HorizontalAlignment="Stretch"
+                        Click="OnOpenConfigFileClick" />
+                </StackPanel>
+            </ui:Card>
+        </Grid>
     </StackPanel>
 </Page>
