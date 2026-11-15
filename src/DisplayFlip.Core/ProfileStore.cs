@@ -7,6 +7,14 @@ public sealed record ProfileFile
 {
     public int SchemaVersion { get; init; } = LayoutProfile.SupportedSchemaVersion;
     public List<LayoutProfile> Profiles { get; init; } = new();
+    public string MirrorShortcut { get; init; } = "Ctrl+Alt+F";
+    public string CyclePrimaryShortcut { get; init; } = "Ctrl+Alt+P";
+    public string IdentifyShortcut { get; init; } = "Ctrl+Alt+I";
+    public string Solo1Shortcut { get; init; } = string.Empty;
+    public string Solo2Shortcut { get; init; } = string.Empty;
+    public string ExtendShortcut { get; init; } = string.Empty;
+    public bool AutoApplyDrag { get; init; }
+    public string IconStyle { get; init; } = "fluent";
 }
 
 public sealed class ProfileStore
@@ -108,6 +116,42 @@ public sealed class ProfileStore
             data.Profiles.RemoveAt(idx);
             WriteAtomic(data);
             return true;
+        }
+    }
+
+    public bool Rename(string oldName, string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName))
+            return false;
+        lock (_gate)
+        {
+            var data = LoadSafe();
+            var idx = data.Profiles.FindIndex(p =>
+                string.Equals(p.Name, oldName, StringComparison.OrdinalIgnoreCase));
+            if (idx < 0)
+                return false;
+            var conflict = data.Profiles.FindIndex(p =>
+                string.Equals(p.Name, newName.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (conflict >= 0 && conflict != idx)
+                return false;
+            var now = DateTime.UtcNow.ToString("o");
+            data.Profiles[idx] = data.Profiles[idx] with
+            {
+                Name = newName.Trim(),
+                UpdatedAt = now
+            };
+            WriteAtomic(data);
+            return true;
+        }
+    }
+
+    public void UpdateSettings(Func<ProfileFile, ProfileFile> updater)
+    {
+        lock (_gate)
+        {
+            var data = File.Exists(_filePath) ? LoadSafe() : new ProfileFile();
+            var updated = updater(data) with { SchemaVersion = LayoutProfile.SupportedSchemaVersion };
+            WriteAtomic(updated);
         }
     }
 

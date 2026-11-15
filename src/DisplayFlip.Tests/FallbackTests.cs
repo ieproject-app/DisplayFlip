@@ -39,4 +39,11 @@ public sealed class FallbackTests
         typeof(DisplayFlip.Windows.CcdTopologyAdapter).GetMethods().Select(m => m.Name)
             .Should().Contain("ReadTopologies");
     }
+
+    [Fact]
+    public void ScreenFallback_DevMode_MarshalsAt220Bytes()
+    {
+        var t = typeof(DisplayFlip.Windows.CcdTopologyAdapter).Assembly.GetType("DisplayFlip.Windows.ScreenFallback+DEVMODE", throwOnError: true)!;
+        System.Runtime.InteropServices.Marshal.SizeOf(t).Should().Be(220);
+    }
 }

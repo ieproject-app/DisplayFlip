@@ -12,7 +12,15 @@ public enum LayoutOperationKind
 {
     Mirror,
     SetPrimary,
-    ApplyProfile
+    ApplyProfile,
+    Arrange
+}
+
+public enum VerticalAlignment
+{
+    Top,
+    Center,
+    Bottom
 }
 
 public readonly record struct Position(int X, int Y, int Width, int Height)
@@ -49,6 +57,7 @@ public sealed record LayoutProfile
     public required string Name { get; init; }
     public required string PrimaryStableKey { get; init; }
     public required List<MonitorState> Monitors { get; init; }
+    public string Shortcut { get; init; } = string.Empty;
     public string CreatedAt { get; init; } = string.Empty;
     public string UpdatedAt { get; init; } = string.Empty;
 

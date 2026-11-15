@@ -1,0 +1,351 @@
+<Page
+    x:Class="DisplayFlip.UI.Views.Pages.GeneralPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Umum &amp; Ikon"
+    d:DesignHeight="950"
+    d:DesignWidth="800"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    mc:Ignorable="d">
+
+    <StackPanel Margin="32,24,32,32">
+        <!-- Judul & Deskripsi Halaman -->
+        <ui:TextBlock
+            FontTypography="Title"
+            Text="Umum &amp; Ikon" />
+        <ui:TextBlock
+            Margin="0,4,0,16"
+            Appearance="Secondary"
+            FontTypography="Body"
+            Text="Preferensi startup sistem, otomatisasi tata letak monitor, personalisasi tema aplikasi, gaya ikon taskbar, dan direktori penyimpanan."
+            TextWrapping="Wrap" />
+
+        <!-- Status InfoBar Notifikasi -->
+        <ui:InfoBar
+            x:Name="PageInfoBar"
+            Margin="0,0,0,16"
+            IsOpen="False"
+            IsClosable="True" />
+
+        <!-- BAGIAN 1: Perilaku Aplikasi -->
+        <ui:TextBlock
+            Margin="0,4,0,12"
+            FontTypography="Subtitle"
+            Text="Perilaku Aplikasi" />
+
+        <!-- Card: Startup Otomatis Windows -->
+        <ui:CardControl Margin="0,0,0,12">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Jalan otomatis saat Windows start" />
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        Text="Mulai DisplayFlip di latar belakang (--tray) secara otomatis saat Anda login ke Windows."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Power24" />
+            </ui:CardControl.Icon>
+            <ui:ToggleSwitch
+                x:Name="ToggleStartup"
+                Click="OnToggleStartupClick" />
+        </ui:CardControl>
+
+        <!-- Card: Auto-Apply Drag Tata Letak -->
+        <ui:CardControl Margin="0,0,0,16">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Langsung terapkan tata letak setelah digeser (Auto-Apply)" />
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        Text="Langsung terapkan posisi monitor begitu selesai menggeser di kanvas tanpa perlu klik Terapkan Perubahan."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Flash24" />
+            </ui:CardControl.Icon>
+            <ui:ToggleSwitch
+                x:Name="ToggleAutoApply"
+                Click="OnToggleAutoApplyClick" />
+        </ui:CardControl>
+
+        <!-- BAGIAN 2: Personalisasi Tema Aplikasi -->
+        <ui:TextBlock
+            Margin="0,8,0,12"
+            FontTypography="Subtitle"
+            Text="Personalisasi Tema Aplikasi" />
+
+        <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Card Tema: Ikuti Sistem -->
+            <ui:Card
+                x:Name="ThemeSystemCard"
+                Grid.Column="0"
+                Padding="16"
+                Cursor="Hand"
+                Focusable="True"
+                MouseLeftButtonUp="OnThemeSystemCardClick"
+                KeyDown="OnThemeSystemCardKeyDown">
+                <StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <ui:SymbolIcon Symbol="Desktop24" HorizontalAlignment="Left" FontSize="24" />
+                        <RadioButton
+                            x:Name="RadioThemeSystem"
+                            HorizontalAlignment="Right"
+                            GroupName="AppThemeGroup"
+                            IsHitTestVisible="False"
+                            Focusable="False" />
+                    </Grid>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Ikuti Sistem" Margin="0,0,0,4" />
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        FontTypography="Caption"
+                        Text="Menyesuaikan dengan mode terang atau gelap Windows 11 secara otomatis."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Card Tema: Mode Terang -->
+            <ui:Card
+                x:Name="ThemeLightCard"
+                Grid.Column="2"
+                Padding="16"
+                Cursor="Hand"
+                Focusable="True"
+                MouseLeftButtonUp="OnThemeLightCardClick"
+                KeyDown="OnThemeLightCardKeyDown">
+                <StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <ui:SymbolIcon Symbol="WeatherSunny24" HorizontalAlignment="Left" FontSize="24" />
+                        <RadioButton
+                            x:Name="RadioThemeLight"
+                            HorizontalAlignment="Right"
+                            GroupName="AppThemeGroup"
+                            IsHitTestVisible="False"
+                            Focusable="False" />
+                    </Grid>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Mode Terang (Light)" Margin="0,0,0,4" />
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        FontTypography="Caption"
+                        Text="Tampilan antarmuka bersih, terang, dan cerah di segala kondisi pencahayaan."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Card Tema: Mode Gelap -->
+            <ui:Card
+                x:Name="ThemeDarkCard"
+                Grid.Column="4"
+                Padding="16"
+                Cursor="Hand"
+                Focusable="True"
+                MouseLeftButtonUp="OnThemeDarkCardClick"
+                KeyDown="OnThemeDarkCardKeyDown">
+                <StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <ui:SymbolIcon Symbol="WeatherMoon24" HorizontalAlignment="Left" FontSize="24" />
+                        <RadioButton
+                            x:Name="RadioThemeDark"
+                            HorizontalAlignment="Right"
+                            GroupName="AppThemeGroup"
+                            IsHitTestVisible="False"
+                            Focusable="False" />
+                    </Grid>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Mode Gelap (Dark)" Margin="0,0,0,4" />
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        FontTypography="Caption"
+                        Text="Tampilan antarmuka bernuansa gelap yang elegan dan nyaman untuk mata."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:Card>
+        </Grid>
+
+        <!-- BAGIAN 3: Gaya Ikon Modern (Tray & App) -->
+        <ui:TextBlock
+            Margin="0,8,0,12"
+            FontTypography="Subtitle"
+            Text="Gaya Ikon Modern (Tray &amp; App)" />
+
+        <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Card Ikon: Fluent Glass Dual -->
+            <ui:Card
+                x:Name="IconCardFluent"
+                Grid.Column="0"
+                Padding="16"
+                Cursor="Hand"
+                Focusable="True"
+                MouseLeftButtonUp="OnIconCardFluentClick"
+                KeyDown="OnIconCardFluentKeyDown">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Image
+                            x:Name="IconPreviewFluent"
+                            Width="44"
+                            Height="44"
+                            HorizontalAlignment="Left"
+                            RenderOptions.BitmapScalingMode="HighQuality"
+                            UseLayoutRounding="True"
+                            SnapsToDevicePixels="True" />
+                        <RadioButton
+                            x:Name="RadioIconFluent"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            GroupName="IconStyleGroup"
+                            IsHitTestVisible="False"
+                            Focusable="False" />
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Fluent Glass Dual" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <ui:Badge
+                            x:Name="BadgeIconFluent"
+                            Appearance="Success"
+                            Content="Aktif"
+                            VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        FontTypography="Caption"
+                        Text="Dua layar berlapis biru-sian modern dengan lencana flip emas elegan."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Card Ikon: Windows 11 Accent -->
+            <ui:Card
+                x:Name="IconCardAccent"
+                Grid.Column="2"
+                Padding="16"
+                Cursor="Hand"
+                Focusable="True"
+                MouseLeftButtonUp="OnIconCardAccentClick"
+                KeyDown="OnIconCardAccentKeyDown">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Image
+                            x:Name="IconPreviewAccent"
+                            Width="44"
+                            Height="44"
+                            HorizontalAlignment="Left"
+                            RenderOptions.BitmapScalingMode="HighQuality"
+                            UseLayoutRounding="True"
+                            SnapsToDevicePixels="True" />
+                        <RadioButton
+                            x:Name="RadioIconAccent"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            GroupName="IconStyleGroup"
+                            IsHitTestVisible="False"
+                            Focusable="False" />
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Windows 11 Accent" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <ui:Badge
+                            x:Name="BadgeIconAccent"
+                            Appearance="Success"
+                            Content="Aktif"
+                            VerticalAlignment="Center"
+                            Visibility="Collapsed" />
+                    </StackPanel>
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        FontTypography="Caption"
+                        Text="Menyesuaikan warna aksen secara dinamis dengan tema Windows 11 Anda."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Card Ikon: Minimalist Precision -->
+            <ui:Card
+                x:Name="IconCardMinimal"
+                Grid.Column="4"
+                Padding="16"
+                Cursor="Hand"
+                Focusable="True"
+                MouseLeftButtonUp="OnIconCardMinimalClick"
+                KeyDown="OnIconCardMinimalKeyDown">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Image
+                            x:Name="IconPreviewMinimal"
+                            Width="44"
+                            Height="44"
+                            HorizontalAlignment="Left"
+                            RenderOptions.BitmapScalingMode="HighQuality"
+                            UseLayoutRounding="True"
+                            SnapsToDevicePixels="True" />
+                        <RadioButton
+                            x:Name="RadioIconMinimal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            GroupName="IconStyleGroup"
+                            IsHitTestVisible="False"
+                            Focusable="False" />
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Minimalist Precision" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <ui:Badge
+                            x:Name="BadgeIconMinimal"
+                            Appearance="Success"
+                            Content="Aktif"
+                            VerticalAlignment="Center"
+                            Visibility="Collapsed" />
+                    </StackPanel>
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        FontTypography="Caption"
+                        Text="Kontras tinggi monokrom tajam untuk area notifikasi taskbar yang bersih."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:Card>
+        </Grid>
+
+        <!-- BAGIAN 4: Direktori Penyimpanan Konfigurasi -->
+        <ui:TextBlock
+            Margin="0,8,0,12"
+            FontTypography="Subtitle"
+            Text="Direktori Penyimpanan" />
+
+        <ui:CardControl Margin="0,0,0,12">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="Lokasi File Profil &amp; Konfigurasi" />
+                    <ui:TextBlock
+                        x:Name="TxtStoragePath"
+                        Appearance="Secondary"
+                        Text="%APPDATA%\DisplayFlip\profiles.json"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Folder24" />
+            </ui:CardControl.Icon>
+            <ui:Button
+                x:Name="BtnOpenFolder"
+                Content="Buka Folder"
+                Icon="{ui:SymbolIcon Symbol=FolderOpen24}"
+                Click="OnOpenFolderClick" />
+        </ui:CardControl>
+    </StackPanel>
+</Page>

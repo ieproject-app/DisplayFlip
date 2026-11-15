@@ -1,0 +1,45 @@
+<Window
+    x:Class="DisplayFlip.UI.Views.IdentifyOverlayWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="DisplayFlip — Identifikasi Layar"
+    Width="220"
+    Height="130"
+    WindowStyle="None"
+    AllowsTransparency="True"
+    Background="Transparent"
+    Topmost="True"
+    ShowInTaskbar="False"
+    ShowActivated="False"
+    Focusable="False"
+    WindowStartupLocation="Manual">
+
+    <Grid Margin="6">
+        <Border
+            Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1.5"
+            CornerRadius="12">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="3" Opacity="0.4" />
+            </Border.Effect>
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,8">
+                <ui:TextBlock
+                    x:Name="DisplayNumberText"
+                    HorizontalAlignment="Center"
+                    FontSize="56"
+                    FontWeight="Bold"
+                    Foreground="{DynamicResource AccentFillColorDefaultBrush}"
+                    Text="1" />
+                <ui:TextBlock
+                    x:Name="DisplaySubtitleText"
+                    Margin="0,2,0,0"
+                    HorizontalAlignment="Center"
+                    Appearance="Secondary"
+                    FontTypography="Caption"
+                    Text="Layar 1 • Layar Utama" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

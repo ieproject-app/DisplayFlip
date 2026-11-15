@@ -17,18 +17,34 @@ public sealed class ProfileService
     public LayoutProfile Capture(string name)
     {
         var monitors = _adapter.ReadTopologies(out _, out _);
+        return CreateFromMonitors(name, monitors);
+    }
+
+    public LayoutProfile CreateFromMonitors(
+        string name,
+        IReadOnlyList<DisplayMonitor> monitors,
+        string? primaryStableKey = null,
+        string? shortcut = null)
+    {
         if (monitors.Count == 0)
             throw new InvalidOperationException("No active monitors to capture.");
 
-        var primary = monitors.FirstOrDefault(m => m.Position.X == 0 && m.Position.Y == 0)
-                      ?? monitors[0];
+        var normalized = DisplayTopology.NormalizeArrangement(monitors, primaryStableKey);
+        var primary = (!string.IsNullOrWhiteSpace(primaryStableKey)
+                          ? normalized.FirstOrDefault(m => m.StableKey == primaryStableKey)
+                          : null)
+                      ?? normalized.FirstOrDefault(m => m.Position.X == 0 && m.Position.Y == 0)
+                      ?? normalized[0];
 
-        var states = monitors.Select(m => new MonitorState(
+        var existing = _store.Find(name);
+        string resolvedShortcut = shortcut ?? existing?.Shortcut ?? string.Empty;
+
+        var states = normalized.Select(m => new MonitorState(
             StableKey: m.StableKey,
             FriendlyName: m.FriendlyName,
             Position: m.Position,
-            ResolutionWidth: m.ResolutionWidth,
-            ResolutionHeight: m.ResolutionHeight,
+            ResolutionWidth: m.ResolutionWidth > 0 ? m.ResolutionWidth : m.Position.Width,
+            ResolutionHeight: m.ResolutionHeight > 0 ? m.ResolutionHeight : m.Position.Height,
             Orientation: m.Orientation,
             IsEnabled: m.IsEnabled)).ToList();
 
@@ -38,14 +54,28 @@ public sealed class ProfileService
             Name = name,
             PrimaryStableKey = primary.StableKey,
             Monitors = states,
-            CreatedAt = DateTime.UtcNow.ToString("o"),
+            Shortcut = resolvedShortcut,
+            CreatedAt = existing?.CreatedAt ?? DateTime.UtcNow.ToString("o"),
             UpdatedAt = DateTime.UtcNow.ToString("o")
         };
     }
 
-    public void SaveCurrentAs(string name)
+    public void SaveCurrentAs(string name, string? shortcut = null)
     {
+        var existing = _store.Find(name);
         var profile = Capture(name);
+        if (shortcut != null || !string.IsNullOrEmpty(existing?.Shortcut))
+            profile = profile with { Shortcut = shortcut ?? existing?.Shortcut ?? string.Empty };
+        _store.Save(profile);
+    }
+
+    public void SaveArrangementAs(
+        string name,
+        IReadOnlyList<DisplayMonitor> monitors,
+        string? primaryStableKey = null,
+        string? shortcut = null)
+    {
+        var profile = CreateFromMonitors(name, monitors, primaryStableKey, shortcut);
         _store.Save(profile);
     }
 
@@ -87,7 +117,7 @@ public sealed class ProfileService
             desired[0] = first with { Position = first.Position with { X = 0, Y = 0 } };
         }
 
-        var desiredLegal = DisplayTopology.Legalize(desired);
+        var desiredLegal = DisplayTopology.NormalizeArrangement(desired, profile.PrimaryStableKey);
 
         var (paths, modes, built) = _adapter.BuildTopology(desiredLegal);
         // When CCD is unavailable BuildTopology returns empty paths; Validate/Apply fall back.
@@ -100,7 +130,7 @@ public sealed class ProfileService
 
         if (paths.Count == 0 || modes.Count == 0)
         {
-            var (fbOk, fbMsg) = _adapter.ApplyViaFallback(desiredLegal);
+            var (fbOk, fbMsg) = _adapter.ApplyArrangement(desiredLegal, profile.PrimaryStableKey);
             return fbOk ? (true, $"Applied '{profileName}'. {fbMsg}") : (false, fbMsg);
         }
 

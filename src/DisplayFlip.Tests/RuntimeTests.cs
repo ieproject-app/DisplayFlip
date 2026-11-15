@@ -26,6 +26,7 @@ public sealed class RuntimeTests
             Path.Combine(root, "src", "DisplayFlip", "DisplayFlip.csproj"),
             Path.Combine(root, "src", "DisplayFlip.Core", "DisplayFlip.Core.csproj"),
             Path.Combine(root, "src", "DisplayFlip.Windows", "DisplayFlip.Windows.csproj"),
+            Path.Combine(root, "src", "DisplayFlip.Wpf", "DisplayFlip.Wpf.csproj"),
         };
         foreach (var f in files)
         {
@@ -62,12 +63,61 @@ public sealed class RuntimeTests
     public void RuntimeConfig_AfterBuild_HasRollForwardMajor()
     {
         var root = FindRepoRoot();
-        var runtimeConfig = Path.Combine(root, "src", "DisplayFlip", "bin", "Release", "net8.0-windows", "DisplayFlip.runtimeconfig.json");
+        var runtimeConfig = Path.Combine(root, "src", "DisplayFlip", "bin", "Release", "net10.0-windows", "DisplayFlip.runtimeconfig.json");
         if (!File.Exists(runtimeConfig))
         {
             // If not built yet, skip with pass — the csproj test above covers the fix statically
             return;
         }
         File.ReadAllText(runtimeConfig).Should().Contain("\"rollForward\": \"Major\"");
+    }
+
+    [Fact]
+    public void WpfCsproj_Declares_WpfUiPackageAndNet10()
+    {
+        var root = FindRepoRoot();
+        var csproj = Path.Combine(root, "src", "DisplayFlip.Wpf", "DisplayFlip.Wpf.csproj");
+        File.Exists(csproj).Should().BeTrue();
+        var content = File.ReadAllText(csproj);
+        content.Should().Contain("<TargetFramework>net10.0-windows</TargetFramework>");
+        content.Should().Contain("<PackageReference Include=\"WPF-UI\" Version=\"4.3.0\" />");
+    }
+
+    [Fact]
+    public void WpfCsproj_Declares_AppManifest_AndMetadata()
+    {
+        var root = FindRepoRoot();
+        var csproj = Path.Combine(root, "src", "DisplayFlip.Wpf", "DisplayFlip.Wpf.csproj");
+        File.Exists(csproj).Should().BeTrue();
+        var content = File.ReadAllText(csproj);
+        content.Should().Contain("<ApplicationManifest>app.manifest</ApplicationManifest>");
+        content.Should().Contain("<Version>1.0.0</Version>");
+        content.Should().Contain("<Product>DisplayFlip</Product>");
+        content.Should().Contain("<ApplicationIcon>DisplayFlip.ico</ApplicationIcon>");
+    }
+
+    [Fact]
+    public void AppManifest_FileExists_AndConfiguresPerMonitorDpi()
+    {
+        var root = FindRepoRoot();
+        var manifest = Path.Combine(root, "src", "DisplayFlip.Wpf", "app.manifest");
+        File.Exists(manifest).Should().BeTrue();
+        var content = File.ReadAllText(manifest);
+        content.Should().Contain("PerMonitorV2");
+        content.Should().Contain("{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}");
+    }
+
+    [Fact]
+    public void PublishProfiles_Exist_AndValid()
+    {
+        var root = FindRepoRoot();
+        var fdd = Path.Combine(root, "src", "DisplayFlip.Wpf", "Properties", "PublishProfiles", "FolderProfile-FrameworkDependent.pubxml");
+        var standalone = Path.Combine(root, "src", "DisplayFlip.Wpf", "Properties", "PublishProfiles", "FolderProfile-Standalone.pubxml");
+        File.Exists(fdd).Should().BeTrue();
+        File.Exists(standalone).Should().BeTrue();
+
+        File.ReadAllText(fdd).Should().Contain("<SelfContained>false</SelfContained>");
+        File.ReadAllText(standalone).Should().Contain("<SelfContained>true</SelfContained>");
+        File.ReadAllText(standalone).Should().Contain("<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>");
     }
 }

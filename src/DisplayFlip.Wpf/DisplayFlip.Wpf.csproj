@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>DisplayFlip.UI</RootNamespace>
+    <AssemblyName>DisplayFlip.Wpf</AssemblyName>
+    <ApplicationIcon>DisplayFlip.ico</ApplicationIcon>
+    <RollForward>Major</RollForward>
+
+    <!-- Version & Assembly Metadata -->
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Product>DisplayFlip</Product>
+    <Title>DisplayFlip</Title>
+    <Company>DisplayFlip</Company>
+    <Authors>DisplayFlip Team</Authors>
+    <Description>DisplayFlip - Modern Windows 11 Multi-Monitor Management &amp; Hotkey Profile Utility</Description>
+    <Copyright>Copyright © 2026 DisplayFlip</Copyright>
+
+    <!-- Application Manifest -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DisplayFlip.Core\DisplayFlip.Core.csproj" />
+    <ProjectReference Include="..\DisplayFlip.Windows\DisplayFlip.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="DisplayFlip.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DisplayFlip.Tests" />
+  </ItemGroup>
+
+  <!-- Post-publish target: Pastikan alias DisplayFlip.exe dibuat otomatis di publish folder dan bersihkan file intermediate Wpf.exe -->
+  <Target Name="CreateDisplayFlipExeAlias" AfterTargets="Publish">
+    <Copy SourceFiles="$(PublishDir)DisplayFlip.Wpf.exe"
+          DestinationFiles="$(PublishDir)DisplayFlip.exe"
+          Condition="Exists('$(PublishDir)DisplayFlip.Wpf.exe')"
+          OverwriteReadOnlyFiles="true" />
+    <Copy SourceFiles="$(PublishDir)DisplayFlip.Wpf.pdb"
+          DestinationFiles="$(PublishDir)DisplayFlip.pdb"
+          Condition="Exists('$(PublishDir)DisplayFlip.Wpf.pdb')"
+          OverwriteReadOnlyFiles="true" />
+    <Delete Files="$(PublishDir)DisplayFlip.Wpf.exe;$(PublishDir)DisplayFlip.Wpf.pdb"
+            Condition="Exists('$(PublishDir)DisplayFlip.exe')" />
+  </Target>
+
+</Project>

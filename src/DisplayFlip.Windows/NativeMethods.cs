@@ -8,10 +8,16 @@ public static class NativeMethods
     public const uint QDC_ALL_PATHS = 0x00000001;
 
     public const uint SDC_USE_SUPPLIED_DISPLAY_CONFIG = 0x00000020;
+    public const uint SDC_VALIDATE = 0x00000040;
     public const uint SDC_APPLY = 0x00000080;
-    public const uint SDC_VALIDATE = 0x00000001;
-    public const uint SDC_SAVE_TO_DATABASE = 0x00000100;
-    public const uint SDC_ALLOW_CHANGES = 0x00000200;
+    public const uint SDC_NO_OPTIMIZATION = 0x00000100;
+    public const uint SDC_SAVE_TO_DATABASE = 0x00000200;
+    public const uint SDC_ALLOW_CHANGES = 0x00000400;
+
+    public const uint SDC_TOPOLOGY_INTERNAL = 0x00000001;
+    public const uint SDC_TOPOLOGY_CLONE = 0x00000002;
+    public const uint SDC_TOPOLOGY_EXTEND = 0x00000004;
+    public const uint SDC_TOPOLOGY_EXTERNAL = 0x00000008;
 
     public const int ERROR_SUCCESS = 0;
     public const int ERROR_INVALID_PARAMETER = 87;
@@ -43,6 +49,14 @@ public static class NativeMethods
         MODE_INFO_N[] modeArray,
         uint flags);
 
+    [DllImport("user32.dll", EntryPoint = "SetDisplayConfig")]
+    public static extern int SetDisplayConfig(
+        uint pathCount,
+        IntPtr pathArray,
+        uint modeCount,
+        IntPtr modeArray,
+        uint flags);
+
     [DllImport("user32.dll", EntryPoint = "SetDisplayConfig", CharSet = CharSet.Unicode)]
     public static extern int SetDisplayConfigNative(
         uint pathCount,
@@ -57,7 +71,7 @@ public static class NativeMethods
     [DllImport("user32.dll")]
     public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_DEVICE_INFO header);
 
-    // Reused structs — names without N for compat with existing code
+    // Reused structs -- names without N for compat with existing code
     public struct PATH_INFO_N { }
     public struct MODE_INFO_N { }
 
