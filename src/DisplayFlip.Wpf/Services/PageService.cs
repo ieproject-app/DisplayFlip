@@ -21,4 +21,9 @@ public sealed class PageService : INavigationViewPageProvider
         }
         return page;
     }
+
+    public T? GetPage<T>() where T : class
+    {
+        return GetPage(typeof(T)) as T;
+    }
 }

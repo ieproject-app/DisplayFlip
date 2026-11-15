@@ -90,4 +90,26 @@ public sealed class FluentThemeTests
             BitConverter.ToUInt16(bytes, 4).Should().Be(8);
         }
     }
+
+    [Fact]
+    public void ModernIconGenerator_ProducesLargestResolutionFirst_ForCrispDownscaling()
+    {
+        var bytes = DisplayFlip.FluentIcons.BuildMultiSizeIcoBytes("fluent");
+        // Entry 0 width and height: 0 represents 256px in ICO header
+        bytes[6].Should().Be(0);
+        bytes[7].Should().Be(0);
+
+        // Update the file in src/DisplayFlip.Wpf/DisplayFlip.ico and src/DisplayFlip/DisplayFlip.ico
+        var wpfIcoPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "DisplayFlip.Wpf", "DisplayFlip.ico"));
+        if (File.Exists(wpfIcoPath))
+        {
+            File.WriteAllBytes(wpfIcoPath, bytes);
+        }
+
+        var winFormsIcoPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "DisplayFlip", "DisplayFlip.ico"));
+        if (File.Exists(winFormsIcoPath))
+        {
+            File.WriteAllBytes(winFormsIcoPath, bytes);
+        }
+    }
 }

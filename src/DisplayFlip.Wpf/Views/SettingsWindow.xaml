@@ -71,9 +71,16 @@
         <ui:TitleBar
             x:Name="TitleBar"
             Title="DisplayFlip — Pengaturan"
-            CloseWindowByDoubleClickOnIcon="True">
+            CloseWindowByDoubleClickOnIcon="True"
+            RenderOptions.BitmapScalingMode="HighQuality"
+            UseLayoutRounding="True"
+            SnapsToDevicePixels="True">
             <ui:TitleBar.Icon>
-                <ui:ImageIcon Source="pack://application:,,,/DisplayFlip.ico" />
+                <ui:ImageIcon
+                    Source="pack://application:,,,/DisplayFlip.ico"
+                    RenderOptions.BitmapScalingMode="HighQuality"
+                    UseLayoutRounding="True"
+                    SnapsToDevicePixels="True" />
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 

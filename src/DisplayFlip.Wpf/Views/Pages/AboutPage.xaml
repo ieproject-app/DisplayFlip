@@ -39,12 +39,16 @@
                 </Grid.ColumnDefinitions>
 
                 <Image
+                    x:Name="AppLogoImage"
                     Grid.Column="0"
                     Source="pack://application:,,,/DisplayFlip.ico"
                     Width="68"
                     Height="68"
                     Margin="0,0,24,0"
-                    VerticalAlignment="Center" />
+                    VerticalAlignment="Center"
+                    RenderOptions.BitmapScalingMode="HighQuality"
+                    UseLayoutRounding="True"
+                    SnapsToDevicePixels="True" />
 
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
@@ -85,7 +89,7 @@
                             Content="Windows CCD API"
                             Margin="0,0,8,6" />
                         <ui:Badge
-                            Appearance="Secondary"
+                            Appearance="Primary"
                             Content="64-bit Architecture"
                             Margin="0,0,8,6" />
                     </WrapPanel>

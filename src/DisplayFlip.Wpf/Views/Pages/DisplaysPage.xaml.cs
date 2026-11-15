@@ -40,11 +40,16 @@ public partial class DisplaysPage : Page
 
     private void OnPageLoaded(object sender, RoutedEventArgs e)
     {
+        RefreshData();
+    }
+
+    public void RefreshData()
+    {
         RefreshMonitorsFromSystem();
         RefreshProfiles();
     }
 
-    private void RefreshMonitorsFromSystem()
+    public void RefreshMonitorsFromSystem()
     {
         var monitors = _adapter.ReadTopologies(out _, out _);
         _canvasMonitors = monitors;

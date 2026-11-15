@@ -27,6 +27,7 @@ public partial class AboutPage : Page
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         InitializeComponent();
+        AppLogoImage.Source = IconHelper.GetBestIconFrame(68);
         PopulateCliCommands();
         Loaded += OnPageLoaded;
     }
@@ -34,6 +35,7 @@ public partial class AboutPage : Page
     private void OnPageLoaded(object sender, RoutedEventArgs e)
     {
         PageInfoBar.IsOpen = false;
+        AppLogoImage.Source = IconHelper.GetBestIconFrame(68);
         PopulateCliCommands();
     }
 
@@ -91,7 +93,7 @@ public partial class AboutPage : Page
 
         titleRow.Children.Add(new Badge
         {
-            Appearance = ControlAppearance.Secondary,
+            Appearance = ControlAppearance.Primary,
             Content = cmd.Category,
             Margin = new Thickness(0, 0, 8, 0),
             VerticalAlignment = SystemVerticalAlignment.Center

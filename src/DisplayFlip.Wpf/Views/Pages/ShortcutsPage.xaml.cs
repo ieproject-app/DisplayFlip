@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using DisplayFlip.Core;
 using DisplayFlip.UI.Helpers;
+using DisplayFlip.UI.Services;
 using Wpf.Ui.Controls;
 using WpfButton = Wpf.Ui.Controls.Button;
 using WpfTextBlock = Wpf.Ui.Controls.TextBlock;
@@ -26,6 +27,7 @@ public partial class ShortcutsPage : Page
     {
         PageInfoBar.IsOpen = false;
         RefreshShortcutsData();
+        GlobalHotkeyManager.Instance.ReloadHotkeys();
     }
 
     private void RefreshShortcutsData()
@@ -426,6 +428,7 @@ public partial class ShortcutsPage : Page
         }
 
         RefreshShortcutsData();
+        GlobalHotkeyManager.Instance.ReloadHotkeys();
 
         string msg = string.IsNullOrEmpty(shortcut)
             ? $"Pintasan untuk '{targetTitle}' berhasil dikosongkan."

@@ -254,11 +254,13 @@ public static class FluentIcons
     }
 
     /// <summary>
-    /// Bangun file .ICO multi-size (16, 20, 24, 32, 48, 64, 128, 256) berformat PNG-in-ICO.
+    /// Bangun file .ICO multi-size (256, 128, 64, 48, 32, 24, 20, 16) berformat PNG-in-ICO.
+    /// Ukuran terbesar (256px) ditaruh di awal agar decoder default (misal WPF BitmapDecoder)
+    /// selalu memilih resolusi tertinggi untuk downscaling tajam & anti-buram.
     /// </summary>
     public static byte[] BuildMultiSizeIcoBytes(string style, Color? customAccent = null)
     {
-        int[] sizes = { 16, 20, 24, 32, 48, 64, 128, 256 };
+        int[] sizes = { 256, 128, 64, 48, 32, 24, 20, 16 };
         var pngBlobs = new List<byte[]>(sizes.Length);
         foreach (int sz in sizes)
         {
