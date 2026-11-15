@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DisplayFlip.Core;
+using DisplayFlip.Core.Localization;
 using DisplayFlip.UI.Views;
 using DisplayFlip.Windows;
 
@@ -27,13 +28,15 @@ public sealed class DisplayActionService
     private readonly Func<string, (bool Success, string Message)> _dispatchProjection;
     private readonly Func<string, bool, (bool ok, string message)> _tryApplyProfile;
     private readonly Action<int> _sleep;
+    private readonly Func<string> _resolveLanguage;
+    private readonly bool _hasCustomDispatchProjection;
 
     public CcdTopologyAdapter Adapter => _adapter;
     public ProfileStore Store => _store;
     public ProfileService Profiles => _profiles;
 
     public DisplayActionService(CcdTopologyAdapter? adapter = null, ProfileStore? store = null)
-        : this(adapter, store, null, null, null, null)
+        : this(adapter, store, null, null, null, null, null)
     {
     }
 
@@ -43,27 +46,31 @@ public sealed class DisplayActionService
         Func<IReadOnlyList<DisplayMonitor>>? readActiveMonitors,
         Func<string, (bool Success, string Message)>? dispatchProjection,
         Func<string, bool, (bool ok, string message)>? tryApplyProfile,
-        Action<int>? sleep)
+        Action<int>? sleep,
+        Func<string>? resolveLanguage = null)
     {
         _adapter = adapter ?? new CcdTopologyAdapter();
         _store = store ?? new ProfileStore();
         _profiles = new ProfileService(_adapter, _store);
         _readActiveMonitors = readActiveMonitors ?? (() => _adapter.ReadTopologies(out _, out _));
+        _hasCustomDispatchProjection = dispatchProjection != null;
         _dispatchProjection = dispatchProjection ?? ProjectionDispatcher.Dispatch;
         _tryApplyProfile = tryApplyProfile ?? _profiles.TryApply;
         _sleep = sleep ?? Thread.Sleep;
+        _resolveLanguage = resolveLanguage ?? (() => Loc.Instance.EffectiveLanguage);
     }
 
     /// <summary>
     /// Menukar susunan posisi horizontal monitor (Mirror/Swap) secara instan.
     /// </summary>
-    public async Task<(bool Success, string Message)> QuickSwapAsync()
+    public async Task<(bool Success, string Message)> QuickSwapAsync(string? languageOverride = null)
     {
+        string lang = LocalizationCatalog.TryResolveExplicitLanguage(languageOverride) ?? _resolveLanguage();
         return await Task.Run(() =>
         {
             var monitors = _adapter.ReadTopologies(out var paths, out var modes);
             if (monitors.Count < 2)
-                return (false, "Perlu minimal 2 monitor aktif untuk menukar posisi.");
+                return (false, LocalizationCatalog.Get("Actions.Swap.NeedTwoMonitors", lang));
 
             var desired = DisplayTopology.Mirror(monitors);
 
@@ -71,22 +78,22 @@ public sealed class DisplayActionService
             {
                 var (fbOk, fbMsg) = _adapter.ApplyViaFallback(desired);
                 return fbOk
-                    ? (true, "Susunan monitor berhasil ditukar (kiri-kanan).")
-                    : (false, $"Gagal menukar susunan: {fbMsg}");
+                    ? (true, LocalizationCatalog.Get("Actions.Swap.Success", lang))
+                    : (false, LocalizationCatalog.Format("Actions.Swap.Failed", lang, fbMsg));
             }
 
             var (newPaths, newModes, built) = _adapter.BuildTopology(desired);
             if (!built && newPaths.Count > 0)
-                return (false, "Gagal membangun susunan cermin monitor.");
+                return (false, LocalizationCatalog.Get("Actions.Swap.BuildFailed", lang));
 
             var (validOk, validMsg) = _adapter.Validate(newPaths, newModes);
             if (!validOk)
-                return (false, $"Validasi topologi gagal: {validMsg}");
+                return (false, LocalizationCatalog.Format("Actions.Swap.ValidationFailed", lang, validMsg));
 
             var (applyOk, applyMsg) = _adapter.Apply(newPaths, newModes);
             return applyOk
-                ? (true, "Susunan monitor berhasil ditukar (kiri-kanan).")
-                : (false, $"Gagal menerapkan susunan: {applyMsg}");
+                ? (true, LocalizationCatalog.Get("Actions.Swap.Success", lang))
+                : (false, LocalizationCatalog.Format("Actions.Swap.ApplyFailed", lang, applyMsg));
         });
     }
 
@@ -112,11 +119,12 @@ public sealed class DisplayActionService
     /// <summary>
     /// Mengganti layar utama (Primary) berurutan dari daftar monitor aktif.
     /// </summary>
-    public (bool Success, string Message) CyclePrimary()
+    public (bool Success, string Message) CyclePrimary(string? languageOverride = null)
     {
+        string lang = LocalizationCatalog.TryResolveExplicitLanguage(languageOverride) ?? _resolveLanguage();
         var monitors = _adapter.ReadTopologies(out var paths, out var modes);
         if (monitors.Count < 2)
-            return (false, "Perlu minimal 2 monitor aktif untuk mengganti layar utama.");
+            return (false, LocalizationCatalog.Get("Actions.CyclePrimary.NeedTwoMonitors", lang));
 
         var ordered = monitors.OrderBy(m => m.Position.X).ThenBy(m => m.Position.Y).ToList();
         int curIdx = ordered.FindIndex(m => m.Position.X == 0 && m.Position.Y == 0);
@@ -131,38 +139,40 @@ public sealed class DisplayActionService
         {
             var (fbOk, fbMsg) = _adapter.ApplyViaFallback(desired);
             return fbOk
-                ? (true, $"{target.FriendlyName} kini menjadi layar utama.")
-                : (false, $"Gagal menetapkan layar utama: {fbMsg}");
+                ? (true, LocalizationCatalog.Format("Actions.CyclePrimary.Success", lang, target.FriendlyName))
+                : (false, LocalizationCatalog.Format("Actions.CyclePrimary.Failed", lang, fbMsg));
         }
 
         var (newPaths, newModes, built) = _adapter.BuildTopology(desired);
         if (!built && newPaths.Count > 0)
-            return (false, "Gagal membangun susunan topologi.");
+            return (false, LocalizationCatalog.Get("Actions.CyclePrimary.BuildFailed", lang));
 
         var (validOk, validMsg) = _adapter.Validate(newPaths, newModes);
         if (!validOk)
-            return (false, $"Validasi gagal: {validMsg}");
+            return (false, LocalizationCatalog.Format("Actions.CyclePrimary.ValidationFailed", lang, validMsg));
 
         var (applyOk, applyMsg) = _adapter.Apply(newPaths, newModes);
         return applyOk
-            ? (true, $"{target.FriendlyName} kini menjadi layar utama.")
-            : (false, $"Gagal menerapkan: {applyMsg}");
+            ? (true, LocalizationCatalog.Format("Actions.CyclePrimary.Success", lang, target.FriendlyName))
+            : (false, LocalizationCatalog.Format("Actions.CyclePrimary.ApplyFailed", lang, applyMsg));
     }
 
     /// <summary>
     /// Mengaktifkan mode layar tunggal (Solo 1 atau Solo 2).
     /// </summary>
-    public (bool Success, string Message) TriggerSolo(int displayIndex)
+    public (bool Success, string Message) TriggerSolo(int displayIndex, string? languageOverride = null)
     {
-        return ProjectionDispatcher.TriggerSolo(displayIndex);
+        string lang = LocalizationCatalog.TryResolveExplicitLanguage(languageOverride) ?? _resolveLanguage();
+        return ProjectionDispatcher.TriggerSolo(displayIndex, lang);
     }
 
     /// <summary>
     /// Mengaktifkan mode proyeksi Windows (extend, clone, internal, external).
     /// </summary>
-    public (bool Success, string Message) TriggerProjection(string mode)
+    public (bool Success, string Message) TriggerProjection(string mode, string? languageOverride = null)
     {
-        return ProjectionDispatcher.Dispatch(mode);
+        string lang = LocalizationCatalog.TryResolveExplicitLanguage(languageOverride) ?? _resolveLanguage();
+        return ProjectionDispatcher.Dispatch(mode, lang);
     }
 
     /// <summary>
@@ -171,30 +181,34 @@ public sealed class DisplayActionService
     /// sistem otomatis membangunkan monitor melalui mode Extend terlebih dahulu dan memberi laporan jujur
     /// bila ada monitor yang tidak terhubung secara fisik.
     /// </summary>
-    public (bool Success, string Message) ApplyProfile(string profileName)
+    public (bool Success, string Message) ApplyProfile(string profileName, string? languageOverride = null)
     {
-        var (success, _, message) = ApplyProfileDetailed(profileName);
+        var (success, _, message) = ApplyProfileDetailed(profileName, languageOverride);
         return (success, message);
     }
 
     /// <summary>
     /// Menerapkan profil tata letak monitor dan mengembalikan status detail termasuk indikasi aplikasi sebagian.
     /// </summary>
-    public (bool Success, bool IsPartial, string Message) ApplyProfileDetailed(string profileName)
+    public (bool Success, bool IsPartial, string Message) ApplyProfileDetailed(string profileName, string? languageOverride = null)
     {
+        string lang = LocalizationCatalog.TryResolveExplicitLanguage(languageOverride) ?? _resolveLanguage();
+
         if (string.IsNullOrWhiteSpace(profileName))
-            return (false, false, "Nama profil tidak boleh kosong.");
+            return (false, false, LocalizationCatalog.Get("Actions.Profile.EmptyName", lang));
 
         var profile = _store.Find(profileName);
         if (profile == null)
-            return (false, false, $"Profil '{profileName}' tidak ditemukan.");
+            return (false, false, LocalizationCatalog.Format("Actions.Profile.NotFound", lang, profileName));
 
         int requiredEnabledCount = profile.Monitors.Count(m => m.IsEnabled);
         var activeMonitors = _readActiveMonitors();
 
         if (activeMonitors.Count < requiredEnabledCount)
         {
-            var (extendOk, _) = _dispatchProjection("extend");
+            var (extendOk, _) = _hasCustomDispatchProjection
+                ? _dispatchProjection("extend")
+                : ProjectionDispatcher.Dispatch("extend", lang);
             if (extendOk)
             {
                 activeMonitors = _readActiveMonitors();
@@ -219,7 +233,7 @@ public sealed class DisplayActionService
 
         if (presentCount == 0)
         {
-            return (false, false, $"Tidak ada monitor dari profil '{profileName}' yang terhubung saat ini.");
+            return (false, false, LocalizationCatalog.Format("Actions.Profile.NoneConnected", lang, profileName));
         }
 
         var (ok, msg) = _tryApplyProfile(profileName, true);
@@ -230,9 +244,9 @@ public sealed class DisplayActionService
 
         if (missingCount > 0)
         {
-            return (true, true, $"Profil '{profileName}' diterapkan sebagian ({missingCount} monitor dari profil tidak terhubung secara fisik).");
+            return (true, true, LocalizationCatalog.Format("Actions.Profile.AppliedPartial", lang, profileName, missingCount));
         }
 
-        return (true, false, $"Profil '{profileName}' berhasil diterapkan.");
+        return (true, false, LocalizationCatalog.Format("Actions.Profile.Applied", lang, profileName));
     }
 }

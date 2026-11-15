@@ -2,8 +2,9 @@
     x:Class="DisplayFlip.UI.Views.IdentifyOverlayWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:services="clr-namespace:DisplayFlip.UI.Services"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Title="DisplayFlip — Identifikasi Layar"
+    Title="{Binding [Overlay.WindowTitle], Source={x:Static services:Loc.Instance}}"
     Width="220"
     Height="130"
     WindowStyle="None"
@@ -38,7 +39,7 @@
                     HorizontalAlignment="Center"
                     Appearance="Secondary"
                     FontTypography="Caption"
-                    Text="Layar 1 • Layar Utama" />
+                    Text="{Binding [Overlay.DefaultSubtitle], Source={x:Static services:Loc.Instance}}" />
             </StackPanel>
         </Border>
     </Grid>

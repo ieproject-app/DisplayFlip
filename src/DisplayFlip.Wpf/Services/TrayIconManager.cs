@@ -92,6 +92,27 @@ public sealed class TrayIconManager : IDisposable
         _source.AddHook(HwndHook);
 
         InitializeNotifyIcon();
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        UpdateTrayTooltip();
+        if (_contextMenu is { IsOpen: true })
+        {
+            _contextMenu.IsOpen = false;
+            _contextMenu = BuildFluentContextMenu();
+        }
+    }
+
+    private void UpdateTrayTooltip()
+    {
+        if (_disposed || !_isCreated)
+            return;
+
+        _nid.szTip = Loc.Instance.Get("Tray.Tooltip");
+        _nid.uFlags |= NIF_TIP;
+        Shell_NotifyIcon(NIM_MODIFY, ref _nid);
     }
 
     private void InitializeNotifyIcon()
@@ -107,7 +128,7 @@ public sealed class TrayIconManager : IDisposable
             uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP,
             uCallbackMessage = WM_TRAY,
             hIcon = _hCurrentIcon,
-            szTip = "DisplayFlip — Multi-Monitor Manager",
+            szTip = Loc.Instance.Get("Tray.Tooltip"),
             szInfo = string.Empty,
             szInfoTitle = string.Empty
         };
@@ -178,6 +199,8 @@ public sealed class TrayIconManager : IDisposable
         _contextMenu.IsOpen = true;
     }
 
+    public ContextMenu CreateContextMenu() => BuildFluentContextMenu();
+
     private ContextMenu BuildFluentContextMenu()
     {
         var menu = new ContextMenu();
@@ -186,7 +209,7 @@ public sealed class TrayIconManager : IDisposable
         // 1. ⚡ Tukar Kiri-Kanan (Quick Swap)
         var swapItem = new WpfMenuItem
         {
-            Header = "Tukar Kiri-Kanan (Quick Swap)",
+            Header = Loc.Instance.Get("Tray.Menu.Swap"),
             Icon = new SymbolIcon { Symbol = SymbolRegular.ArrowSwap24, FontSize = 16 }
         };
         swapItem.Click += async (_, _) =>
@@ -199,7 +222,7 @@ public sealed class TrayIconManager : IDisposable
         // 2. 👁 Identifikasi Layar
         var identifyItem = new WpfMenuItem
         {
-            Header = "Identifikasi Layar",
+            Header = Loc.Instance.Get("Tray.Menu.Identify"),
             Icon = new SymbolIcon { Symbol = SymbolRegular.Eye24, FontSize = 16 }
         };
         identifyItem.Click += (_, _) => actions.IdentifyMonitors();
@@ -208,13 +231,13 @@ public sealed class TrayIconManager : IDisposable
         // 3. 🖥 Multi-Layar (Submenu)
         var projectionParent = new WpfMenuItem
         {
-            Header = "Multi-Layar",
+            Header = Loc.Instance.Get("Tray.Menu.MultiDisplay"),
             Icon = new SymbolIcon { Symbol = SymbolRegular.Desktop24, FontSize = 16 }
         };
 
         var solo1Item = new WpfMenuItem
         {
-            Header = "Hanya Layar 1",
+            Header = Loc.Instance.Get("Tray.Menu.Solo1"),
             Icon = new SymbolIcon { Symbol = SymbolRegular.Desktop16, FontSize = 16 }
         };
         solo1Item.Click += (_, _) =>
@@ -226,7 +249,7 @@ public sealed class TrayIconManager : IDisposable
 
         var solo2Item = new WpfMenuItem
         {
-            Header = "Hanya Layar 2",
+            Header = Loc.Instance.Get("Tray.Menu.Solo2"),
             Icon = new SymbolIcon { Symbol = SymbolRegular.Desktop16, FontSize = 16 }
         };
         solo2Item.Click += (_, _) =>
@@ -238,7 +261,7 @@ public sealed class TrayIconManager : IDisposable
 
         var extendItem = new WpfMenuItem
         {
-            Header = "Bentangkan / Extend",
+            Header = Loc.Instance.Get("Tray.Menu.Extend"),
             Icon = new SymbolIcon { Symbol = SymbolRegular.FullScreenMaximize24, FontSize = 16 }
         };
         extendItem.Click += (_, _) =>
@@ -253,7 +276,7 @@ public sealed class TrayIconManager : IDisposable
         // 4. 📁 Profil Tampilan (Submenu Dinamis)
         var profileParent = new WpfMenuItem
         {
-            Header = "Profil Tampilan",
+            Header = Loc.Instance.Get("Tray.Menu.Profiles"),
             Icon = new SymbolIcon { Symbol = SymbolRegular.Folder24, FontSize = 16 }
         };
 
@@ -262,7 +285,7 @@ public sealed class TrayIconManager : IDisposable
         {
             var emptyItem = new WpfMenuItem
             {
-                Header = "(Belum ada profil tersimpan)",
+                Header = Loc.Instance.Get("Tray.Menu.NoProfiles"),
                 IsEnabled = false
             };
             profileParent.Items.Add(emptyItem);
@@ -294,7 +317,7 @@ public sealed class TrayIconManager : IDisposable
         // 5. ⚙️ Buka Pengaturan
         var settingsItem = new WpfMenuItem
         {
-            Header = "Buka Pengaturan",
+            Header = Loc.Instance.Get("Tray.Menu.OpenSettings"),
             Icon = new SymbolIcon { Symbol = SymbolRegular.Settings24, FontSize = 16 }
         };
         settingsItem.Click += (_, _) => OpenSettingsAction?.Invoke();
@@ -303,7 +326,7 @@ public sealed class TrayIconManager : IDisposable
         // 6. ❌ Keluar
         var exitItem = new WpfMenuItem
         {
-            Header = "Keluar",
+            Header = Loc.Instance.Get("Tray.Menu.Exit"),
             Icon = new SymbolIcon { Symbol = SymbolRegular.Dismiss24, FontSize = 16 }
         };
         exitItem.Click += (_, _) => ExitApplicationAction?.Invoke();
@@ -341,6 +364,7 @@ public sealed class TrayIconManager : IDisposable
             return;
 
         _disposed = true;
+        Loc.Instance.LanguageChanged -= OnLanguageChanged;
 
         if (_isCreated)
         {

@@ -6,8 +6,10 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 using DisplayFlip.Core;
+using DisplayFlip.Core.Localization;
 using DisplayFlip.UI.Controls;
 using DisplayFlip.UI.Helpers;
+using DisplayFlip.UI.Services;
 using DisplayFlip.UI.Views.Pages;
 using FluentAssertions;
 using Xunit;
@@ -15,6 +17,7 @@ using CoreOrientation = DisplayFlip.Core.Orientation;
 
 namespace DisplayFlip.Tests;
 
+[Collection("Localization")]
 public class WpfCanvasDragAndE2ETests
 {
     private static List<DisplayMonitor> CreateDualMonitors()
@@ -316,11 +319,23 @@ public class WpfCanvasDragAndE2ETests
     {
         ExecuteOnSta(() =>
         {
-            var page = new DisplaysPage();
-            page.Should().NotBeNull();
-            page.RefreshData();
-            page.CanvasSubtitleText.Should().NotBeNull();
-            page.CanvasSubtitleText.Text.Should().Contain("layar aktif");
+            Loc.Instance.SetPreference(LocalizationCatalog.LanguageIndonesian, persist: false);
+            try
+            {
+                var page = new DisplaysPage();
+                page.Should().NotBeNull();
+                page.RefreshData();
+                page.CanvasSubtitleText.Should().NotBeNull();
+                page.CanvasSubtitleText.Text.Should().Contain("layar aktif");
+
+                Loc.Instance.SetPreference(LocalizationCatalog.LanguageEnglish, persist: false);
+                page.RefreshData(resetCanvasToLive: false);
+                page.CanvasSubtitleText.Text.Should().Contain("active display");
+            }
+            finally
+            {
+                Loc.Instance.SetPreference(LocalizationCatalog.PreferenceAuto, persist: false);
+            }
         });
     }
 

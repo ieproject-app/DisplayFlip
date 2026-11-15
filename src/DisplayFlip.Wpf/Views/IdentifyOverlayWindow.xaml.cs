@@ -4,6 +4,7 @@ using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using DisplayFlip.Core;
 using DisplayFlip.UI.Helpers;
+using DisplayFlip.UI.Services;
 
 namespace DisplayFlip.UI.Views;
 
@@ -92,7 +93,9 @@ public partial class IdentifyOverlayWindow : Window
             string num = DisplayHelper.ExtractDisplayNumber(m.StableKey, m.FriendlyName, i + 1);
             string cleanName = DisplayHelper.CleanDeviceName(m.FriendlyName);
             bool isPrimary = m.Position.X == 0 && m.Position.Y == 0;
-            string subtitle = isPrimary ? $"{cleanName} • Layar Utama" : cleanName;
+            string subtitle = isPrimary
+                ? Loc.Instance.Format("Overlay.PrimarySuffix", cleanName)
+                : cleanName;
 
             var win = new IdentifyOverlayWindow(m.Position, num, subtitle);
             windows.Add(win);

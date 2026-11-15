@@ -30,10 +30,13 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Initialize UI localization early before tray/window construction
+        Loc.Instance.Initialize();
+
         // 1. Ekspor Screenshot jika diminta
         if (e.Args.Contains("--export-screenshots"))
         {
-            await ExportScreenshotsAsync();
+            await ExportScreenshotsAsync(e.Args);
             Shutdown(0);
             return;
         }
@@ -160,16 +163,36 @@ public partial class App : Application
         base.OnExit(e);
     }
 
-    private async Task ExportScreenshotsAsync()
+    private async Task ExportScreenshotsAsync(string[] args)
     {
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        // Default showcase capture to English (or explicit --lang <id|en>) without mutating user settings
+        var requestedLang = DisplayFlip.Core.Localization.LocalizationCatalog.LanguageEnglish;
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i].StartsWith("--lang=", StringComparison.OrdinalIgnoreCase))
+            {
+                var parsed = DisplayFlip.Core.Localization.LocalizationCatalog.TryResolveExplicitLanguage(args[i].Substring("--lang=".Length));
+                if (parsed != null)
+                    requestedLang = parsed;
+            }
+            else if (args[i].Equals("--lang", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                var parsed = DisplayFlip.Core.Localization.LocalizationCatalog.TryResolveExplicitLanguage(args[i + 1]);
+                if (parsed != null)
+                    requestedLang = parsed;
+            }
+        }
+        Loc.Instance.SetPreference(requestedLang, persist: false);
+
         var outDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "docs", "screenshots");
         outDir = Path.GetFullPath(outDir);
         Directory.CreateDirectory(outDir);
 
         // LIGHT MODE RUN
-        ApplicationThemeManager.Apply(ApplicationTheme.Light);
-        var win = new SettingsWindow();
+        ApplicationThemeManager.Apply(ApplicationTheme.Light, WindowBackdropType.Mica, true);
+        var win = new SettingsWindow(false);
         win.WindowStartupLocation = WindowStartupLocation.CenterScreen;
         win.Width = 1000;
         win.Height = 720;
@@ -267,9 +290,10 @@ public partial class App : Application
         rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
 
+        bool isIndonesian = Loc.Instance.EffectiveLanguage == DisplayFlip.Core.Localization.LocalizationCatalog.LanguageIndonesian;
         var header = new TextBlock
         {
-            Text = "DisplayFlip • Menu Cepat System Tray",
+            Text = isIndonesian ? "DisplayFlip • Menu Cepat System Tray" : "DisplayFlip • System Tray Quick Menu",
             FontSize = 13,
             FontWeight = FontWeights.SemiBold,
             Foreground = isDark ? new SolidColorBrush(Color.FromRgb(0xA0, 0xA0, 0xA0)) : new SolidColorBrush(Color.FromRgb(0x60, 0x60, 0x60)),
@@ -366,13 +390,13 @@ public partial class App : Application
             };
         }
 
-        menuStack.Children.Add(CreateMenuItem(SymbolRegular.ArrowSwap24, "Tukar Kiri-Kanan (Quick Swap)"));
-        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Eye24, "Identifikasi Layar"));
-        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Desktop24, "Multi-Layar", hasSubmenu: true));
-        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Folder24, "Profil Tampilan", hasSubmenu: true));
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.ArrowSwap24, Loc.Instance.Get("Tray.Menu.Swap")));
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Eye24, Loc.Instance.Get("Tray.Menu.Identify")));
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Desktop24, Loc.Instance.Get("Tray.Menu.MultiDisplay"), hasSubmenu: true));
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Folder24, Loc.Instance.Get("Tray.Menu.Profiles"), hasSubmenu: true));
         menuStack.Children.Add(CreateSeparator());
-        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Settings24, "Buka Pengaturan DisplayFlip", isBold: true));
-        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Dismiss24, "Keluar"));
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Settings24, Loc.Instance.Get("Tray.Menu.OpenSettings"), isBold: true));
+        menuStack.Children.Add(CreateMenuItem(SymbolRegular.Dismiss24, Loc.Instance.Get("Tray.Menu.Exit")));
 
         flyoutCard.Child = menuStack;
         Grid.SetRow(flyoutCard, 1);
@@ -392,7 +416,7 @@ public partial class App : Application
 
         var tbNote = new TextBlock
         {
-            Text = "Taskbar Windows 11",
+            Text = isIndonesian ? "Taskbar Windows 11" : "Windows 11 Taskbar",
             FontSize = 11,
             Foreground = isDark ? new SolidColorBrush(Color.FromRgb(0x70, 0x70, 0x70)) : new SolidColorBrush(Color.FromRgb(0xA0, 0xA0, 0xA0)),
             VerticalAlignment = VerticalAlignment.Center

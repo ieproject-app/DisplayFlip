@@ -19,7 +19,7 @@ public partial class DisplaysPage : Page
     }
 
     private readonly CcdTopologyAdapter _adapter = new();
-    private readonly ProfileStore _store = new();
+    private readonly ProfileStore _store;
     private readonly ProfileService _profileService;
 
     private List<DisplayMonitor> _canvasMonitors = new();
@@ -35,8 +35,13 @@ public partial class DisplaysPage : Page
     public bool IsApplyingArrangement => _isApplyingArrangement;
     public IReadOnlyList<DisplayMonitor> CanvasMonitors => _canvasMonitors;
 
-    public DisplaysPage()
+    public DisplaysPage() : this(new ProfileStore())
     {
+    }
+
+    internal DisplaysPage(ProfileStore store)
+    {
+        _store = store ?? throw new ArgumentNullException(nameof(store));
         _profileService = new ProfileService(_adapter, _store);
 
         InitializeComponent();
@@ -45,11 +50,29 @@ public partial class DisplaysPage : Page
         MonitorCanvas.ArrangementChanged += OnCanvasArrangementChanged;
 
         Loaded += OnPageLoaded;
+        Unloaded += OnPageUnloaded;
     }
 
     private void OnPageLoaded(object sender, RoutedEventArgs e)
     {
+        Loc.Instance.LanguageChanged -= OnLanguageChanged;
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
         RefreshData(resetCanvasToLive: true);
+    }
+
+    private void OnPageUnloaded(object sender, RoutedEventArgs e)
+    {
+        Loc.Instance.LanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        if (!IsLoaded)
+            return;
+        // Preserve pending canvas drag edits (HasUnappliedChanges) — refresh text & profile cards only.
+        UpdateUiFromState();
+        RefreshProfiles();
+        MonitorCanvas?.InvalidateVisual();
     }
 
     public void RefreshData(bool resetCanvasToLive = true)
@@ -57,6 +80,10 @@ public partial class DisplaysPage : Page
         if (resetCanvasToLive && !_hasUnappliedChanges && !_isApplyingArrangement)
         {
             RefreshMonitorsFromSystem();
+        }
+        else
+        {
+            UpdateUiFromState();
         }
         RefreshProfiles();
     }
@@ -96,11 +123,11 @@ public partial class DisplaysPage : Page
 
             if (_canvasMonitors.Count == 0)
             {
-                CanvasSubtitleText.Text = "0 layar aktif • Tidak ada monitor aktif terdeteksi.";
+                CanvasSubtitleText.Text = Loc.Instance.Get("Displays.Canvas.NoMonitorsSubtitle");
             }
             else
             {
-                CanvasSubtitleText.Text = $"{_canvasMonitors.Count} layar aktif • Klik monitor untuk konfigurasi atau geser kotak monitor untuk mengatur susunan koordinat.";
+                CanvasSubtitleText.Text = Loc.Instance.Format("Displays.Canvas.ActiveSubtitle", _canvasMonitors.Count);
             }
 
             var sel = _canvasMonitors.FirstOrDefault(m => m.StableKey == _selectedMonitorKey);
@@ -108,20 +135,29 @@ public partial class DisplaysPage : Page
             {
                 int idx = _canvasMonitors.IndexOf(sel) + 1;
                 string numStr = DisplayHelper.ExtractDisplayNumber(sel.StableKey, sel.FriendlyName, idx);
-                string cleanName = DisplayHelper.CleanDeviceName(sel.FriendlyName);
                 bool isPrimary = sel.StableKey == _primaryMonitorKey || (sel.Position.X == 0 && sel.Position.Y == 0);
 
                 int hz = DisplayHelper.GetCurrentRefreshRate(sel.StableKey, sel.FriendlyName);
                 string hzText = hz > 0 ? $" @ {hz} Hz" : string.Empty;
 
-                SelectedMonitorTitle.Text = $"Layar {numStr} ({cleanName})";
-                SelectedMonitorSubtitle.Text = $"Resolusi {sel.Position.Width} × {sel.Position.Height}{hzText} • Posisi ({sel.Position.X}, {sel.Position.Y}) • {(isPrimary ? "Layar Utama" : "Layar Sekunder")}";
+                SelectedMonitorTitle.Text = DisplayHelper.GetShortDisplayName(sel.FriendlyName, sel.StableKey, idx);
+                string roleText = Loc.Instance.Get(isPrimary ? "Displays.Inspector.PrimaryRole" : "Displays.Inspector.SecondaryRole");
+                SelectedMonitorSubtitle.Text = Loc.Instance.Format(
+                    "Displays.Inspector.DetailsFormat",
+                    sel.Position.Width,
+                    sel.Position.Height,
+                    hzText,
+                    sel.Position.X,
+                    sel.Position.Y,
+                    roleText);
 
                 BtnSetPrimary.IsEnabled = !isPrimary && _canvasMonitors.Count > 1;
 
                 bool isEligibleSolo = int.TryParse(numStr, out int dn) ? (dn == 1 || dn == 2) : (idx <= 2);
                 BtnSoloDisplay.IsEnabled = _canvasMonitors.Count >= 2 && isEligibleSolo;
-                BtnSoloDisplay.Content = isEligibleSolo ? $"Hanya Layar {numStr} Saja" : "Hanya Layar Ini (Solo)";
+                BtnSoloDisplay.Content = isEligibleSolo
+                    ? Loc.Instance.Format("Displays.Inspector.SoloNumbered", numStr)
+                    : Loc.Instance.Get("Displays.Inspector.SoloDefault");
 
                 // Orientasi
                 OrientationComboBox.IsEnabled = true;
@@ -163,10 +199,11 @@ public partial class DisplaysPage : Page
             }
             else
             {
-                SelectedMonitorTitle.Text = "Pilih sebuah monitor di kanvas";
-                SelectedMonitorSubtitle.Text = "Klik kotak nomor monitor di kanvas atas untuk mengatur properti layar.";
+                SelectedMonitorTitle.Text = Loc.Instance.Get("Displays.Inspector.NoSelection");
+                SelectedMonitorSubtitle.Text = Loc.Instance.Get("Displays.Inspector.NoSelectionSubtitle");
                 BtnSetPrimary.IsEnabled = false;
                 BtnSoloDisplay.IsEnabled = false;
+                BtnSoloDisplay.Content = Loc.Instance.Get("Displays.Inspector.SoloDefault");
                 OrientationComboBox.IsEnabled = false;
                 ResolutionComboBox.IsEnabled = false;
                 OrientationComboBox.SelectedIndex = -1;
@@ -233,12 +270,15 @@ public partial class DisplaysPage : Page
         if (GeneralHelper.GetAutoApplyDrag(_store))
         {
             await ApplyArrangementSerializedAsync(
-                "Susunan Diterapkan Otomatis",
-                "Susunan posisi monitor berhasil langsung diterapkan ke sistem Windows.");
+                Loc.Instance.Get("Displays.Info.AutoAppliedTitle"),
+                Loc.Instance.Get("Displays.Info.AutoAppliedMsg"));
         }
         else
         {
-            ShowInfoBar("Susunan Monitor Diubah", "Susunan posisi monitor diperbarui di kanvas. Klik 'Terapkan Perubahan' atau simpan ke profil baru.", InfoBarSeverity.Informational);
+            ShowInfoBar(
+                Loc.Instance.Get("Displays.Info.ArrangementChangedTitle"),
+                Loc.Instance.Get("Displays.Info.ArrangementChangedMsg"),
+                InfoBarSeverity.Informational);
         }
     }
 
@@ -275,7 +315,7 @@ public partial class DisplaysPage : Page
                 {
                     _hasUnappliedChanges = true;
                     UpdateUiFromState();
-                    ShowInfoBar("Gagal Menerapkan Susunan", msg, InfoBarSeverity.Error);
+                    ShowInfoBar(Loc.Instance.Get("Displays.Info.ApplyFailedTitle"), msg, InfoBarSeverity.Error);
                     break;
                 }
 
@@ -316,14 +356,17 @@ public partial class DisplaysPage : Page
     private void OnResetClicked(object sender, RoutedEventArgs e)
     {
         RefreshMonitorsFromSystem();
-        ShowInfoBar("Tata Letak Direset", "Kanvas dikembalikan ke susunan monitor aktif saat ini.", InfoBarSeverity.Informational);
+        ShowInfoBar(
+            Loc.Instance.Get("Displays.Info.ResetTitle"),
+            Loc.Instance.Get("Displays.Info.ResetMsg"),
+            InfoBarSeverity.Informational);
     }
 
     private async void OnApplyClicked(object sender, RoutedEventArgs e)
     {
         await ApplyArrangementSerializedAsync(
-            "Susunan Diterapkan",
-            "Susunan posisi monitor berhasil diterapkan ke sistem Windows.");
+            Loc.Instance.Get("Displays.Info.AppliedTitle"),
+            Loc.Instance.Get("Displays.Info.AppliedMsg"));
     }
 
     private async void OnSetPrimaryClicked(object sender, RoutedEventArgs e)
@@ -339,12 +382,15 @@ public partial class DisplaysPage : Page
         if (GeneralHelper.GetAutoApplyDrag(_store))
         {
             await ApplyArrangementSerializedAsync(
-                "Layar Utama Diterapkan",
-                "Layar utama dan koordinat susunan berhasil diterapkan ke sistem Windows.");
+                Loc.Instance.Get("Displays.Info.PrimaryAppliedTitle"),
+                Loc.Instance.Get("Displays.Info.PrimaryAppliedMsg"));
         }
         else
         {
-            ShowInfoBar("Layar Utama Diubah", "Layar utama telah diubah di kanvas. Klik 'Terapkan Perubahan' untuk menerapkan ke sistem Windows.", InfoBarSeverity.Informational);
+            ShowInfoBar(
+                Loc.Instance.Get("Displays.Info.PrimaryChangedTitle"),
+                Loc.Instance.Get("Displays.Info.PrimaryChangedMsg"),
+                InfoBarSeverity.Informational);
         }
     }
 
@@ -364,15 +410,15 @@ public partial class DisplaysPage : Page
             targetDisplay = idx <= 1 ? 1 : 2;
         }
 
-        var (ok, msg) = ProjectionDispatcher.TriggerSolo(targetDisplay);
+        var (ok, msg) = ProjectionDispatcher.TriggerSolo(targetDisplay, Loc.Instance.EffectiveLanguage);
         if (ok)
         {
             RefreshMonitorsFromSystem();
-            ShowInfoBar("Mode Layar Tunggal (Solo)", msg, InfoBarSeverity.Success);
+            ShowInfoBar(Loc.Instance.Get("Displays.Info.SoloUpdatedTitle"), msg, InfoBarSeverity.Success);
         }
         else
         {
-            ShowInfoBar("Gagal Mode Solo", msg, InfoBarSeverity.Error);
+            ShowInfoBar(Loc.Instance.Get("Displays.Info.SoloFailedTitle"), msg, InfoBarSeverity.Error);
         }
     }
 
@@ -418,7 +464,10 @@ public partial class DisplaysPage : Page
         _canvasMonitors = DisplayTopology.NormalizeArrangement(_canvasMonitors, _primaryMonitorKey);
         _hasUnappliedChanges = true;
         UpdateUiFromState();
-        ShowInfoBar("Orientasi Diubah", "Orientasi layar diubah di kanvas. Klik 'Terapkan Perubahan' untuk menerapkan ke sistem.", InfoBarSeverity.Informational);
+        ShowInfoBar(
+            Loc.Instance.Get("Displays.Info.OrientationChangedTitle"),
+            Loc.Instance.Get("Displays.Info.OrientationChangedMsg"),
+            InfoBarSeverity.Informational);
     }
 
     private void OnResolutionSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -447,7 +496,10 @@ public partial class DisplaysPage : Page
         _canvasMonitors = DisplayTopology.NormalizeArrangement(_canvasMonitors, _primaryMonitorKey);
         _hasUnappliedChanges = true;
         UpdateUiFromState();
-        ShowInfoBar("Resolusi Diubah", "Resolusi layar diubah di kanvas. Klik 'Terapkan Perubahan' untuk menerapkan ke sistem.", InfoBarSeverity.Informational);
+        ShowInfoBar(
+            Loc.Instance.Get("Displays.Info.ResolutionChangedTitle"),
+            Loc.Instance.Get("Displays.Info.ResolutionChangedMsg"),
+            InfoBarSeverity.Informational);
     }
 
     #region Manajemen Profil Tampilan
@@ -490,7 +542,7 @@ public partial class DisplaysPage : Page
                 : string.Empty;
 
             string primaryName = DisplayHelper.CleanDeviceName(profile.PrimaryStableKey);
-            string subText = $"{profile.Monitors.Count} Layar • Primary: {primaryName}";
+            string subText = Loc.Instance.Format("Displays.Profiles.CardMeta", profile.Monitors.Count, primaryName);
             if (!string.IsNullOrWhiteSpace(dateInfo))
                 subText += $" • {dateInfo}";
 
@@ -510,7 +562,7 @@ public partial class DisplaysPage : Page
             var applyBtn = new Wpf.Ui.Controls.Button
             {
                 Appearance = ControlAppearance.Primary,
-                Content = "Terapkan",
+                Content = Loc.Instance.Get("Displays.Profiles.ApplyBtn"),
                 Margin = new Thickness(0, 0, 8, 0)
             };
             applyBtn.Icon = new SymbolIcon { Symbol = SymbolRegular.Play24 };
@@ -520,7 +572,7 @@ public partial class DisplaysPage : Page
             var deleteBtn = new Wpf.Ui.Controls.Button
             {
                 Appearance = ControlAppearance.Secondary,
-                Content = "Hapus"
+                Content = Loc.Instance.Get("Displays.Profiles.DeleteBtn")
             };
             deleteBtn.Icon = new SymbolIcon { Symbol = SymbolRegular.Delete24 };
             deleteBtn.Click += async (_, _) => await DeleteProfileAsync(profile);
@@ -538,13 +590,13 @@ public partial class DisplaysPage : Page
         {
             RefreshMonitorsFromSystem();
             ShowInfoBar(
-                isPartial ? "Profil Diterapkan Sebagian" : "Profil Diterapkan",
+                Loc.Instance.Get(isPartial ? "Displays.Info.ProfileAppliedPartialTitle" : "Displays.Info.ProfileAppliedTitle"),
                 msg,
                 isPartial ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
         }
         else
         {
-            ShowInfoBar("Gagal Menerapkan Profil", msg, InfoBarSeverity.Error);
+            ShowInfoBar(Loc.Instance.Get("Displays.Info.ProfileApplyFailedTitle"), msg, InfoBarSeverity.Error);
         }
     }
 
@@ -554,21 +606,24 @@ public partial class DisplaysPage : Page
         var host = win != null ? ContentDialogHost.GetForWindow(win) : null;
         if (host == null)
         {
-            ShowInfoBar("Dialog Error", "Tidak dapat membuka dialog konfirmasi hapus profil.", InfoBarSeverity.Error);
+            ShowInfoBar(
+                Loc.Instance.Get("Displays.Info.DialogErrorTitle"),
+                Loc.Instance.Get("Displays.Info.DeleteDialogErrorMsg"),
+                InfoBarSeverity.Error);
             return;
         }
 
         var dialog = new ContentDialog(host)
         {
-            Title = "Hapus Profil",
+            Title = Loc.Instance.Get("Displays.Dialog.Delete.Title"),
             Content = new Wpf.Ui.Controls.TextBlock
             {
-                Text = $"Apakah Anda yakin ingin menghapus profil tata letak '{profile.Name}'? Tindakan ini tidak dapat dibatalkan.",
+                Text = Loc.Instance.Format("Displays.Dialog.Delete.Content", profile.Name),
                 TextWrapping = TextWrapping.Wrap
             },
-            PrimaryButtonText = "Hapus",
+            PrimaryButtonText = Loc.Instance.Get("Displays.Dialog.Delete.PrimaryBtn"),
             PrimaryButtonAppearance = ControlAppearance.Danger,
-            CloseButtonText = "Batal",
+            CloseButtonText = Loc.Instance.Get("Displays.Dialog.Delete.CloseBtn"),
             DefaultButton = ContentDialogButton.Close
         };
 
@@ -580,12 +635,15 @@ public partial class DisplaysPage : Page
                 _store.Delete(profile.Name);
                 GlobalHotkeyManager.Instance.ReloadHotkeys();
                 RefreshProfiles();
-                ShowInfoBar("Profil Dihapus", $"Profil '{profile.Name}' telah dihapus dari daftar.", InfoBarSeverity.Success);
+                ShowInfoBar(
+                    Loc.Instance.Get("Displays.Info.ProfileDeletedTitle"),
+                    Loc.Instance.Format("Displays.Info.ProfileDeletedMsg", profile.Name),
+                    InfoBarSeverity.Success);
             }
         }
         catch (Exception ex)
         {
-            ShowInfoBar("Error Dialog Hapus", ex.Message, InfoBarSeverity.Error);
+            ShowInfoBar(Loc.Instance.Get("Displays.Info.DeleteDialogExceptionTitle"), ex.Message, InfoBarSeverity.Error);
         }
     }
 
@@ -595,13 +653,16 @@ public partial class DisplaysPage : Page
         var host = win != null ? ContentDialogHost.GetForWindow(win) : null;
         if (host == null)
         {
-            ShowInfoBar("Dialog Error", "Tidak dapat membuka dialog simpan profil baru.", InfoBarSeverity.Error);
+            ShowInfoBar(
+                Loc.Instance.Get("Displays.Info.DialogErrorTitle"),
+                Loc.Instance.Get("Displays.Info.SaveDialogErrorMsg"),
+                InfoBarSeverity.Error);
             return;
         }
 
         var nameBox = new Wpf.Ui.Controls.TextBox
         {
-            PlaceholderText = "Contoh: Kerja Dual Monitor",
+            PlaceholderText = Loc.Instance.Get("Displays.Dialog.Save.Placeholder"),
             Margin = new Thickness(0, 12, 0, 8),
             MinWidth = 320
         };
@@ -609,16 +670,16 @@ public partial class DisplaysPage : Page
         var contentPanel = new StackPanel();
         contentPanel.Children.Add(new Wpf.Ui.Controls.TextBlock
         {
-            Text = "Masukkan nama untuk profil tata letak monitor saat ini:"
+            Text = Loc.Instance.Get("Displays.Dialog.Save.Prompt")
         });
         contentPanel.Children.Add(nameBox);
 
         var dialog = new ContentDialog(host)
         {
-            Title = "Simpan Profil Baru",
+            Title = Loc.Instance.Get("Displays.Dialog.Save.Title"),
             Content = contentPanel,
-            PrimaryButtonText = "Simpan",
-            CloseButtonText = "Batal",
+            PrimaryButtonText = Loc.Instance.Get("Displays.Dialog.Save.PrimaryBtn"),
+            CloseButtonText = Loc.Instance.Get("Displays.Dialog.Save.CloseBtn"),
             DefaultButton = ContentDialogButton.Primary
         };
 
@@ -630,13 +691,19 @@ public partial class DisplaysPage : Page
                 string profileName = nameBox.Text.Trim();
                 if (string.IsNullOrWhiteSpace(profileName))
                 {
-                    ShowInfoBar("Nama Profil Kosong", "Nama profil tidak boleh kosong.", InfoBarSeverity.Warning);
+                    ShowInfoBar(
+                        Loc.Instance.Get("Displays.Info.EmptyNameTitle"),
+                        Loc.Instance.Get("Displays.Info.SaveEmptyName"),
+                        InfoBarSeverity.Warning);
                     return;
                 }
 
                 if (profileName.Length > 100)
                 {
-                    ShowInfoBar("Nama Terlalu Panjang", "Nama profil maksimal 100 karakter.", InfoBarSeverity.Warning);
+                    ShowInfoBar(
+                        Loc.Instance.Get("Displays.Info.NameTooLongTitle"),
+                        Loc.Instance.Get("Displays.Info.NameTooLongMsg"),
+                        InfoBarSeverity.Warning);
                     return;
                 }
 
@@ -644,17 +711,20 @@ public partial class DisplaysPage : Page
                 {
                     _profileService.SaveArrangementAs(profileName, _canvasMonitors, _primaryMonitorKey);
                     RefreshProfiles();
-                    ShowInfoBar("Profil Disimpan", $"Profil tata letak '{profileName}' berhasil disimpan.", InfoBarSeverity.Success);
+                    ShowInfoBar(
+                        Loc.Instance.Get("Displays.Info.ProfileSavedTitle"),
+                        Loc.Instance.Format("Displays.Info.ProfileSavedMsg", profileName),
+                        InfoBarSeverity.Success);
                 }
                 catch (Exception ex)
                 {
-                    ShowInfoBar("Gagal Menyimpan Profil", ex.Message, InfoBarSeverity.Error);
+                    ShowInfoBar(Loc.Instance.Get("Displays.Info.ProfileSaveFailedTitle"), ex.Message, InfoBarSeverity.Error);
                 }
             }
         }
         catch (Exception ex)
         {
-            ShowInfoBar("Error Dialog Simpan", ex.Message, InfoBarSeverity.Error);
+            ShowInfoBar(Loc.Instance.Get("Displays.Info.SaveDialogExceptionTitle"), ex.Message, InfoBarSeverity.Error);
         }
     }
 

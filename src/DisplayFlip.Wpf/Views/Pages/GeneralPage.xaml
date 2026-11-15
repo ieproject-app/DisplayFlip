@@ -4,8 +4,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:services="clr-namespace:DisplayFlip.UI.Services"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Title="Umum &amp; Ikon"
+    Title="{Binding [General.PageTitle], Source={x:Static services:Loc.Instance}}"
     d:DesignHeight="950"
     d:DesignWidth="800"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -15,12 +16,12 @@
         <!-- Judul & Deskripsi Halaman -->
         <ui:TextBlock
             FontTypography="Title"
-            Text="Umum &amp; Ikon" />
+            Text="{Binding [General.PageTitle], Source={x:Static services:Loc.Instance}}" />
         <ui:TextBlock
             Margin="0,4,0,16"
             Appearance="Secondary"
             FontTypography="Body"
-            Text="Preferensi startup sistem, otomatisasi tata letak monitor, personalisasi tema aplikasi, gaya ikon taskbar, dan direktori penyimpanan."
+            Text="{Binding [General.PageSubtitle], Source={x:Static services:Loc.Instance}}"
             TextWrapping="Wrap" />
 
         <!-- Status InfoBar Notifikasi -->
@@ -34,16 +35,16 @@
         <ui:TextBlock
             Margin="0,4,0,12"
             FontTypography="Subtitle"
-            Text="Perilaku Aplikasi" />
+            Text="{Binding [General.Section.SystemBehavior], Source={x:Static services:Loc.Instance}}" />
 
         <!-- Card: Startup Otomatis Windows -->
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Jalan otomatis saat Windows start" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [General.Startup.Title], Source={x:Static services:Loc.Instance}}" />
                     <ui:TextBlock
                         Appearance="Secondary"
-                        Text="Mulai DisplayFlip di latar belakang (--tray) secara otomatis saat Anda login ke Windows."
+                        Text="{Binding [General.Startup.Desc], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:CardControl.Header>
@@ -59,10 +60,10 @@
         <ui:CardControl Margin="0,0,0,16">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Langsung terapkan tata letak setelah digeser (Auto-Apply)" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [General.AutoApply.Title], Source={x:Static services:Loc.Instance}}" />
                     <ui:TextBlock
                         Appearance="Secondary"
-                        Text="Langsung terapkan posisi monitor begitu selesai menggeser di kanvas tanpa perlu klik Terapkan Perubahan."
+                        Text="{Binding [General.AutoApply.Desc], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:CardControl.Header>
@@ -74,11 +75,45 @@
                 Click="OnToggleAutoApplyClick" />
         </ui:CardControl>
 
+        <!-- BAGIAN 1B: Bahasa Antarmuka -->
+        <ui:TextBlock
+            Margin="0,8,0,12"
+            FontTypography="Subtitle"
+            Text="{Binding [General.Section.Language], Source={x:Static services:Loc.Instance}}" />
+
+        <ui:CardControl Margin="0,0,0,16">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [General.Language.CardTitle], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        Text="{Binding [General.Language.CardDesc], Source={x:Static services:Loc.Instance}}"
+                        TextWrapping="Wrap" />
+                    <ui:TextBlock
+                        x:Name="TxtEffectiveLanguage"
+                        Margin="0,4,0,0"
+                        Appearance="Tertiary"
+                        FontTypography="Caption" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Globe24" />
+            </ui:CardControl.Icon>
+            <ComboBox
+                x:Name="LanguageComboBox"
+                MinWidth="220"
+                SelectionChanged="OnLanguageSelectionChanged">
+                <ComboBoxItem Content="{Binding [General.Language.FollowWindows], Source={x:Static services:Loc.Instance}}" Tag="auto" />
+                <ComboBoxItem Content="{Binding [General.Language.Indonesian], Source={x:Static services:Loc.Instance}}" Tag="id" />
+                <ComboBoxItem Content="{Binding [General.Language.English], Source={x:Static services:Loc.Instance}}" Tag="en" />
+            </ComboBox>
+        </ui:CardControl>
+
         <!-- BAGIAN 2: Personalisasi Tema Aplikasi -->
         <ui:TextBlock
             Margin="0,8,0,12"
             FontTypography="Subtitle"
-            Text="Personalisasi Tema Aplikasi" />
+            Text="{Binding [General.Section.Theme], Source={x:Static services:Loc.Instance}}" />
 
         <Grid Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
@@ -108,11 +143,11 @@
                             IsHitTestVisible="False"
                             Focusable="False" />
                     </Grid>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Ikuti Sistem" Margin="0,0,0,4" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [General.Theme.System.Title], Source={x:Static services:Loc.Instance}}" Margin="0,0,0,4" />
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
-                        Text="Menyesuaikan dengan mode terang atau gelap Windows 11 secara otomatis."
+                        Text="{Binding [General.Theme.System.Subtitle], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:Card>
@@ -136,11 +171,11 @@
                             IsHitTestVisible="False"
                             Focusable="False" />
                     </Grid>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Mode Terang (Light)" Margin="0,0,0,4" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [General.Theme.Light.Title], Source={x:Static services:Loc.Instance}}" Margin="0,0,0,4" />
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
-                        Text="Tampilan antarmuka bersih, terang, dan cerah di segala kondisi pencahayaan."
+                        Text="{Binding [General.Theme.Light.Subtitle], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:Card>
@@ -164,11 +199,11 @@
                             IsHitTestVisible="False"
                             Focusable="False" />
                     </Grid>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Mode Gelap (Dark)" Margin="0,0,0,4" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [General.Theme.Dark.Title], Source={x:Static services:Loc.Instance}}" Margin="0,0,0,4" />
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
-                        Text="Tampilan antarmuka bernuansa gelap yang elegan dan nyaman untuk mata."
+                        Text="{Binding [General.Theme.Dark.Subtitle], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:Card>
@@ -178,7 +213,7 @@
         <ui:TextBlock
             Margin="0,8,0,12"
             FontTypography="Subtitle"
-            Text="Gaya Ikon Modern (Tray &amp; App)" />
+            Text="{Binding [General.Section.Icon], Source={x:Static services:Loc.Instance}}" />
 
         <Grid Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
@@ -217,17 +252,17 @@
                             Focusable="False" />
                     </Grid>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <ui:TextBlock FontTypography="BodyStrong" Text="Fluent Glass Dual" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [General.Icon.Fluent.Title], Source={x:Static services:Loc.Instance}}" Margin="0,0,8,0" VerticalAlignment="Center" />
                         <ui:Badge
                             x:Name="BadgeIconFluent"
                             Appearance="Success"
-                            Content="Aktif"
+                            Content="{Binding [General.Badge.Active], Source={x:Static services:Loc.Instance}}"
                             VerticalAlignment="Center" />
                     </StackPanel>
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
-                        Text="Dua layar berlapis biru-sian modern dengan lencana flip emas elegan."
+                        Text="{Binding [General.Icon.Fluent.Subtitle], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:Card>
@@ -260,18 +295,18 @@
                             Focusable="False" />
                     </Grid>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <ui:TextBlock FontTypography="BodyStrong" Text="Windows 11 Accent" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [General.Icon.Accent.Title], Source={x:Static services:Loc.Instance}}" Margin="0,0,8,0" VerticalAlignment="Center" />
                         <ui:Badge
                             x:Name="BadgeIconAccent"
                             Appearance="Success"
-                            Content="Aktif"
+                            Content="{Binding [General.Badge.Active], Source={x:Static services:Loc.Instance}}"
                             VerticalAlignment="Center"
                             Visibility="Collapsed" />
                     </StackPanel>
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
-                        Text="Menyesuaikan warna aksen secara dinamis dengan tema Windows 11 Anda."
+                        Text="{Binding [General.Icon.Accent.Subtitle], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:Card>
@@ -304,18 +339,18 @@
                             Focusable="False" />
                     </Grid>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <ui:TextBlock FontTypography="BodyStrong" Text="Minimalist Precision" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [General.Icon.Minimal.Title], Source={x:Static services:Loc.Instance}}" Margin="0,0,8,0" VerticalAlignment="Center" />
                         <ui:Badge
                             x:Name="BadgeIconMinimal"
                             Appearance="Success"
-                            Content="Aktif"
+                            Content="{Binding [General.Badge.Active], Source={x:Static services:Loc.Instance}}"
                             VerticalAlignment="Center"
                             Visibility="Collapsed" />
                     </StackPanel>
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
-                        Text="Kontras tinggi monokrom tajam untuk area notifikasi taskbar yang bersih."
+                        Text="{Binding [General.Icon.Minimal.Subtitle], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:Card>
@@ -325,16 +360,16 @@
         <ui:TextBlock
             Margin="0,8,0,12"
             FontTypography="Subtitle"
-            Text="Direktori Penyimpanan" />
+            Text="{Binding [General.Section.Storage], Source={x:Static services:Loc.Instance}}" />
 
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Lokasi File Profil &amp; Konfigurasi" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [General.Storage.Title], Source={x:Static services:Loc.Instance}}" />
                     <ui:TextBlock
                         x:Name="TxtStoragePath"
                         Appearance="Secondary"
-                        Text="%APPDATA%\DisplayFlip\profiles.json"
+                        Text="%LOCALAPPDATA%\DisplayFlip\profiles.json"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:CardControl.Header>
@@ -343,7 +378,7 @@
             </ui:CardControl.Icon>
             <ui:Button
                 x:Name="BtnOpenFolder"
-                Content="Buka Folder"
+                Content="{Binding [General.Storage.OpenFolder], Source={x:Static services:Loc.Instance}}"
                 Icon="{ui:SymbolIcon Symbol=FolderOpen24}"
                 Click="OnOpenFolderClick" />
         </ui:CardControl>

@@ -9,7 +9,7 @@
 [![Platform](https://img.shields.io/badge/Windows-11%20%2F%2010%20(x64)-0078D6?style=for-the-badge&logo=windows)](https://www.microsoft.com/windows)
 [![UI](https://img.shields.io/badge/UI-WPF--UI%204.3%20Fluent-00B4D8?style=for-the-badge)](#screenshots)
 
-[Download v1.0.0](https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.0.0) • [Features](#key-features) • [Screenshots](#screenshots) • [CLI Reference](#cli-reference) • [Build from Source](#build-from-source)
+[Website](https://displayflip.snipgeek.com) • [Download v1.0.0](https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.0.0) • [Features](#key-features) • [Screenshots](#screenshots) • [CLI Reference](#cli-reference) • [Build from Source](#build-from-source)
 
 </div>
 
@@ -50,8 +50,10 @@ Download the latest binaries from the [**v1.0.0 Release Page**](https://github.c
   - Fluent context menu with Quick Swap, Identify overlay, Solo 1 / Solo 2 / Extend switching, and instant Profile selection.
 - **Global Keyboard Shortcuts:**
   - Interactive key recorder modal with canonical shortcut normalization and automatic conflict resolution across 6 global actions and per-profile hotkeys.
+- **Bilingual Interface (Indonesian & English):**
+  - Automatically defaults to **Bahasa Indonesia** on Indonesian Windows locales and **English** on all other locales (`Auto`), with live zero-restart switching under **General & Icons** (**Language**).
 - **Single-Instance Guard & CLI Automation:**
-  - Built-in mutex prevents duplicate background instances and supports scriptable CLI commands (`--swap`, `--apply`, `--solo`, `--extend`, `--list --json`).
+  - Built-in mutex prevents duplicate background instances and supports scriptable CLI commands (`--swap`, `--apply`, `--solo`, `--extend`, `--list --json`, `--lang <id|en>`).
 - **Windows 11 Fluent Design:**
   - Native **Mica** backdrop, Per-Monitor V2 DPI awareness, synchronized **Light / Dark / System** themes, and pixel-crisp multi-resolution vector icons.
 
@@ -83,6 +85,7 @@ DisplayFlip supports direct command-line automation from PowerShell, CMD, or Tas
 | `DisplayFlip.exe --clone` | `--duplicate` | Duplicate / mirror displays |
 | `DisplayFlip.exe --apply "<name>"` | `-p "<name>"` | Apply a saved layout profile (auto-wakes sleeping displays) |
 | `DisplayFlip.exe --list [--json]` | — | List all saved profiles (optionally formatted as JSON) |
+| `DisplayFlip.exe --lang <id\|en>` | `--lang=id`, `--lang=en` | Override CLI output language for a single command without altering saved settings |
 | `DisplayFlip.exe --tray` | `--minimized` | Launch quietly into the System Tray |
 | `DisplayFlip.exe --help` | `-h`, `/?` | Print CLI usage help |
 
@@ -97,7 +100,7 @@ DisplayFlip.slnx
 │   ├── DisplayFlip.Windows/     # Win32 CCD (Query/SetDisplayConfig), fallback & startup registry (net10.0-windows)
 │   ├── DisplayFlip.Wpf/         # Primary Windows 11 Fluent UI, Tray, Global Hotkeys & CLI (net10.0-windows)
 │   ├── DisplayFlip/             # Legacy WinForms UI preserved side-by-side
-│   └── DisplayFlip.Tests/       # 290 xUnit tests (topology, profiles, hotkeys, tray, canvas drag & font glyph audit)
+│   └── DisplayFlip.Tests/       # 316 xUnit tests (topology, profiles, hotkeys, tray, canvas drag, localization & font glyph audit)
 ├── docs/screenshots/            # Light & Dark UI showcase captures (including System Tray menu)
 └── publish.ps1                  # Automated single-file release build script
 ```
@@ -113,7 +116,7 @@ DisplayFlip.slnx
 git clone https://github.com/ieproject-app/DisplayFlip.git
 cd DisplayFlip
 
-# 2. Run the full test suite (290 tests)
+# 2. Run the full test suite (316 tests)
 dotnet test DisplayFlip.slnx
 
 # 3. Run the WPF app directly

@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using DisplayFlip.Core;
 using DisplayFlip.UI.Helpers;
+using DisplayFlip.UI.Services;
 
 namespace DisplayFlip.UI.Controls;
 
@@ -474,7 +475,7 @@ public sealed class MonitorCanvasControl : FrameworkElement
             {
                 var badgeTypeface = new Typeface(new FontFamily("Segoe UI Variable Text, Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
                 var badgeText = new FormattedText(
-                    "★ Utama",
+                    Loc.Instance.Get("Displays.Canvas.PrimaryBadge"),
                     CultureInfo.CurrentUICulture,
                     FlowDirection.LeftToRight,
                     badgeTypeface,
@@ -548,7 +549,7 @@ public sealed class MonitorCanvasControl : FrameworkElement
             // Footer (resolution or snap position)
             var pos = isFloating ? _dragSnappedDesktopPos : m.Position;
             string footer = isFloating
-                ? $"Snap ({pos.X},{pos.Y})"
+                ? Loc.Instance.Format("Displays.Canvas.SnapBadge", pos.X, pos.Y)
                 : $"{pos.Width} \u00D7 {pos.Height}";
 
             var footerText = new FormattedText(
@@ -574,7 +575,7 @@ public sealed class MonitorCanvasControl : FrameworkElement
         var textBrush = GetThemeBrush("TextFillColorSecondaryBrush", Brushes.Gray);
         var typeface = new Typeface(new FontFamily("Segoe UI Variable Text, Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
         var text = new FormattedText(
-            "Tidak ada monitor aktif terdeteksi.",
+            Loc.Instance.Get("Displays.Canvas.EmptyState"),
             CultureInfo.CurrentUICulture,
             FlowDirection.LeftToRight,
             typeface,

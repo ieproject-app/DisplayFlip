@@ -1,9 +1,11 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using DisplayFlip.Core;
+using DisplayFlip.Core.Localization;
 using DisplayFlip.UI.Services;
 using DisplayFlip.Windows;
 
@@ -37,6 +39,53 @@ public static class CliRunner
     }
 
     /// <summary>
+    /// Resolves effective CLI language from non-mutating `--lang <id|en>` or `--lang=<id|en>` override,
+    /// falling back to persisted ProfileStore.Language or current Windows UI culture.
+    /// </summary>
+    public static string ResolveCliLanguage(string[] args, ProfileStore? store = null, CultureInfo? uiCulture = null)
+    {
+        if (args != null)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                var arg = args[i];
+                if (string.IsNullOrWhiteSpace(arg))
+                    continue;
+
+                if (arg.StartsWith("--lang=", StringComparison.OrdinalIgnoreCase))
+                {
+                    var inlineVal = arg.Substring("--lang=".Length);
+                    var explicitLang = LocalizationCatalog.TryResolveExplicitLanguage(inlineVal);
+                    if (explicitLang != null)
+                        return explicitLang;
+                }
+                else if (arg.Equals("--lang", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    var nextVal = args[i + 1];
+                    if (!nextVal.StartsWith("-", StringComparison.Ordinal))
+                    {
+                        var explicitLang = LocalizationCatalog.TryResolveExplicitLanguage(nextVal);
+                        if (explicitLang != null)
+                            return explicitLang;
+                    }
+                }
+            }
+        }
+
+        string savedPref = LocalizationCatalog.PreferenceAuto;
+        try
+        {
+            savedPref = (store ?? new ProfileStore()).GetLanguagePreference();
+        }
+        catch
+        {
+            savedPref = LocalizationCatalog.PreferenceAuto;
+        }
+
+        return LocalizationCatalog.ResolveEffectiveLanguage(savedPref, uiCulture);
+    }
+
+    /// <summary>
     /// Menjalankan perintah CLI secara sinkron dan mengembalikan exit code.
     /// </summary>
     public static int Run(string[] args)
@@ -49,15 +98,25 @@ public static class CliRunner
             Console.SetError(stdErr);
         }
 
-        var actions = DisplayActionService.Instance;
+        return Run(args, DisplayActionService.Instance, Console.Out, Console.Error);
+    }
+
+    internal static int Run(
+        string[] args,
+        DisplayActionService actions,
+        TextWriter stdout,
+        TextWriter stderr,
+        CultureInfo? uiCulture = null)
+    {
         var store = actions.Store;
+        string lang = ResolveCliLanguage(args, store, uiCulture);
 
         try
         {
             // 1. HELP / INFORMASI PERINTAH
             if (args.Contains("--help") || args.Contains("-h") || args.Contains("/?"))
             {
-                PrintHelp();
+                stdout.WriteLine(LocalizationCatalog.Get("Cli.Help.Body", lang));
                 return 0;
             }
 
@@ -68,15 +127,15 @@ public static class CliRunner
                 if (args.Contains("--json"))
                 {
                     var json = JsonSerializer.Serialize(profiles, new JsonSerializerOptions { WriteIndented = true });
-                    Console.WriteLine(json);
+                    stdout.WriteLine(json);
                 }
                 else
                 {
-                    Console.WriteLine($"Daftar Profil Tersimpan ({profiles.Count}):");
+                    stdout.WriteLine(LocalizationCatalog.Format("Cli.List.Header", lang, profiles.Count));
                     foreach (var p in profiles)
                     {
                         string shortcut = string.IsNullOrEmpty(p.Shortcut) ? "-" : p.Shortcut;
-                        Console.WriteLine($"  • {p.Name,-24} | Pintasan: {shortcut,-12} | Monitor: {p.Monitors.Count}");
+                        stdout.WriteLine(LocalizationCatalog.Format("Cli.List.Row", lang, p.Name, shortcut, p.Monitors.Count));
                     }
                 }
                 return 0;
@@ -85,17 +144,17 @@ public static class CliRunner
             // 3. TUKAR POSISI MONITOR (MIRROR / SWAP)
             if (args.Contains("--swap") || args.Contains("--flip") || args.Contains("--mirror"))
             {
-                var task = actions.QuickSwapAsync();
+                var task = actions.QuickSwapAsync(lang);
                 task.Wait();
                 var (ok, msg) = task.Result;
                 if (ok)
                 {
-                    Console.WriteLine($"[DisplayFlip] {msg}");
+                    stdout.WriteLine($"[DisplayFlip] {msg}");
                     return 0;
                 }
                 else
                 {
-                    Console.Error.WriteLine($"[DisplayFlip ERROR] {msg}");
+                    stderr.WriteLine($"[DisplayFlip ERROR] {msg}");
                     return 4;
                 }
             }
@@ -104,7 +163,7 @@ public static class CliRunner
             if (args.Contains("--identify") || args.Contains("-i"))
             {
                 actions.IdentifyMonitors();
-                Console.WriteLine("[DisplayFlip] Menampilkan overlay nomor monitor.");
+                stdout.WriteLine(LocalizationCatalog.Get("Cli.Identify.Shown", lang));
                 return 0;
             }
 
@@ -122,31 +181,46 @@ public static class CliRunner
                     targetDisplay = 2;
                 }
 
-                var (ok, msg) = actions.TriggerSolo(targetDisplay);
+                var (ok, msg) = actions.TriggerSolo(targetDisplay, lang);
                 if (ok)
                 {
-                    Console.WriteLine($"[DisplayFlip] {msg}");
+                    stdout.WriteLine($"[DisplayFlip] {msg}");
                     return 0;
                 }
                 else
                 {
-                    Console.Error.WriteLine($"[DisplayFlip ERROR] {msg}");
+                    stderr.WriteLine($"[DisplayFlip ERROR] {msg}");
                     return 5;
                 }
             }
 
-            // 6. BENTANGKAN MONITOR (EXTEND)
+            // 6. BENTANGKAN / DUPLIKASI MONITOR (EXTEND / CLONE)
             if (args.Contains("--extend") || args.Contains("--perluas"))
             {
-                var (ok, msg) = actions.TriggerProjection("extend");
+                var (ok, msg) = actions.TriggerProjection("extend", lang);
                 if (ok)
                 {
-                    Console.WriteLine($"[DisplayFlip] {msg}");
+                    stdout.WriteLine($"[DisplayFlip] {msg}");
                     return 0;
                 }
                 else
                 {
-                    Console.Error.WriteLine($"[DisplayFlip ERROR] {msg}");
+                    stderr.WriteLine($"[DisplayFlip ERROR] {msg}");
+                    return 5;
+                }
+            }
+
+            if (args.Contains("--clone") || args.Contains("--duplicate"))
+            {
+                var (ok, msg) = actions.TriggerProjection("clone", lang);
+                if (ok)
+                {
+                    stdout.WriteLine($"[DisplayFlip] {msg}");
+                    return 0;
+                }
+                else
+                {
+                    stderr.WriteLine($"[DisplayFlip ERROR] {msg}");
                     return 5;
                 }
             }
@@ -156,44 +230,26 @@ public static class CliRunner
             if (applyIdx >= 0 && applyIdx + 1 < args.Length)
             {
                 string profileName = args[applyIdx + 1];
-                var (ok, msg) = actions.ApplyProfile(profileName);
+                var (ok, msg) = actions.ApplyProfile(profileName, lang);
                 if (ok)
                 {
-                    Console.WriteLine($"[DisplayFlip] {msg}");
+                    stdout.WriteLine($"[DisplayFlip] {msg}");
                     return 0;
                 }
                 else
                 {
-                    Console.Error.WriteLine($"[DisplayFlip ERROR] {msg}");
+                    stderr.WriteLine($"[DisplayFlip ERROR] {msg}");
                     return 5;
                 }
             }
 
-            Console.Error.WriteLine("[DisplayFlip] Perintah CLI tidak dikenali. Gunakan --help untuk melihat daftar perintah.");
+            stderr.WriteLine(LocalizationCatalog.Get("Cli.Error.UnknownCommand", lang));
             return 1;
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DisplayFlip FATAL] {ex.Message}");
+            stderr.WriteLine($"[DisplayFlip FATAL] {ex.Message}");
             return 5;
         }
-    }
-
-    private static void PrintHelp()
-    {
-        Console.WriteLine(@"DisplayFlip — Multi-Monitor Manager CLI
-Penggunaan:
-  displayflip.exe [perintah] [opsi]
-
-Perintah Utama:
-  --swap, --flip, --mirror    Tukar posisi horizontal monitor primer dan sekunder.
-  --identify, -i              Tampilkan overlay nomor layar fisik pada seluruh monitor.
-  --solo <1|2>                Aktifkan hanya Layar 1 atau Layar 2 (proyeksi tunggal).
-  --extend, --perluas         Bentangkan tampilan desktop ke seluruh layar terhubung.
-  --apply <nama>, -p <nama>   Terapkan profil konfigurasi tata letak monitor tersimpan.
-  --list [--json]             Daftar nama profil tersimpan (opsional format JSON).
-  --settings, --config        Buka jendela antarmuka pengaturan DisplayFlip.
-  --tray, --minimized         Jalankan DisplayFlip tenang di area notifikasi (system tray).
-  --help, -h                  Tampilkan bantuan ini.");
     }
 }

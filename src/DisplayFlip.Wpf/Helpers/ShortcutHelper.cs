@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using DisplayFlip.Core;
+using DisplayFlip.UI.Services;
 using Wpf.Ui.Controls;
 using WpfTextBlock = Wpf.Ui.Controls.TextBlock;
 using SystemVerticalAlignment = System.Windows.VerticalAlignment;
@@ -176,14 +177,14 @@ public static class ShortcutHelper
         if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt
             or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin or Key.None)
         {
-            errorMessage = "Tekan tombol utama (mis. A-Z, 0-9, F1-F12, dll.)";
+            errorMessage = Loc.Instance.Get("Shortcuts.Error.PrimaryKeyRequired");
             return false;
         }
 
         string? keyName = FormatWpfKey(key);
         if (string.IsNullOrEmpty(keyName))
         {
-            errorMessage = "Tombol ini tidak didukung sebagai pintasan global.";
+            errorMessage = Loc.Instance.Get("Shortcuts.Error.UnsupportedKey");
             return false;
         }
 
@@ -197,7 +198,7 @@ public static class ShortcutHelper
         // Pintasan non-fungsi harus memiliki minimal 1 modifier
         if (!ctrl && !alt && !shift && !win && !isFunctionKey)
         {
-            errorMessage = "Pintasan global memerlukan modifier (Ctrl, Alt, Shift, atau Win).";
+            errorMessage = Loc.Instance.Get("Shortcuts.Error.ModifierRequired");
             return false;
         }
 
@@ -247,6 +248,17 @@ public static class ShortcutHelper
         };
     }
 
+    private static string GetConflictLabelForGlobalAction(string keyKind) => keyKind switch
+    {
+        "mirror" => Loc.Instance.Get("Shortcuts.Global.Mirror.Title"),
+        "primary" => Loc.Instance.Get("Shortcuts.Global.Primary.Title"),
+        "identify" => Loc.Instance.Get("Shortcuts.Global.Identify.Title"),
+        "solo1" => Loc.Instance.Get("Shortcuts.Conflict.Solo1"),
+        "solo2" => Loc.Instance.Get("Shortcuts.Conflict.Solo2"),
+        "extend" => Loc.Instance.Get("Shortcuts.Conflict.Extend"),
+        _ => keyKind
+    };
+
     /// <summary>
     /// Mendeteksi apakah shortcut sudah digunakan oleh aksi global lain atau profil lain.
     /// </summary>
@@ -256,40 +268,23 @@ public static class ShortcutHelper
         if (string.IsNullOrEmpty(clean))
             return null;
 
-        if (!string.Equals(targetId, "mirror", StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(Normalize(config.MirrorShortcut), clean, StringComparison.OrdinalIgnoreCase))
-        {
-            return new ShortcutConflict("mirror", "Balik / Tukar Posisi Layar", false);
-        }
+        (string kind, string value)[] globals =
+        [
+            ("mirror", config.MirrorShortcut),
+            ("primary", config.CyclePrimaryShortcut),
+            ("identify", config.IdentifyShortcut),
+            ("solo1", config.Solo1Shortcut),
+            ("solo2", config.Solo2Shortcut),
+            ("extend", config.ExtendShortcut)
+        ];
 
-        if (!string.Equals(targetId, "primary", StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(Normalize(config.CyclePrimaryShortcut), clean, StringComparison.OrdinalIgnoreCase))
+        foreach (var (kind, value) in globals)
         {
-            return new ShortcutConflict("primary", "Siklus Layar Utama", false);
-        }
-
-        if (!string.Equals(targetId, "identify", StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(Normalize(config.IdentifyShortcut), clean, StringComparison.OrdinalIgnoreCase))
-        {
-            return new ShortcutConflict("identify", "Identifikasi Layar", false);
-        }
-
-        if (!string.Equals(targetId, "solo1", StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(Normalize(config.Solo1Shortcut), clean, StringComparison.OrdinalIgnoreCase))
-        {
-            return new ShortcutConflict("solo1", "Hanya Layar 1", false);
-        }
-
-        if (!string.Equals(targetId, "solo2", StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(Normalize(config.Solo2Shortcut), clean, StringComparison.OrdinalIgnoreCase))
-        {
-            return new ShortcutConflict("solo2", "Hanya Layar 2", false);
-        }
-
-        if (!string.Equals(targetId, "extend", StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(Normalize(config.ExtendShortcut), clean, StringComparison.OrdinalIgnoreCase))
-        {
-            return new ShortcutConflict("extend", "Perluas Multi-Layar", false);
+            if (!string.Equals(targetId, kind, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(Normalize(value), clean, StringComparison.OrdinalIgnoreCase))
+            {
+                return new ShortcutConflict(kind, GetConflictLabelForGlobalAction(kind), false);
+            }
         }
 
         foreach (var prof in config.Profiles)
@@ -298,7 +293,7 @@ public static class ShortcutHelper
             if (!string.Equals(targetId, profTargetId, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(Normalize(prof.Shortcut), clean, StringComparison.OrdinalIgnoreCase))
             {
-                return new ShortcutConflict(profTargetId, $"Profil '{prof.Name}'", true);
+                return new ShortcutConflict(profTargetId, Loc.Instance.Format("Shortcuts.Conflict.Profile", prof.Name), true);
             }
         }
 
@@ -321,28 +316,7 @@ public static class ShortcutHelper
 
         store.UpdateSettings(cfg =>
         {
-            if (!string.IsNullOrEmpty(clean))
-            {
-                if (keyKind != "mirror" && string.Equals(Normalize(cfg.MirrorShortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Balik / Tukar Posisi Layar";
-                else if (keyKind != "primary" && string.Equals(Normalize(cfg.CyclePrimaryShortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Siklus Layar Utama";
-                else if (keyKind != "identify" && string.Equals(Normalize(cfg.IdentifyShortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Identifikasi Layar";
-                else if (keyKind != "solo1" && string.Equals(Normalize(cfg.Solo1Shortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Hanya Layar 1";
-                else if (keyKind != "solo2" && string.Equals(Normalize(cfg.Solo2Shortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Hanya Layar 2";
-                else if (keyKind != "extend" && string.Equals(Normalize(cfg.ExtendShortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Perluas Multi-Layar";
-                else
-                {
-                    var conflictingProf = cfg.Profiles.FirstOrDefault(p =>
-                        string.Equals(Normalize(p.Shortcut), clean, StringComparison.OrdinalIgnoreCase));
-                    if (conflictingProf != null)
-                        freedFrom = $"Profil '{conflictingProf.Name}'";
-                }
-            }
+            freedFrom = CheckConflict(cfg, keyKind, clean)?.TargetName;
 
             string mirror = keyKind == "mirror" ? clean
                 : (!string.IsNullOrEmpty(clean) && string.Equals(Normalize(cfg.MirrorShortcut), clean, StringComparison.OrdinalIgnoreCase) ? string.Empty : cfg.MirrorShortcut);
@@ -399,28 +373,10 @@ public static class ShortcutHelper
 
         if (!string.IsNullOrEmpty(clean))
         {
+            string targetId = "profile:" + profileName;
             store.UpdateSettings(cfg =>
             {
-                if (string.Equals(Normalize(cfg.MirrorShortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Balik / Tukar Posisi Layar";
-                else if (string.Equals(Normalize(cfg.CyclePrimaryShortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Siklus Layar Utama";
-                else if (string.Equals(Normalize(cfg.IdentifyShortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Identifikasi Layar";
-                else if (string.Equals(Normalize(cfg.Solo1Shortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Hanya Layar 1";
-                else if (string.Equals(Normalize(cfg.Solo2Shortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Hanya Layar 2";
-                else if (string.Equals(Normalize(cfg.ExtendShortcut), clean, StringComparison.OrdinalIgnoreCase))
-                    freedFrom = "Perluas Multi-Layar";
-                else
-                {
-                    var other = cfg.Profiles.FirstOrDefault(p =>
-                        !string.Equals(p.Name, profileName, StringComparison.OrdinalIgnoreCase) &&
-                        string.Equals(Normalize(p.Shortcut), clean, StringComparison.OrdinalIgnoreCase));
-                    if (other != null)
-                        freedFrom = $"Profil '{other.Name}'";
-                }
+                freedFrom = CheckConflict(cfg, targetId, clean)?.TargetName;
 
                 return cfg with
                 {
@@ -455,7 +411,7 @@ public static class ShortcutHelper
         {
             var emptyBlock = new WpfTextBlock
             {
-                Text = "(Belum diatur)",
+                Text = Loc.Instance.Get("Shortcuts.Keycap.Unset"),
                 FontStyle = FontStyles.Italic,
                 VerticalAlignment = SystemVerticalAlignment.Center,
                 Margin = new Thickness(4, 0, 4, 0)
@@ -528,43 +484,43 @@ public static class ShortcutHelper
     [
         new(
             "mirror",
-            "Balik / Tukar Posisi Layar",
-            "Tukar posisi horizontal antar dua monitor secara instan (default: Ctrl+Alt+F).",
+            Loc.Instance.Get("Shortcuts.Global.Mirror.Title"),
+            Loc.Instance.Get("Shortcuts.Global.Mirror.Desc"),
             SymbolRegular.ArrowSwap24,
             config.MirrorShortcut
         ),
         new(
             "primary",
-            "Siklus Layar Utama",
-            "Pindahkan monitor utama secara bergiliran ke layar berikutnya (default: Ctrl+Alt+P).",
+            Loc.Instance.Get("Shortcuts.Global.Primary.Title"),
+            Loc.Instance.Get("Shortcuts.Global.Primary.Desc"),
             SymbolRegular.ArrowRepeatAll24,
             config.CyclePrimaryShortcut
         ),
         new(
             "identify",
-            "Identifikasi Layar",
-            "Tampilkan nomor monitor fisik besar di setiap sudut layar (default: Ctrl+Alt+I).",
+            Loc.Instance.Get("Shortcuts.Global.Identify.Title"),
+            Loc.Instance.Get("Shortcuts.Global.Identify.Desc"),
             SymbolRegular.Eye24,
             config.IdentifyShortcut
         ),
         new(
             "solo1",
-            "Hanya Layar 1 (Solo Display 1)",
-            "Hanya menampilkan layar monitor 1 (internal/utama) dan mematikan layar lainnya.",
+            Loc.Instance.Get("Shortcuts.Global.Solo1.Title"),
+            Loc.Instance.Get("Shortcuts.Global.Solo1.Desc"),
             SymbolRegular.Desktop24,
             config.Solo1Shortcut
         ),
         new(
             "solo2",
-            "Hanya Layar 2 (Solo Display 2)",
-            "Hanya menampilkan layar monitor 2 (eksternal) dan mematikan layar lainnya.",
+            Loc.Instance.Get("Shortcuts.Global.Solo2.Title"),
+            Loc.Instance.Get("Shortcuts.Global.Solo2.Desc"),
             SymbolRegular.Desktop24,
             config.Solo2Shortcut
         ),
         new(
             "extend",
-            "Perluas Multi-Layar (Extend Displays)",
-            "Mengaktifkan kembali seluruh monitor dalam mode bentangkan / perluas (Extend).",
+            Loc.Instance.Get("Shortcuts.Global.Extend.Title"),
+            Loc.Instance.Get("Shortcuts.Global.Extend.Desc"),
             SymbolRegular.FullScreenMaximize24,
             config.ExtendShortcut
         )

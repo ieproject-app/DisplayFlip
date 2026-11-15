@@ -4,7 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using DisplayFlip.Core;
+using DisplayFlip.Core.Localization;
 using DisplayFlip.UI.Helpers;
+using DisplayFlip.UI.Services;
 using Wpf.Ui.Controls;
 
 namespace DisplayFlip.UI.Views.Pages;
@@ -24,12 +26,25 @@ public partial class GeneralPage : Page
         InitializeComponent();
         LoadSettings();
         Loaded += OnPageLoaded;
+        Unloaded += OnPageUnloaded;
     }
 
     private void OnPageLoaded(object sender, RoutedEventArgs e)
     {
+        Loc.Instance.LanguageChanged -= OnLanguageChanged;
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
         PageInfoBar.IsOpen = false;
         LoadSettings();
+    }
+
+    private void OnPageUnloaded(object sender, RoutedEventArgs e)
+    {
+        Loc.Instance.LanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        UpdateEffectiveLanguageLabel();
     }
 
     private void LoadSettings()
@@ -43,26 +58,85 @@ public partial class GeneralPage : Page
             // 2. Auto-Apply Drag
             ToggleAutoApply.IsChecked = GeneralHelper.GetAutoApplyDrag(_store);
 
-            // 3. Tema Aplikasi
+            // 3. Bahasa Antarmuka
+            var langPref = _store.GetLanguagePreference();
+            SelectLanguageComboItem(langPref);
+            UpdateEffectiveLanguageLabel();
+
+            // 4. Tema Aplikasi
             var themeMode = GeneralHelper.GetCurrentThemeMode();
             UpdateThemeSelectionVisuals(themeMode);
 
-            // 4. Gaya Ikon Modern
+            // 5. Gaya Ikon Modern
             var cfg = _store.Load();
             var iconStyle = GeneralHelper.NormalizeIconStyle(cfg.IconStyle);
             UpdateIconStyleSelectionVisuals(iconStyle);
             LoadIconPreviews();
 
-            // 5. Lokasi Direktori Penyimpanan
+            // 6. Lokasi Direktori Penyimpanan
             TxtStoragePath.Text = _store.FilePath;
         }
         catch (Exception ex)
         {
-            ShowNotification(InfoBarSeverity.Error, "Kesalahan Memuat Pengaturan", ex.Message);
+            ShowNotification(InfoBarSeverity.Error, Loc.Instance.Get("General.LoadErrorTitle"), ex.Message);
         }
         finally
         {
             _isInitializing = false;
+        }
+    }
+
+    private void SelectLanguageComboItem(string pref)
+    {
+        var normalized = LocalizationCatalog.NormalizePreference(pref);
+        foreach (var item in LanguageComboBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Tag as string, normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                LanguageComboBox.SelectedItem = item;
+                return;
+            }
+        }
+    }
+
+    private void UpdateEffectiveLanguageLabel()
+    {
+        string langKey = Loc.Instance.EffectiveLanguage == LocalizationCatalog.LanguageIndonesian
+            ? "General.Language.Name.id"
+            : "General.Language.Name.en";
+        TxtEffectiveLanguage.Text = Loc.Instance.Format("General.Language.CurrentEffective", Loc.Instance.Get(langKey));
+    }
+
+    private void OnLanguageSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isInitializing)
+            return;
+
+        if (LanguageComboBox.SelectedItem is not ComboBoxItem item || item.Tag is not string rawPref)
+            return;
+
+        try
+        {
+            string normalized = LocalizationCatalog.NormalizePreference(rawPref);
+            Loc.Instance.SetPreference(normalized, persist: true, store: _store);
+            UpdateEffectiveLanguageLabel();
+
+            string langNameKey = Loc.Instance.EffectiveLanguage == LocalizationCatalog.LanguageIndonesian
+                ? "General.Language.Name.id"
+                : "General.Language.Name.en";
+            string langDisplayName = Loc.Instance.Get(langNameKey);
+            string msg = normalized == LocalizationCatalog.PreferenceAuto
+                ? Loc.Instance.Format("General.Language.ChangedAuto", langDisplayName)
+                : Loc.Instance.Format("General.Language.ChangedExplicit", langDisplayName);
+
+            ShowNotification(InfoBarSeverity.Success, Loc.Instance.Get("General.Language.InfoTitle"), msg);
+        }
+        catch (Exception ex)
+        {
+            ShowNotification(
+                InfoBarSeverity.Error,
+                Loc.Instance.Get("General.AutoApply.SaveFailedTitle"),
+                Loc.Instance.Format("General.Language.SaveError", ex.Message));
         }
     }
 
@@ -80,13 +154,13 @@ public partial class GeneralPage : Page
 
         if (ok)
         {
-            ShowNotification(InfoBarSeverity.Success, "Startup Windows Diperbarui", msg);
+            ShowNotification(InfoBarSeverity.Success, Loc.Instance.Get("General.Startup.SuccessTitle"), msg);
         }
         else
         {
             // Kembalikan switch ke kondisi sebenarnya bila gagal
             ToggleStartup.IsChecked = GeneralHelper.IsStartupEnabled();
-            ShowNotification(InfoBarSeverity.Error, "Gagal Mengubah Startup", msg);
+            ShowNotification(InfoBarSeverity.Error, Loc.Instance.Get("General.Startup.FailedTitle"), msg);
         }
     }
 
@@ -104,12 +178,12 @@ public partial class GeneralPage : Page
 
         if (ok)
         {
-            ShowNotification(InfoBarSeverity.Success, "Tata Letak Otomatis", msg);
+            ShowNotification(InfoBarSeverity.Success, Loc.Instance.Get("General.AutoApply.UpdatedTitle"), msg);
         }
         else
         {
             ToggleAutoApply.IsChecked = GeneralHelper.GetAutoApplyDrag(_store);
-            ShowNotification(InfoBarSeverity.Error, "Gagal Menyimpan Pengaturan", msg);
+            ShowNotification(InfoBarSeverity.Error, Loc.Instance.Get("General.AutoApply.SaveFailedTitle"), msg);
         }
     }
 
@@ -170,13 +244,13 @@ public partial class GeneralPage : Page
 
         if (applied)
         {
-            ShowNotification(InfoBarSeverity.Success, "Tema Aplikasi Diperbarui",
-                $"Tampilan antarmuka berhasil disesuaikan ke {modeTitle}.");
+            ShowNotification(InfoBarSeverity.Success, Loc.Instance.Get("General.Theme.UpdatedTitle"),
+                Loc.Instance.Format("General.Theme.UpdatedMsg", modeTitle));
         }
         else
         {
-            ShowNotification(InfoBarSeverity.Warning, "Tema Aplikasi",
-                $"Gagal menerapkan tema {modeTitle} secara penuh.");
+            ShowNotification(InfoBarSeverity.Warning, Loc.Instance.Get("General.Theme.FailedTitle"),
+                Loc.Instance.Format("General.Theme.FailedMsg", modeTitle));
         }
     }
 
@@ -263,11 +337,11 @@ public partial class GeneralPage : Page
         if (ok)
         {
             (Application.Current as App)?.ApplyIconStyle(normalized);
-            ShowNotification(InfoBarSeverity.Success, "Gaya Ikon Diperbarui", msg);
+            ShowNotification(InfoBarSeverity.Success, Loc.Instance.Get("General.Icon.UpdatedTitle"), msg);
         }
         else
         {
-            ShowNotification(InfoBarSeverity.Error, "Gagal Memperbarui Ikon", msg);
+            ShowNotification(InfoBarSeverity.Error, Loc.Instance.Get("General.Icon.FailedTitle"), msg);
         }
     }
 
@@ -299,11 +373,11 @@ public partial class GeneralPage : Page
         var (ok, msg) = GeneralHelper.OpenStorageFolder(_store.FilePath);
         if (ok)
         {
-            ShowNotification(InfoBarSeverity.Success, "Folder Dibuka", msg);
+            ShowNotification(InfoBarSeverity.Success, Loc.Instance.Get("General.Storage.OpenedTitle"), msg);
         }
         else
         {
-            ShowNotification(InfoBarSeverity.Error, "Gagal Membuka Folder", msg);
+            ShowNotification(InfoBarSeverity.Error, Loc.Instance.Get("General.FolderErrorTitle"), msg);
         }
     }
 

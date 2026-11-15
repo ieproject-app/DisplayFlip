@@ -4,8 +4,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:services="clr-namespace:DisplayFlip.UI.Services"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Title="Tentang &amp; CLI"
+    Title="{Binding [About.PageTitle], Source={x:Static services:Loc.Instance}}"
     d:DesignHeight="1100"
     d:DesignWidth="800"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -15,12 +16,12 @@
         <!-- Judul & Deskripsi Halaman -->
         <ui:TextBlock
             FontTypography="Title"
-            Text="Tentang &amp; CLI" />
+            Text="{Binding [About.PageTitle], Source={x:Static services:Loc.Instance}}" />
         <ui:TextBlock
             Margin="0,4,0,16"
             Appearance="Secondary"
             FontTypography="Body"
-            Text="Informasi aplikasi DisplayFlip, status runtime komponen sistem, dan dokumentasi perintah baris perintah (CLI)."
+            Text="{Binding [About.PageSubtitle], Source={x:Static services:Loc.Instance}}"
             TextWrapping="Wrap" />
 
         <!-- Status InfoBar Notifikasi -->
@@ -59,7 +60,7 @@
                             Margin="0,0,10,0" />
                         <ui:Badge
                             Appearance="Primary"
-                            Content="v2.0 (Windows 11 Fluent Edition)"
+                            Content="{Binding [About.Hero.Badge], Source={x:Static services:Loc.Instance}}"
                             VerticalAlignment="Center" />
                     </StackPanel>
 
@@ -67,7 +68,7 @@
                         Margin="0,0,0,12"
                         Appearance="Secondary"
                         FontTypography="Body"
-                        Text="Utilitas manajemen multi-layar modern untuk Windows 11 dengan performa native CCD (Connecting and Configuring Displays) API, mendukung drag-and-drop koordinat 2D presisi, manajemen profil instan, pintasan keyboard global, dan integrasi latar belakang yang senyap."
+                        Text="{Binding [About.Hero.Description], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap" />
 
                     <!-- Status Badges Runtime -->
@@ -101,12 +102,12 @@
         <ui:TextBlock
             Margin="0,8,0,4"
             FontTypography="Subtitle"
-            Text="Dokumentasi &amp; Referensi Perintah CLI" />
+            Text="{Binding [About.Section.Cli], Source={x:Static services:Loc.Instance}}" />
         <ui:TextBlock
             Margin="0,0,0,16"
             Appearance="Secondary"
             FontTypography="Body"
-            Text="Seluruh opsi perintah baris perintah (CLI) yang dapat dijalankan melalui Windows Terminal, PowerShell, Command Prompt, atau skrip automasi. Klik tombol Salin untuk menyalin perintah ke clipboard."
+            Text="{Binding [About.Section.CliDesc], Source={x:Static services:Loc.Instance}}"
             TextWrapping="Wrap" />
 
         <!-- Wadah Kartu CLI Interaktif -->
@@ -116,71 +117,94 @@
         <ui:TextBlock
             Margin="0,8,0,12"
             FontTypography="Subtitle"
-            Text="Tautan Cepat &amp; Sumber Daya" />
+            Text="{Binding [About.Section.Links], Source={x:Static services:Loc.Instance}}" />
 
         <Grid Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <!-- Card 1: Dokumentasi Proyek -->
-            <ui:Card Grid.Column="0" Padding="16">
+            <!-- Card 1: Situs Proyek DisplayFlip (displayflip.snipgeek.com) -->
+            <ui:Card Grid.Row="0" Grid.Column="0" Padding="16">
                 <StackPanel>
-                    <ui:SymbolIcon Symbol="Book24" FontSize="24" HorizontalAlignment="Left" Margin="0,0,0,10" />
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Dokumentasi Proyek" Margin="0,0,0,4" />
+                    <ui:SymbolIcon Symbol="Globe24" FontSize="24" HorizontalAlignment="Left" Margin="0,0,0,10" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [About.Links.Docs.Title], Source={x:Static services:Loc.Instance}}" Margin="0,0,0,4" />
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
-                        Text="Panduan arsitektur sistem, spesifikasi API CCD, dan repositori di browser."
+                        Text="{Binding [About.Links.Docs.Subtitle], Source={x:Static services:Loc.Instance}}"
+                        TextWrapping="Wrap"
+                        Margin="0,0,0,14" />
+                    <ui:Button
+                        x:Name="BtnWebsite"
+                        Content="{Binding [About.Links.Docs.Btn], Source={x:Static services:Loc.Instance}}"
+                        Icon="{ui:SymbolIcon Symbol=Open24}"
+                        HorizontalAlignment="Stretch"
+                        Click="OnOpenWebsiteClick" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Card 2: Repositori GitHub -->
+            <ui:Card Grid.Row="0" Grid.Column="2" Padding="16">
+                <StackPanel>
+                    <ui:SymbolIcon Symbol="Code24" FontSize="24" HorizontalAlignment="Left" Margin="0,0,0,10" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [About.Links.GitHub.Title], Source={x:Static services:Loc.Instance}}" Margin="0,0,0,4" />
+                    <ui:TextBlock
+                        Appearance="Secondary"
+                        FontTypography="Caption"
+                        Text="{Binding [About.Links.GitHub.Subtitle], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap"
                         Margin="0,0,0,14" />
                     <ui:Button
                         x:Name="BtnDocs"
-                        Content="Buka di Browser"
+                        Content="{Binding [About.Links.GitHub.Btn], Source={x:Static services:Loc.Instance}}"
                         Icon="{ui:SymbolIcon Symbol=Open24}"
                         HorizontalAlignment="Stretch"
                         Click="OnOpenDocsClick" />
                 </StackPanel>
             </ui:Card>
 
-            <!-- Card 2: Folder Instalasi Aplikasi -->
-            <ui:Card Grid.Column="2" Padding="16">
+            <!-- Card 3: Folder Instalasi Aplikasi -->
+            <ui:Card Grid.Row="2" Grid.Column="0" Padding="16">
                 <StackPanel>
                     <ui:SymbolIcon Symbol="Folder24" FontSize="24" HorizontalAlignment="Left" Margin="0,0,0,10" />
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Folder Aplikasi" Margin="0,0,0,4" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [About.Links.AppFolder.Title], Source={x:Static services:Loc.Instance}}" Margin="0,0,0,4" />
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
-                        Text="Akses langsung ke folder executable DisplayFlip dan file biner."
+                        Text="{Binding [About.Links.AppFolder.Subtitle], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap"
                         Margin="0,0,0,14" />
                     <ui:Button
                         x:Name="BtnAppFolder"
-                        Content="Buka Folder"
+                        Content="{Binding [About.Links.AppFolder.Btn], Source={x:Static services:Loc.Instance}}"
                         Icon="{ui:SymbolIcon Symbol=FolderOpen24}"
                         HorizontalAlignment="Stretch"
                         Click="OnOpenAppFolderClick" />
                 </StackPanel>
             </ui:Card>
 
-            <!-- Card 3: File Profil Konfigurasi -->
-            <ui:Card Grid.Column="4" Padding="16">
+            <!-- Card 4: File Profil Konfigurasi -->
+            <ui:Card Grid.Row="2" Grid.Column="2" Padding="16">
                 <StackPanel>
                     <ui:SymbolIcon Symbol="Document24" FontSize="24" HorizontalAlignment="Left" Margin="0,0,0,10" />
-                    <ui:TextBlock FontTypography="BodyStrong" Text="File Konfigurasi" Margin="0,0,0,4" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [About.Links.ConfigFolder.Title], Source={x:Static services:Loc.Instance}}" Margin="0,0,0,4" />
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
-                        Text="Buka lokasi penyimpanan profil JSON di AppData pengguna."
+                        Text="{Binding [About.Links.ConfigFolder.Subtitle], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap"
                         Margin="0,0,0,14" />
                     <ui:Button
                         x:Name="BtnConfigFile"
-                        Content="Buka Folder Profil"
+                        Content="{Binding [About.Links.ConfigFolder.Btn], Source={x:Static services:Loc.Instance}}"
                         Icon="{ui:SymbolIcon Symbol=FolderOpen24}"
                         HorizontalAlignment="Stretch"
                         Click="OnOpenConfigFileClick" />

@@ -76,7 +76,7 @@ public sealed class CliParityTests
         DisplayFlip.Windows.ProjectionDispatcher.SetDisplayConfigHook = flags => DisplayFlip.Windows.NativeMethods.ERROR_SUCCESS;
         try
         {
-            var (ok, msg) = DisplayFlip.Windows.ProjectionDispatcher.Dispatch(modeSwitch);
+            var (ok, msg) = DisplayFlip.Windows.ProjectionDispatcher.Dispatch(modeSwitch, "id");
             ok.Should().BeTrue();
             msg.Should().Contain(expectedSubstring);
         }
@@ -92,15 +92,15 @@ public sealed class CliParityTests
         DisplayFlip.Windows.ProjectionDispatcher.SetDisplayConfigHook = flags => DisplayFlip.Windows.NativeMethods.ERROR_SUCCESS;
         try
         {
-            var (ok1, msg1) = DisplayFlip.Windows.ProjectionDispatcher.TriggerSolo(1);
+            var (ok1, msg1) = DisplayFlip.Windows.ProjectionDispatcher.TriggerSolo(1, "id");
             ok1.Should().BeTrue();
             msg1.Should().Contain("Hanya Layar 1");
 
-            var (ok2, msg2) = DisplayFlip.Windows.ProjectionDispatcher.TriggerSolo(2);
+            var (ok2, msg2) = DisplayFlip.Windows.ProjectionDispatcher.TriggerSolo(2, "id");
             ok2.Should().BeTrue();
             msg2.Should().Contain("Hanya Layar 2");
 
-            var (ok3, msg3) = DisplayFlip.Windows.ProjectionDispatcher.TriggerSolo(3);
+            var (ok3, msg3) = DisplayFlip.Windows.ProjectionDispatcher.TriggerSolo(3, "id");
             ok3.Should().BeFalse();
             msg3.Should().Contain("Hanya Layar 1 dan Layar 2 yang didukung");
         }
@@ -153,7 +153,7 @@ public sealed class CliParityTests
 
         try
         {
-            var (ok, msg) = DisplayFlip.Windows.ProjectionDispatcher.Dispatch("mode-tidak-ada");
+            var (ok, msg) = DisplayFlip.Windows.ProjectionDispatcher.Dispatch("mode-tidak-ada", "id");
             ok.Should().BeFalse();
             msg.Should().Contain("tidak dikenal");
             directCalled.Should().BeFalse();

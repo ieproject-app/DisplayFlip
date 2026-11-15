@@ -4,9 +4,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:services="clr-namespace:DisplayFlip.UI.Services"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:controls="clr-namespace:DisplayFlip.UI.Controls"
-    Title="Layar &amp; Profil"
+    Title="{Binding [Displays.PageTitle], Source={x:Static services:Loc.Instance}}"
     d:DesignHeight="1000"
     d:DesignWidth="850"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -16,12 +17,12 @@
         <!-- Judul Halaman & Deskripsi -->
         <ui:TextBlock
             FontTypography="Title"
-            Text="Layar &amp; Profil" />
+            Text="{Binding [Displays.PageTitle], Source={x:Static services:Loc.Instance}}" />
         <ui:TextBlock
             Margin="0,4,0,16"
             Appearance="Secondary"
             FontTypography="Body"
-            Text="Atur susunan posisi monitor, orientasi, resolusi, dan simpan profil tata letak multi-layar." />
+            Text="{Binding [Displays.PageSubtitle], Source={x:Static services:Loc.Instance}}" />
 
         <!-- Status InfoBar Notifikasi -->
         <ui:InfoBar
@@ -34,18 +35,18 @@
         <ui:TextBlock
             Margin="0,4,0,12"
             FontTypography="Subtitle"
-            Text="Tata Letak Monitor" />
+            Text="{Binding [Displays.Section.Layout], Source={x:Static services:Loc.Instance}}" />
 
         <ui:Card Padding="16" Margin="0,0,0,16">
             <StackPanel>
                 <!-- Info Header Kanvas -->
                 <StackPanel Margin="0,0,0,12">
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Kanvas Multi-Monitor 2D" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Displays.Canvas.CardTitle], Source={x:Static services:Loc.Instance}}" />
                     <ui:TextBlock
                         x:Name="CanvasSubtitleText"
                         Margin="0,2,0,0"
                         Appearance="Secondary"
-                        Text="Klik monitor untuk konfigurasi atau geser kotak monitor untuk mengatur susunan koordinat."
+                        Text="{Binding [Displays.Canvas.DefaultSubtitle], Source={x:Static services:Loc.Instance}}"
                         TextWrapping="Wrap" />
                 </StackPanel>
 
@@ -67,7 +68,7 @@
                         <ui:Button
                             x:Name="BtnIdentify"
                             Appearance="Secondary"
-                            Content="Identifikasi Layar"
+                            Content="{Binding [Displays.Toolbar.Identify], Source={x:Static services:Loc.Instance}}"
                             Click="OnIdentifyClicked"
                             Margin="0,4,16,4">
                             <ui:Button.Icon>
@@ -77,7 +78,7 @@
 
                         <ui:ToggleSwitch
                             x:Name="ToggleSnap"
-                            Content="Rapatkan ke Tepi (Snap)"
+                            Content="{Binding [Displays.Toolbar.Snap], Source={x:Static services:Loc.Instance}}"
                             IsChecked="True"
                             Margin="0,4,16,4"
                             Checked="OnSnapToggled"
@@ -85,7 +86,7 @@
 
                         <ui:ToggleSwitch
                             x:Name="ToggleMonitorNames"
-                            Content="Nama Monitor"
+                            Content="{Binding [Displays.Toolbar.MonitorNames], Source={x:Static services:Loc.Instance}}"
                             IsChecked="True"
                             Margin="0,4,0,4"
                             Checked="OnMonitorNamesToggled"
@@ -97,7 +98,7 @@
                         <ui:Button
                             x:Name="BtnReset"
                             Appearance="Secondary"
-                            Content="Reset Tata Letak"
+                            Content="{Binding [Displays.Toolbar.Reset], Source={x:Static services:Loc.Instance}}"
                             IsEnabled="False"
                             Click="OnResetClicked"
                             Margin="0,0,8,0">
@@ -109,7 +110,7 @@
                         <ui:Button
                             x:Name="BtnApply"
                             Appearance="Primary"
-                            Content="Terapkan Perubahan"
+                            Content="{Binding [Displays.Toolbar.Apply], Source={x:Static services:Loc.Instance}}"
                             IsEnabled="False"
                             Click="OnApplyClicked">
                             <ui:Button.Icon>
@@ -125,14 +126,14 @@
         <ui:TextBlock
             Margin="0,8,0,12"
             FontTypography="Subtitle"
-            Text="Konfigurasi Monitor Terpilih" />
+            Text="{Binding [Displays.Section.Selected], Source={x:Static services:Loc.Instance}}" />
 
         <!-- Card: Identitas & Aksi Cepat Monitor Terpilih -->
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock x:Name="SelectedMonitorTitle" FontTypography="BodyStrong" Text="Pilih sebuah monitor di kanvas" />
-                    <ui:TextBlock x:Name="SelectedMonitorSubtitle" Appearance="Secondary" Text="Klik kotak nomor monitor di kanvas atas untuk mengatur properti layar." />
+                    <ui:TextBlock x:Name="SelectedMonitorTitle" FontTypography="BodyStrong" Text="{Binding [Displays.Inspector.NoSelection], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock x:Name="SelectedMonitorSubtitle" Appearance="Secondary" Text="{Binding [Displays.Inspector.NoSelectionSubtitle], Source={x:Static services:Loc.Instance}}" />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
@@ -141,7 +142,7 @@
             <StackPanel Orientation="Horizontal">
                 <ui:Button
                     x:Name="BtnSetPrimary"
-                    Content="Jadikan Layar Utama"
+                    Content="{Binding [Displays.Inspector.SetPrimary], Source={x:Static services:Loc.Instance}}"
                     IsEnabled="False"
                     Click="OnSetPrimaryClicked"
                     Margin="0,0,8,0">
@@ -151,7 +152,7 @@
                 </ui:Button>
                 <ui:Button
                     x:Name="BtnSoloDisplay"
-                    Content="Hanya Layar Ini (Solo)"
+                    Content="{Binding [Displays.Inspector.SoloDefault], Source={x:Static services:Loc.Instance}}"
                     IsEnabled="False"
                     Click="OnSoloDisplayClicked">
                     <ui:Button.Icon>
@@ -165,8 +166,8 @@
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Orientasi Tampilan" />
-                    <ui:TextBlock Appearance="Secondary" Text="Pilih orientasi layar lanskap atau potret untuk monitor yang dipilih." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Displays.Inspector.Orientation.Title], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock Appearance="Secondary" Text="{Binding [Displays.Inspector.Orientation.Desc], Source={x:Static services:Loc.Instance}}" />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
@@ -177,10 +178,10 @@
                 Width="190"
                 IsEnabled="False"
                 SelectionChanged="OnOrientationSelectionChanged">
-                <ComboBoxItem Content="Lanskap" Tag="Landscape" />
-                <ComboBoxItem Content="Potret" Tag="Portrait" />
-                <ComboBoxItem Content="Lanskap Dibalik" Tag="Rotated" />
-                <ComboBoxItem Content="Potret Dibalik" Tag="Unhandled" />
+                <ComboBoxItem Content="{Binding [Displays.Inspector.Orientation.Landscape], Source={x:Static services:Loc.Instance}}" Tag="Landscape" />
+                <ComboBoxItem Content="{Binding [Displays.Inspector.Orientation.Portrait], Source={x:Static services:Loc.Instance}}" Tag="Portrait" />
+                <ComboBoxItem Content="{Binding [Displays.Inspector.Orientation.LandscapeFlipped], Source={x:Static services:Loc.Instance}}" Tag="Rotated" />
+                <ComboBoxItem Content="{Binding [Displays.Inspector.Orientation.PortraitFlipped], Source={x:Static services:Loc.Instance}}" Tag="Unhandled" />
             </ComboBox>
         </ui:CardControl>
 
@@ -188,8 +189,8 @@
         <ui:CardControl Margin="0,0,0,16">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Resolusi Layar" />
-                    <ui:TextBlock Appearance="Secondary" Text="Pilih resolusi piksel tampilan yang didukung oleh monitor yang dipilih." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Displays.Inspector.Resolution.Title], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock Appearance="Secondary" Text="{Binding [Displays.Inspector.Resolution.Desc], Source={x:Static services:Loc.Instance}}" />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
@@ -212,12 +213,12 @@
                 Grid.Column="0"
                 VerticalAlignment="Center"
                 FontTypography="Subtitle"
-                Text="Profil Tata Letak Tersimpan" />
+                Text="{Binding [Displays.Profiles.Title], Source={x:Static services:Loc.Instance}}" />
             <ui:Button
                 x:Name="BtnSaveNewProfile"
                 Grid.Column="1"
                 Appearance="Primary"
-                Content="+ Simpan Profil Baru"
+                Content="{Binding [Displays.Profiles.SaveNew], Source={x:Static services:Loc.Instance}}"
                 Click="OnSaveNewProfileClicked">
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="Add24" />
@@ -230,8 +231,8 @@
             <ui:CardControl x:Name="EmptyProfilesCard" Margin="0,0,0,12">
                 <ui:CardControl.Header>
                     <StackPanel>
-                        <ui:TextBlock FontTypography="BodyStrong" Text="Belum ada profil tersimpan" />
-                        <ui:TextBlock Appearance="Secondary" Text="Simpan susunan multi-layar saat ini dengan mengklik '+ Simpan Profil Baru'." />
+                        <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Displays.Profiles.EmptyTitle], Source={x:Static services:Loc.Instance}}" />
+                        <ui:TextBlock Appearance="Secondary" Text="{Binding [Displays.Profiles.EmptySubtitle], Source={x:Static services:Loc.Instance}}" />
                     </StackPanel>
                 </ui:CardControl.Header>
                 <ui:CardControl.Icon>

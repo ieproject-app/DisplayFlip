@@ -21,13 +21,28 @@ public partial class ShortcutsPage : Page
     {
         InitializeComponent();
         Loaded += OnPageLoaded;
+        Unloaded += OnPageUnloaded;
     }
 
     private void OnPageLoaded(object sender, RoutedEventArgs e)
     {
+        Loc.Instance.LanguageChanged -= OnLanguageChanged;
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
         PageInfoBar.IsOpen = false;
         RefreshShortcutsData();
         GlobalHotkeyManager.Instance.ReloadHotkeys();
+    }
+
+    private void OnPageUnloaded(object sender, RoutedEventArgs e)
+    {
+        Loc.Instance.LanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        if (!IsLoaded)
+            return;
+        RefreshShortcutsData();
     }
 
     private void RefreshShortcutsData()
@@ -65,14 +80,14 @@ public partial class ShortcutsPage : Page
                 headerPanel.Children.Add(new WpfTextBlock
                 {
                     FontTypography = FontTypography.BodyStrong,
-                    Text = $"Profil: {prof.Name}"
+                    Text = Loc.Instance.Format("Shortcuts.Profile.CardTitle", prof.Name)
                 });
 
                 string cleanPrimary = DisplayHelper.CleanDeviceName(prof.PrimaryStableKey);
                 headerPanel.Children.Add(new WpfTextBlock
                 {
                     Appearance = TextColor.Secondary,
-                    Text = $"{prof.Monitors.Count} monitor • Layar Utama: {cleanPrimary}"
+                    Text = Loc.Instance.Format("Shortcuts.Profile.CardMeta", prof.Monitors.Count, cleanPrimary)
                 });
 
                 card.Header = headerPanel;
@@ -109,16 +124,16 @@ public partial class ShortcutsPage : Page
             });
             stack.Children.Add(new WpfTextBlock
             {
-                Text = "+ Pintasan",
+                Text = Loc.Instance.Get("Shortcuts.Button.Add"),
                 VerticalAlignment = SystemVerticalAlignment.Center
             });
             btn.Content = stack;
-            btn.ToolTip = "Klik untuk mengatur kombinasi tombol pintas";
+            btn.ToolTip = Loc.Instance.Get("Shortcuts.Button.AddToolTip");
         }
         else
         {
             btn.Content = ShortcutHelper.CreateKeycapsBadge(shortcut);
-            btn.ToolTip = $"Pintasan aktif: {shortcut}. Klik untuk mengubah atau menghapus.";
+            btn.ToolTip = Loc.Instance.Format("Shortcuts.Button.ActiveToolTip", shortcut);
         }
     }
 
@@ -145,7 +160,7 @@ public partial class ShortcutsPage : Page
         if (prof == null)
             return;
 
-        await OpenShortcutRecorderDialogAsync(targetId, $"Profil: {prof.Name}", prof.Shortcut);
+        await OpenShortcutRecorderDialogAsync(targetId, Loc.Instance.Format("Shortcuts.Profile.CardTitle", prof.Name), prof.Shortcut);
     }
 
     private async Task OpenShortcutRecorderDialogAsync(string targetId, string targetTitle, string currentShortcut)
@@ -154,7 +169,10 @@ public partial class ShortcutsPage : Page
         var host = win != null ? ContentDialogHost.GetForWindow(win) : null;
         if (host == null)
         {
-            ShowInfoBar("Error Dialog", "Tidak dapat membuka modal dialog pintasan.", InfoBarSeverity.Error);
+            ShowInfoBar(
+                Loc.Instance.Get("Shortcuts.Dialog.ErrorTitle"),
+                Loc.Instance.Get("Shortcuts.Dialog.OpenError"),
+                InfoBarSeverity.Error);
             return;
         }
 
@@ -166,7 +184,7 @@ public partial class ShortcutsPage : Page
 
         var subTitle = new WpfTextBlock
         {
-            Text = $"Target: {targetTitle}\nTekan kombinasi tombol pada keyboard Anda (misal Ctrl+Alt+F atau F9):",
+            Text = Loc.Instance.Format("Shortcuts.Dialog.Instructions", targetTitle),
             Appearance = TextColor.Secondary,
             Margin = new Thickness(0, 0, 0, 16),
             TextWrapping = TextWrapping.Wrap
@@ -214,7 +232,7 @@ public partial class ShortcutsPage : Page
 
         var presetsHeader = new WpfTextBlock
         {
-            Text = "Preset Cepat:",
+            Text = Loc.Instance.Get("Shortcuts.Dialog.PresetsHeader"),
             FontTypography = FontTypography.Caption,
             Appearance = TextColor.Secondary,
             Margin = new Thickness(0, 0, 0, 6)
@@ -226,11 +244,11 @@ public partial class ShortcutsPage : Page
 
         var dialog = new ContentDialog(host)
         {
-            Title = "Atur Pintasan Keyboard",
+            Title = Loc.Instance.Get("Shortcuts.Dialog.Title"),
             Content = rootPanel,
-            PrimaryButtonText = "Simpan Pintasan",
-            SecondaryButtonText = "Hapus Pintasan",
-            CloseButtonText = "Batal",
+            PrimaryButtonText = Loc.Instance.Get("Shortcuts.Dialog.SaveBtn"),
+            SecondaryButtonText = Loc.Instance.Get("Shortcuts.Dialog.RemoveBtn"),
+            CloseButtonText = Loc.Instance.Get("Shortcuts.Dialog.CancelBtn"),
             DefaultButton = ContentDialogButton.Primary
         };
         foreach (var preset in commonPresets)
@@ -254,7 +272,7 @@ public partial class ShortcutsPage : Page
 
         var clearBtn = new WpfButton
         {
-            Content = "Kosongkan",
+            Content = Loc.Instance.Get("Shortcuts.Dialog.ClearPreset"),
             Appearance = ControlAppearance.Secondary,
             Margin = new Thickness(0, 0, 8, 8),
             Padding = new Thickness(8, 4, 8, 4)
@@ -277,7 +295,7 @@ public partial class ShortcutsPage : Page
             {
                 var placeholder = new WpfTextBlock
                 {
-                    Text = "(Kosong — Tekan kombinasi tombol...)",
+                    Text = Loc.Instance.Get("Shortcuts.Dialog.EmptyRecorder"),
                     FontStyle = FontStyles.Italic,
                     VerticalAlignment = SystemVerticalAlignment.Center
                 };
@@ -294,8 +312,8 @@ public partial class ShortcutsPage : Page
                 var conflict = ShortcutHelper.CheckConflict(cfg, targetId, recordedShortcut);
                 if (conflict != null)
                 {
-                    conflictInfoBar.Title = "Pintasan Sudah Digunakan";
-                    conflictInfoBar.Message = $"Pintasan '{recordedShortcut}' saat ini digunakan oleh {conflict.TargetName}. Jika disimpan, pintasan pemegang sebelumnya akan otomatis dilepaskan.";
+                    conflictInfoBar.Title = Loc.Instance.Get("Shortcuts.Dialog.ConflictTitle");
+                    conflictInfoBar.Message = Loc.Instance.Format("Shortcuts.Dialog.ConflictMsg", recordedShortcut, conflict.TargetName);
                     conflictInfoBar.IsOpen = true;
                 }
                 else
@@ -423,7 +441,10 @@ public partial class ShortcutsPage : Page
 
         if (!changed)
         {
-            ShowInfoBar("Gagal Menyimpan", $"Tidak dapat memperbarui pintasan untuk '{targetTitle}'.", InfoBarSeverity.Error);
+            ShowInfoBar(
+                Loc.Instance.Get("Shortcuts.Info.SaveFailedTitle"),
+                Loc.Instance.Format("Shortcuts.Info.SaveFailedMsg", targetTitle),
+                InfoBarSeverity.Error);
             return;
         }
 
@@ -431,15 +452,15 @@ public partial class ShortcutsPage : Page
         GlobalHotkeyManager.Instance.ReloadHotkeys();
 
         string msg = string.IsNullOrEmpty(shortcut)
-            ? $"Pintasan untuk '{targetTitle}' berhasil dikosongkan."
-            : $"Pintasan '{shortcut}' berhasil disimpan untuk '{targetTitle}'.";
+            ? Loc.Instance.Format("Shortcuts.Info.ClearedMsg", targetTitle)
+            : Loc.Instance.Format("Shortcuts.Info.SavedMsg", shortcut, targetTitle);
 
         if (!string.IsNullOrEmpty(freedFrom))
         {
-            msg += $" (Pintasan otomatis dilepaskan dari {freedFrom}).";
+            msg += Loc.Instance.Format("Shortcuts.Info.FreedSuffix", freedFrom);
         }
 
-        ShowInfoBar("Pintasan Diperbarui", msg, InfoBarSeverity.Success);
+        ShowInfoBar(Loc.Instance.Get("Shortcuts.Info.UpdatedTitle"), msg, InfoBarSeverity.Success);
     }
 
     private void ShowInfoBar(string title, string message, InfoBarSeverity severity)

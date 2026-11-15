@@ -7,6 +7,7 @@ using System.Resources;
 using System.Text.RegularExpressions;
 using System.Windows.Media;
 using DisplayFlip.Core;
+using DisplayFlip.Core.Localization;
 using DisplayFlip.UI.Services;
 using FluentAssertions;
 using Wpf.Ui.Controls;
@@ -14,8 +15,18 @@ using Xunit;
 
 namespace DisplayFlip.Tests;
 
-public sealed class WpfProfileAndIconAuditTests
+[Collection("Localization")]
+public sealed class WpfProfileAndIconAuditTests : IDisposable
 {
+    public WpfProfileAndIconAuditTests()
+    {
+        Loc.Instance.SetPreference(LocalizationCatalog.LanguageIndonesian, persist: false);
+    }
+
+    public void Dispose()
+    {
+        Loc.Instance.SetPreference(LocalizationCatalog.PreferenceAuto, persist: false);
+    }
     private static DisplayMonitor MakeMonitor(string key, int x = 0, int y = 0, int w = 1920, int h = 1080) =>
         new(
             StableKey: key,

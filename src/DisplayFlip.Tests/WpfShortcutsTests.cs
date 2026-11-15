@@ -1,7 +1,9 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using DisplayFlip.Core;
+using DisplayFlip.Core.Localization;
 using DisplayFlip.UI.Helpers;
+using DisplayFlip.UI.Services;
 using FluentAssertions;
 using Xunit;
 using CoreOrientation = DisplayFlip.Core.Orientation;
@@ -9,8 +11,18 @@ using WpfTextBlock = Wpf.Ui.Controls.TextBlock;
 
 namespace DisplayFlip.Tests;
 
-public class WpfShortcutsTests
+[Collection("Localization")]
+public class WpfShortcutsTests : IDisposable
 {
+    public WpfShortcutsTests()
+    {
+        Loc.Instance.SetPreference(LocalizationCatalog.LanguageIndonesian, persist: false);
+    }
+
+    public void Dispose()
+    {
+        Loc.Instance.SetPreference(LocalizationCatalog.PreferenceAuto, persist: false);
+    }
     private static (ProfileStore store, string path) CreateTempStore()
     {
         var path = Path.Combine(Path.GetTempPath(), $"df_test_shortcuts_{Guid.NewGuid():N}.json");

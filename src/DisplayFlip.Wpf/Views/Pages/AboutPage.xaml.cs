@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using DisplayFlip.Core;
 using DisplayFlip.UI.Helpers;
+using DisplayFlip.UI.Services;
 using Wpf.Ui.Controls;
 using WpfButton = Wpf.Ui.Controls.Button;
 using WpfTextBlock = Wpf.Ui.Controls.TextBlock;
@@ -17,6 +18,9 @@ namespace DisplayFlip.UI.Views.Pages;
 
 public partial class AboutPage : Page
 {
+    public const string WebsiteUrl = "https://displayflip.snipgeek.com";
+    public const string GitHubUrl = "https://github.com/ieproject-app/DisplayFlip";
+
     private readonly ProfileStore _store;
 
     public AboutPage() : this(new ProfileStore())
@@ -30,12 +34,27 @@ public partial class AboutPage : Page
         UpdateLogo(_store.Load().IconStyle);
         PopulateCliCommands();
         Loaded += OnPageLoaded;
+        Unloaded += OnPageUnloaded;
     }
 
     private void OnPageLoaded(object sender, RoutedEventArgs e)
     {
+        Loc.Instance.LanguageChanged -= OnLanguageChanged;
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
         PageInfoBar.IsOpen = false;
         UpdateLogo(_store.Load().IconStyle);
+        PopulateCliCommands();
+    }
+
+    private void OnPageUnloaded(object sender, RoutedEventArgs e)
+    {
+        Loc.Instance.LanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        if (!IsLoaded)
+            return;
         PopulateCliCommands();
     }
 
@@ -161,7 +180,7 @@ public partial class AboutPage : Page
         // Copy Button on the right
         var copyBtn = new WpfButton
         {
-            Content = "Salin",
+            Content = Loc.Instance.Get("About.Button.Copy"),
             Icon = new SymbolIcon { Symbol = SymbolRegular.Copy24 },
             Appearance = ControlAppearance.Secondary,
             VerticalAlignment = SystemVerticalAlignment.Center,
@@ -184,24 +203,26 @@ public partial class AboutPage : Page
         if (ok)
         {
             btn.IsEnabled = false;
-            btn.Content = "Disalin!";
+            btn.Content = Loc.Instance.Get("About.Button.Copied");
             btn.Icon = new SymbolIcon { Symbol = SymbolRegular.Checkmark24 };
             btn.Appearance = ControlAppearance.Primary;
 
-            ShowNotification(InfoBarSeverity.Success, "Perintah Disalin ke Clipboard",
-                $"Perintah '{cmd.Syntax}' telah disalin dan siap dijalankan.");
+            ShowNotification(InfoBarSeverity.Success,
+                Loc.Instance.Get("About.Info.CopiedTitle"),
+                Loc.Instance.Format("About.Info.CopiedMsg", cmd.Syntax));
 
             await Task.Delay(1800);
 
-            btn.Content = "Salin";
+            btn.Content = Loc.Instance.Get("About.Button.Copy");
             btn.Icon = new SymbolIcon { Symbol = SymbolRegular.Copy24 };
             btn.Appearance = ControlAppearance.Secondary;
             btn.IsEnabled = true;
         }
         else
         {
-            ShowNotification(InfoBarSeverity.Error, "Gagal Menyalin",
-                "Akses clipboard Windows sedang terkunci oleh aplikasi lain.");
+            ShowNotification(InfoBarSeverity.Error,
+                Loc.Instance.Get("About.Info.CopyFailedTitle"),
+                Loc.Instance.Get("About.Info.CopyFailedMsg"));
         }
     }
 
@@ -213,6 +234,7 @@ public partial class AboutPage : Page
         "--extend" => SymbolRegular.FullScreenMaximize24,
         "--apply <profile>" => SymbolRegular.Play24,
         "--list" => SymbolRegular.DocumentBulletList24,
+        "--lang <id|en>" => SymbolRegular.Globe24,
         "--settings" => SymbolRegular.Settings24,
         "--tray" => SymbolRegular.Navigation24,
         _ => SymbolRegular.Code24
@@ -222,18 +244,33 @@ public partial class AboutPage : Page
     // TAUTAN CEPAT & SUMBER DAYA
     // =========================================================================
 
-    public void OnOpenDocsClick(object sender, RoutedEventArgs e)
+    public void OnOpenWebsiteClick(object sender, RoutedEventArgs e)
     {
-        const string docsUrl = "https://github.com/akses/multi-monitor";
-        var (ok, msg) = GeneralHelper.OpenUrl(docsUrl);
+        var (ok, msg) = GeneralHelper.OpenUrl(WebsiteUrl);
         if (ok)
         {
-            ShowNotification(InfoBarSeverity.Success, "Membuka Browser",
-                $"Membuka repositori dan dokumentasi proyek di browser: {docsUrl}");
+            ShowNotification(InfoBarSeverity.Success,
+                Loc.Instance.Get("About.Info.OpeningBrowserTitle"),
+                Loc.Instance.Format("About.Info.OpeningWebsiteMsg", WebsiteUrl));
         }
         else
         {
-            ShowNotification(InfoBarSeverity.Warning, "Tautan Dokumentasi", msg);
+            ShowNotification(InfoBarSeverity.Warning, Loc.Instance.Get("About.Info.WebsiteLinkWarnTitle"), msg);
+        }
+    }
+
+    public void OnOpenDocsClick(object sender, RoutedEventArgs e)
+    {
+        var (ok, msg) = GeneralHelper.OpenUrl(GitHubUrl);
+        if (ok)
+        {
+            ShowNotification(InfoBarSeverity.Success,
+                Loc.Instance.Get("About.Info.OpeningBrowserTitle"),
+                Loc.Instance.Format("About.Info.OpeningGitHubMsg", GitHubUrl));
+        }
+        else
+        {
+            ShowNotification(InfoBarSeverity.Warning, Loc.Instance.Get("About.Info.GitHubLinkWarnTitle"), msg);
         }
     }
 
@@ -242,11 +279,11 @@ public partial class AboutPage : Page
         var (ok, msg) = GeneralHelper.OpenAppFolder();
         if (ok)
         {
-            ShowNotification(InfoBarSeverity.Success, "Folder Aplikasi Dibuka", msg);
+            ShowNotification(InfoBarSeverity.Success, Loc.Instance.Get("About.Info.AppFolderOpenedTitle"), msg);
         }
         else
         {
-            ShowNotification(InfoBarSeverity.Error, "Gagal Membuka Folder", msg);
+            ShowNotification(InfoBarSeverity.Error, Loc.Instance.Get("General.FolderErrorTitle"), msg);
         }
     }
 
@@ -255,11 +292,11 @@ public partial class AboutPage : Page
         var (ok, msg) = GeneralHelper.OpenStorageFolder(_store.FilePath);
         if (ok)
         {
-            ShowNotification(InfoBarSeverity.Success, "Folder Profil Dibuka", msg);
+            ShowNotification(InfoBarSeverity.Success, Loc.Instance.Get("About.Info.ConfigFolderOpenedTitle"), msg);
         }
         else
         {
-            ShowNotification(InfoBarSeverity.Error, "Gagal Membuka Folder", msg);
+            ShowNotification(InfoBarSeverity.Error, Loc.Instance.Get("General.FolderErrorTitle"), msg);
         }
     }
 

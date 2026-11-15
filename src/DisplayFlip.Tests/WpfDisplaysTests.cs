@@ -1,10 +1,13 @@
 using DisplayFlip.Core;
+using DisplayFlip.Core.Localization;
 using DisplayFlip.UI.Helpers;
+using DisplayFlip.UI.Services;
 using FluentAssertions;
 using Xunit;
 
 namespace DisplayFlip.Tests;
 
+[Collection("Localization")]
 public class WpfDisplaysTests
 {
     [Theory]
@@ -32,8 +35,20 @@ public class WpfDisplaysTests
     [Fact]
     public void DisplayHelper_GetShortDisplayName_ShouldFormatProperly()
     {
-        var name = DisplayHelper.GetShortDisplayName(@"\\.\DISPLAY2", @"\\.\DISPLAY2|MON", 2);
-        name.Should().Be("Layar 2 (DISPLAY2)");
+        Loc.Instance.SetPreference(LocalizationCatalog.LanguageIndonesian, persist: false);
+        try
+        {
+            var nameId = DisplayHelper.GetShortDisplayName(@"\\.\DISPLAY2", @"\\.\DISPLAY2|MON", 2);
+            nameId.Should().Be("Layar 2 (DISPLAY2)");
+
+            Loc.Instance.SetPreference(LocalizationCatalog.LanguageEnglish, persist: false);
+            var nameEn = DisplayHelper.GetShortDisplayName(@"\\.\DISPLAY2", @"\\.\DISPLAY2|MON", 2);
+            nameEn.Should().Be("Display 2 (DISPLAY2)");
+        }
+        finally
+        {
+            Loc.Instance.SetPreference(LocalizationCatalog.PreferenceAuto, persist: false);
+        }
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using DisplayFlip.Core;
+using DisplayFlip.UI.Services;
 
 namespace DisplayFlip.UI.Helpers;
 
@@ -102,7 +103,7 @@ public static class DisplayHelper
     public static string CleanDeviceName(string? friendlyName)
     {
         if (string.IsNullOrWhiteSpace(friendlyName))
-            return "Monitor";
+            return Loc.Instance.Get("DisplayHelper.FallbackMonitor");
 
         string name = friendlyName.Trim();
         if (name.StartsWith(@"\\.\", StringComparison.Ordinal))
@@ -115,7 +116,7 @@ public static class DisplayHelper
     {
         string num = ExtractDisplayNumber(stableKey, friendlyName, index);
         string clean = CleanDeviceName(friendlyName);
-        return $"Layar {num} ({clean})";
+        return Loc.Instance.Format("DisplayHelper.ShortName", num, clean);
     }
 
     /// <summary>

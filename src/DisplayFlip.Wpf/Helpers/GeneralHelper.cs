@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using DisplayFlip.Core;
+using DisplayFlip.UI.Services;
 using DisplayFlip.Windows;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
@@ -40,97 +41,105 @@ public static class GeneralHelper
 
     private static AppThemeMode _currentThemeMode = AppThemeMode.System;
 
-    private static readonly IconStyleOption[] IconStyles =
+    private static IReadOnlyList<IconStyleOption> BuildIconStyles() =>
     [
         new(
             "fluent",
-            "Fluent Glass Dual",
-            "Dua layar berlapis biru-sian modern dengan lencana flip emas elegan.",
-            "Rekomendasi"
+            Loc.Instance.Get("General.Icon.Fluent.Title"),
+            Loc.Instance.Get("General.Icon.Fluent.Subtitle"),
+            Loc.Instance.Get("General.Icon.Fluent.Badge")
         ),
         new(
             "accent",
-            "Windows 11 Accent",
-            "Menyesuaikan warna aksen secara dinamis dengan tema Windows 11 Anda.",
-            "Dinamis"
+            Loc.Instance.Get("General.Icon.Accent.Title"),
+            Loc.Instance.Get("General.Icon.Accent.Subtitle"),
+            Loc.Instance.Get("General.Icon.Accent.Badge")
         ),
         new(
             "minimal",
-            "Minimalist Precision",
-            "Kontras tinggi monokrom tajam untuk area notifikasi taskbar yang bersih.",
-            "Monokrom"
+            Loc.Instance.Get("General.Icon.Minimal.Title"),
+            Loc.Instance.Get("General.Icon.Minimal.Subtitle"),
+            Loc.Instance.Get("General.Icon.Minimal.Badge")
         )
     ];
 
-    private static readonly CliCommandItem[] CliCommands =
+    private static IReadOnlyList<CliCommandItem> BuildCliCommands() =>
     [
         new(
             "--swap",
             "--flip, --mirror",
-            "Tukar Posisi Monitor",
+            Loc.Instance.Get("Cli.Doc.Swap.Title"),
             "displayflip.exe --swap",
-            "Tukar posisi horizontal monitor primer dan sekunder secara instan tanpa membuka jendela antarmuka.",
-            "Aksi Tata Letak"
+            Loc.Instance.Get("Cli.Doc.Swap"),
+            Loc.Instance.Get("Cli.Cat.Layout")
         ),
         new(
             "--identify",
             "-i",
-            "Identifikasi Monitor",
+            Loc.Instance.Get("Cli.Doc.Identify.Title"),
             "displayflip.exe --identify",
-            "Tampilkan overlay nomor layar fisik berukuran besar di setiap monitor aktif selama beberapa detik.",
-            "Visual & Diagnostik"
+            Loc.Instance.Get("Cli.Doc.Identify"),
+            Loc.Instance.Get("Cli.Cat.Visual")
         ),
         new(
             "--solo <1|2>",
             "--internal, --external",
-            "Mode Layar Tunggal (Solo)",
+            Loc.Instance.Get("Cli.Doc.Solo.Title"),
             "displayflip.exe --solo 1",
-            "Aktifkan hanya Layar 1 atau Layar 2 secara instan dan nonaktifkan layar lainnya.",
-            "Mode Proyeksi"
+            Loc.Instance.Get("Cli.Doc.Solo"),
+            Loc.Instance.Get("Cli.Cat.Projection")
         ),
         new(
             "--extend",
             "--perluas",
-            "Bentangkan Multi-Monitor (Extend)",
+            Loc.Instance.Get("Cli.Doc.Extend.Title"),
             "displayflip.exe --extend",
-            "Bentangkan tampilan desktop ke seluruh monitor yang terhubung (mode extend Windows).",
-            "Mode Proyeksi"
+            Loc.Instance.Get("Cli.Doc.Extend"),
+            Loc.Instance.Get("Cli.Cat.Projection")
         ),
         new(
             "--apply <profile>",
             "--profile, -p",
-            "Terapkan Profil Tersimpan",
+            Loc.Instance.Get("Cli.Doc.Profile.Title"),
             "displayflip.exe --apply \"Kerja Siang\"",
-            "Terapkan koordinat tata letak dan konfigurasi monitor dari nama profil yang telah disimpan.",
-            "Manajemen Profil"
+            Loc.Instance.Get("Cli.Doc.Profile"),
+            Loc.Instance.Get("Cli.Cat.Profile")
         ),
         new(
             "--list",
             "--list --json",
-            "Daftar Profil Tersimpan",
+            Loc.Instance.Get("Cli.Doc.List.Title"),
             "displayflip.exe --list",
-            "Tampilkan seluruh nama profil tata letak yang tersimpan (tambahkan --json untuk keluaran format JSON).",
-            "Manajemen Profil"
+            Loc.Instance.Get("Cli.Doc.List"),
+            Loc.Instance.Get("Cli.Cat.Profile")
+        ),
+        new(
+            "--lang <id|en>",
+            "--lang=id, --lang=en",
+            Loc.Instance.Get("Cli.Doc.Lang.Title"),
+            "displayflip.exe --list --lang en",
+            Loc.Instance.Get("Cli.Doc.Lang"),
+            Loc.Instance.Get("Cli.Cat.Language")
         ),
         new(
             "--settings",
             "--config",
-            "Buka Jendela Pengaturan",
+            Loc.Instance.Get("Cli.Doc.Settings.Title"),
             "displayflip.exe --settings",
-            "Buka jendela utama antarmuka DisplayFlip Fluent Settings.",
-            "Aplikasi & UI"
+            Loc.Instance.Get("Cli.Doc.Settings"),
+            Loc.Instance.Get("Cli.Cat.App")
         ),
         new(
             "--tray",
             "--minimized",
-            "Jalankan di Background Tray",
+            Loc.Instance.Get("Cli.Doc.Tray.Title"),
             "displayflip.exe --tray",
-            "Mulai DisplayFlip langsung di system tray latar belakang tanpa memunculkan jendela pengaturan.",
-            "Aplikasi & UI"
+            Loc.Instance.Get("Cli.Doc.Tray"),
+            Loc.Instance.Get("Cli.Cat.App")
         )
     ];
 
-    public static IReadOnlyList<IconStyleOption> GetIconStyles() => IconStyles;
+    public static IReadOnlyList<IconStyleOption> GetIconStyles() => BuildIconStyles();
 
     public static string NormalizeIconStyle(string? key)
     {
@@ -149,14 +158,14 @@ public static class GeneralHelper
     public static IconStyleOption GetIconStyleOption(string? key)
     {
         var normalized = NormalizeIconStyle(key);
-        return IconStyles.First(s => s.Key == normalized);
+        return BuildIconStyles().First(s => s.Key == normalized);
     }
 
     public static string GetThemeName(AppThemeMode mode) => mode switch
     {
-        AppThemeMode.Light => "Mode Terang (Light)",
-        AppThemeMode.Dark => "Mode Gelap (Dark)",
-        _ => "Ikuti Sistem (Otomatis)"
+        AppThemeMode.Light => Loc.Instance.Get("General.Theme.Light.Title"),
+        AppThemeMode.Dark => Loc.Instance.Get("General.Theme.Dark.Title"),
+        _ => Loc.Instance.Get("General.Theme.System.Label")
     };
 
     public static AppThemeMode GetCurrentThemeMode()
@@ -210,16 +219,14 @@ public static class GeneralHelper
             var isNow = StartupRegistry.IsEnabled();
             if (enabled == isNow)
             {
-                return (true, enabled
-                    ? "DisplayFlip akan berjalan otomatis di latar belakang (--tray) saat login Windows."
-                    : "Startup otomatis dinonaktifkan.");
+                return (true, Loc.Instance.Get(enabled ? "General.Startup.EnabledMsg" : "General.Startup.DisabledMsg"));
             }
 
-            return (false, "Gagal mengubah konfigurasi startup Windows di registri.");
+            return (false, Loc.Instance.Get("General.Startup.RegistryError"));
         }
         catch (Exception ex)
         {
-            return (false, $"Gagal memperbarui startup Windows: {ex.Message}");
+            return (false, Loc.Instance.Format("General.Startup.UpdateError", ex.Message));
         }
     }
 
@@ -242,13 +249,11 @@ public static class GeneralHelper
         try
         {
             store.UpdateSettings(cfg => cfg with { AutoApplyDrag = enabled });
-            return (true, enabled
-                ? "Tata letak monitor akan langsung diterapkan otomatis setiap selesai menggeser di kanvas."
-                : "Auto-apply dinonaktifkan. Gunakan tombol 'Terapkan Perubahan' untuk menerapkan tata letak.");
+            return (true, Loc.Instance.Get(enabled ? "General.AutoApply.EnabledMsg" : "General.AutoApply.DisabledMsg"));
         }
         catch (Exception ex)
         {
-            return (false, $"Gagal menyimpan pengaturan auto-apply: {ex.Message}");
+            return (false, Loc.Instance.Format("General.AutoApply.SaveError", ex.Message));
         }
     }
 
@@ -260,11 +265,11 @@ public static class GeneralHelper
             var normalized = NormalizeIconStyle(styleKey);
             store.UpdateSettings(cfg => cfg with { IconStyle = normalized });
             var option = GetIconStyleOption(normalized);
-            return (true, $"Gaya ikon berhasil diperbarui ke '{option.Title}'.");
+            return (true, Loc.Instance.Format("General.Icon.UpdatedMsg", option.Title));
         }
         catch (Exception ex)
         {
-            return (false, $"Gagal menyimpan pilihan gaya ikon: {ex.Message}");
+            return (false, Loc.Instance.Format("General.Icon.SaveError", ex.Message));
         }
     }
 
@@ -290,7 +295,7 @@ public static class GeneralHelper
     {
         var dir = GetStorageDirectory(filePath);
         if (string.IsNullOrWhiteSpace(dir))
-            return (false, "Direktori penyimpanan konfigurasi tidak valid.");
+            return (false, Loc.Instance.Get("General.Storage.InvalidDir"));
 
         try
         {
@@ -304,11 +309,11 @@ public static class GeneralHelper
                 UseShellExecute = true
             };
             Process.Start(startInfo);
-            return (true, $"Folder penyimpanan berhasil dibuka: {dir}");
+            return (true, Loc.Instance.Format("General.Storage.OpenSuccess", dir));
         }
         catch (Exception ex)
         {
-            return (false, $"Gagal membuka folder penyimpanan: {ex.Message}");
+            return (false, Loc.Instance.Format("General.Storage.OpenError", ex.Message));
         }
     }
 
@@ -318,7 +323,7 @@ public static class GeneralHelper
         {
             var dir = AppContext.BaseDirectory;
             if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir))
-                return (false, "Folder instalasi aplikasi tidak ditemukan.");
+                return (false, Loc.Instance.Get("General.AppFolder.NotFound"));
 
             Process.Start(new ProcessStartInfo
             {
@@ -326,18 +331,18 @@ public static class GeneralHelper
                 Arguments = $"\"{dir}\"",
                 UseShellExecute = true
             });
-            return (true, $"Folder aplikasi berhasil dibuka: {dir}");
+            return (true, Loc.Instance.Format("General.AppFolder.Opened", dir));
         }
         catch (Exception ex)
         {
-            return (false, $"Gagal membuka folder aplikasi: {ex.Message}");
+            return (false, Loc.Instance.Format("General.AppFolder.OpenError", ex.Message));
         }
     }
 
     public static (bool Success, string Message) OpenUrl(string url)
     {
         if (string.IsNullOrWhiteSpace(url))
-            return (false, "Tautan URL tidak valid.");
+            return (false, Loc.Instance.Get("General.Url.Invalid"));
 
         try
         {
@@ -346,15 +351,15 @@ public static class GeneralHelper
                 FileName = url,
                 UseShellExecute = true
             });
-            return (true, $"Membuka tautan: {url}");
+            return (true, Loc.Instance.Format("General.Url.Opening", url));
         }
         catch (Exception ex)
         {
-            return (false, $"Gagal membuka tautan: {ex.Message}");
+            return (false, Loc.Instance.Format("General.Url.OpenError", ex.Message));
         }
     }
 
-    public static IReadOnlyList<CliCommandItem> GetCliCommands() => CliCommands;
+    public static IReadOnlyList<CliCommandItem> GetCliCommands() => BuildCliCommands();
 
     public static bool TryCopyToClipboard(string text)
     {

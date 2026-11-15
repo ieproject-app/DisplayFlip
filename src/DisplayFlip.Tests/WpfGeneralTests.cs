@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using DisplayFlip.Core;
+using DisplayFlip.Core.Localization;
 using DisplayFlip.UI.Helpers;
 using DisplayFlip.UI.Services;
 using DisplayFlip.UI.Views.Pages;
@@ -11,8 +12,18 @@ using Xunit;
 
 namespace DisplayFlip.Tests;
 
-public class WpfGeneralTests
+[Collection("Localization")]
+public class WpfGeneralTests : IDisposable
 {
+    public WpfGeneralTests()
+    {
+        Loc.Instance.SetPreference(LocalizationCatalog.LanguageIndonesian, persist: false);
+    }
+
+    public void Dispose()
+    {
+        Loc.Instance.SetPreference(LocalizationCatalog.PreferenceAuto, persist: false);
+    }
     [Theory]
     [InlineData("fluent", "fluent")]
     [InlineData("FLUENT", "fluent")]
@@ -204,10 +215,10 @@ public class WpfGeneralTests
     }
 
     [Fact]
-    public void GetCliCommands_ShouldContainAllEightRequiredCommands()
+    public void GetCliCommands_ShouldContainAllNineRequiredCommands()
     {
         var commands = GeneralHelper.GetCliCommands();
-        commands.Should().HaveCount(8);
+        commands.Should().HaveCount(9);
 
         var options = commands.Select(c => c.Option).ToList();
         options.Should().Contain(new[]
@@ -218,6 +229,7 @@ public class WpfGeneralTests
             "--extend",
             "--apply <profile>",
             "--list",
+            "--lang <id|en>",
             "--settings",
             "--tray"
         });
@@ -300,7 +312,7 @@ public class WpfGeneralTests
         {
             var page = new AboutPage();
             page.Should().NotBeNull();
-            page.CliCommandsPanel.Children.Count.Should().Be(8);
+            page.CliCommandsPanel.Children.Count.Should().Be(9);
         });
     }
 

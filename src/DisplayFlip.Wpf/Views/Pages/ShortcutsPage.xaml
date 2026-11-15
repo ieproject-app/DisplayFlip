@@ -4,8 +4,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:services="clr-namespace:DisplayFlip.UI.Services"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Title="Pintasan Keyboard"
+    Title="{Binding [Shortcuts.PageTitle], Source={x:Static services:Loc.Instance}}"
     d:DesignHeight="950"
     d:DesignWidth="800"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -15,12 +16,12 @@
         <!-- Judul & Deskripsi Halaman -->
         <ui:TextBlock
             FontTypography="Title"
-            Text="Pintasan Keyboard" />
+            Text="{Binding [Shortcuts.PageTitle], Source={x:Static services:Loc.Instance}}" />
         <ui:TextBlock
             Margin="0,4,0,16"
             Appearance="Secondary"
             FontTypography="Body"
-            Text="Atur tombol pintas global untuk aksi cepat multi-layar dan pergantian profil tata letak." />
+            Text="{Binding [Shortcuts.PageSubtitle], Source={x:Static services:Loc.Instance}}" />
 
         <!-- Status InfoBar Notifikasi -->
         <ui:InfoBar
@@ -33,14 +34,14 @@
         <ui:TextBlock
             Margin="0,4,0,12"
             FontTypography="Subtitle"
-            Text="Aksi Cepat Global" />
+            Text="{Binding [Shortcuts.Section.Global], Source={x:Static services:Loc.Instance}}" />
 
         <!-- 1. Balik / Tukar Posisi Layar -->
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Balik / Tukar Posisi Layar" />
-                    <ui:TextBlock Appearance="Secondary" Text="Tukar posisi horizontal antar dua monitor secara instan (default: Ctrl+Alt+F)." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Shortcuts.Global.Mirror.Title], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock Appearance="Secondary" Text="{Binding [Shortcuts.Global.Mirror.Desc], Source={x:Static services:Loc.Instance}}" />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
@@ -58,8 +59,8 @@
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Siklus Layar Utama" />
-                    <ui:TextBlock Appearance="Secondary" Text="Pindahkan monitor utama secara bergiliran ke layar berikutnya (default: Ctrl+Alt+P)." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Shortcuts.Global.Primary.Title], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock Appearance="Secondary" Text="{Binding [Shortcuts.Global.Primary.Desc], Source={x:Static services:Loc.Instance}}" />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
@@ -77,8 +78,8 @@
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Identifikasi Layar" />
-                    <ui:TextBlock Appearance="Secondary" Text="Tampilkan nomor monitor fisik besar di setiap sudut layar (default: Ctrl+Alt+I)." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Shortcuts.Global.Identify.Title], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock Appearance="Secondary" Text="{Binding [Shortcuts.Global.Identify.Desc], Source={x:Static services:Loc.Instance}}" />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
@@ -96,8 +97,8 @@
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Hanya Layar 1 (Solo Display 1)" />
-                    <ui:TextBlock Appearance="Secondary" Text="Hanya menampilkan layar monitor 1 (internal/utama) dan mematikan layar lainnya." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Shortcuts.Global.Solo1.Title], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock Appearance="Secondary" Text="{Binding [Shortcuts.Global.Solo1.Desc], Source={x:Static services:Loc.Instance}}" />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
@@ -115,8 +116,8 @@
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Hanya Layar 2 (Solo Display 2)" />
-                    <ui:TextBlock Appearance="Secondary" Text="Hanya menampilkan layar monitor 2 (eksternal) dan mematikan layar lainnya." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Shortcuts.Global.Solo2.Title], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock Appearance="Secondary" Text="{Binding [Shortcuts.Global.Solo2.Desc], Source={x:Static services:Loc.Instance}}" />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
@@ -134,8 +135,8 @@
         <ui:CardControl Margin="0,0,0,12">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Perluas Multi-Layar (Extend Displays)" />
-                    <ui:TextBlock Appearance="Secondary" Text="Mengaktifkan kembali seluruh monitor dalam mode bentangkan / perluas (Extend)." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Shortcuts.Global.Extend.Title], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock Appearance="Secondary" Text="{Binding [Shortcuts.Global.Extend.Desc], Source={x:Static services:Loc.Instance}}" />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>
@@ -153,12 +154,12 @@
         <ui:TextBlock
             Margin="0,16,0,4"
             FontTypography="Subtitle"
-            Text="Pintasan Profil Tersimpan" />
+            Text="{Binding [Shortcuts.Section.Profiles], Source={x:Static services:Loc.Instance}}" />
         <ui:TextBlock
             Margin="0,0,0,12"
             Appearance="Secondary"
             FontTypography="Body"
-            Text="Atur kombinasi tombol cepat untuk beralih langsung ke susunan profil monitor yang telah disimpan." />
+            Text="{Binding [Shortcuts.Section.ProfilesSubtitle], Source={x:Static services:Loc.Instance}}" />
 
         <!-- Daftar Profil Dinamis -->
         <StackPanel x:Name="ProfilesShortcutsPanel" />
@@ -170,8 +171,8 @@
             Visibility="Collapsed">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Belum Ada Profil Tersimpan" />
-                    <ui:TextBlock Appearance="Secondary" Text="Simpan profil tata letak di tab Layar &amp; Profil terlebih dahulu untuk mengatur pintasan profil." />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding [Shortcuts.Empty.Title], Source={x:Static services:Loc.Instance}}" />
+                    <ui:TextBlock Appearance="Secondary" Text="{Binding [Shortcuts.Empty.Desc], Source={x:Static services:Loc.Instance}}" />
                 </StackPanel>
             </ui:CardControl.Header>
             <ui:CardControl.Icon>

@@ -15,6 +15,7 @@ public sealed record ProfileFile
     public string ExtendShortcut { get; init; } = string.Empty;
     public bool AutoApplyDrag { get; init; }
     public string IconStyle { get; init; } = "fluent";
+    public string Language { get; init; } = Localization.LocalizationCatalog.PreferenceAuto;
 }
 
 public sealed class ProfileStore
@@ -153,6 +154,17 @@ public sealed class ProfileStore
             var updated = updater(data) with { SchemaVersion = LayoutProfile.SupportedSchemaVersion };
             WriteAtomic(updated);
         }
+    }
+
+    public string GetLanguagePreference()
+    {
+        return Localization.LocalizationCatalog.NormalizePreference(LoadSafe().Language);
+    }
+
+    public void SaveLanguagePreference(string preference)
+    {
+        var normalized = Localization.LocalizationCatalog.NormalizePreference(preference);
+        UpdateSettings(cfg => cfg with { Language = normalized });
     }
 
     private ProfileFile LoadSafe()

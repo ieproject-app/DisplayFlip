@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using DisplayFlip.Core.Localization;
 
 namespace DisplayFlip.Windows;
 
@@ -20,7 +21,18 @@ public static class ProjectionDispatcher
     public static Func<string, (bool Success, string Message)>? DisplaySwitchHook { get; set; }
 
     public static bool TryParseMode(string? modeSwitch, out ProjectionMode mode, out string friendlyName, out string switchArg, out uint topology)
+        => TryParseMode(modeSwitch, out mode, out friendlyName, out switchArg, out topology, null);
+
+    public static bool TryParseMode(
+        string? modeSwitch,
+        out ProjectionMode mode,
+        out string friendlyName,
+        out string switchArg,
+        out uint topology,
+        string? language)
     {
+        string effectiveLang = LocalizationCatalog.TryResolveExplicitLanguage(language)
+                               ?? LocalizationCatalog.ResolveEffectiveLanguage(null);
         string norm = (modeSwitch ?? string.Empty).TrimStart('/', '-').Trim().ToLowerInvariant();
         switch (norm)
         {
@@ -31,7 +43,7 @@ public static class ProjectionDispatcher
                 mode = ProjectionMode.Internal;
                 topology = NativeMethods.SDC_TOPOLOGY_INTERNAL;
                 switchArg = "/internal";
-                friendlyName = "Hanya Layar 1";
+                friendlyName = LocalizationCatalog.Get("Projection.Mode.Internal", effectiveLang);
                 return true;
 
             case "external":
@@ -41,7 +53,7 @@ public static class ProjectionDispatcher
                 mode = ProjectionMode.External;
                 topology = NativeMethods.SDC_TOPOLOGY_EXTERNAL;
                 switchArg = "/external";
-                friendlyName = "Hanya Layar 2";
+                friendlyName = LocalizationCatalog.Get("Projection.Mode.External", effectiveLang);
                 return true;
 
             case "clone":
@@ -49,14 +61,14 @@ public static class ProjectionDispatcher
                 mode = ProjectionMode.Clone;
                 topology = NativeMethods.SDC_TOPOLOGY_CLONE;
                 switchArg = "/clone";
-                friendlyName = "Duplikat (Clone)";
+                friendlyName = LocalizationCatalog.Get("Projection.Mode.Clone", effectiveLang);
                 return true;
 
             case "extend":
                 mode = ProjectionMode.Extend;
                 topology = NativeMethods.SDC_TOPOLOGY_EXTEND;
                 switchArg = "/extend";
-                friendlyName = "Perluas (Extend)";
+                friendlyName = LocalizationCatalog.Get("Projection.Mode.Extend", effectiveLang);
                 return true;
 
             default:
@@ -69,10 +81,16 @@ public static class ProjectionDispatcher
     }
 
     public static (bool Success, string Message) Dispatch(string? modeSwitch)
+        => Dispatch(modeSwitch, null);
+
+    public static (bool Success, string Message) Dispatch(string? modeSwitch, string? language)
     {
-        if (!TryParseMode(modeSwitch, out var mode, out var friendlyName, out var switchArg, out var topology))
+        string effectiveLang = LocalizationCatalog.TryResolveExplicitLanguage(language)
+                               ?? LocalizationCatalog.ResolveEffectiveLanguage(null);
+
+        if (!TryParseMode(modeSwitch, out var mode, out var friendlyName, out var switchArg, out var topology, effectiveLang))
         {
-            return (false, $"Mode proyeksi tidak dikenal: '{modeSwitch}'. Opsi yang valid: extend, clone, internal (solo 1), external (solo 2).");
+            return (false, LocalizationCatalog.Format("Projection.UnknownMode", effectiveLang, modeSwitch));
         }
 
         // Engine 1: Win32 SetDisplayConfig direct API
@@ -85,7 +103,7 @@ public static class ProjectionDispatcher
 
             if (ret == NativeMethods.ERROR_SUCCESS)
             {
-                return (true, $"Mode multi-layar diterapkan: {friendlyName}.");
+                return (true, LocalizationCatalog.Format("Projection.Applied", effectiveLang, friendlyName));
             }
         }
         catch
@@ -108,23 +126,28 @@ public static class ProjectionDispatcher
                 {
                     UseShellExecute = true
                 });
-                return (true, $"Mode {friendlyName} dikirim melalui DisplaySwitch ({switchArg}).");
+                return (true, LocalizationCatalog.Format("Projection.DispatchedViaSwitch", effectiveLang, friendlyName, switchArg));
             }
-            return (false, $"Gagal mengubah mode ({friendlyName}) dan DisplaySwitch.exe tidak ditemukan.");
+            return (false, LocalizationCatalog.Format("Projection.DisplaySwitchMissing", effectiveLang, friendlyName));
         }
         catch (Exception ex)
         {
-            return (false, $"Gagal mengubah mode proyeksi: {ex.Message}");
+            return (false, LocalizationCatalog.Format("Projection.ChangeFailed", effectiveLang, ex.Message));
         }
     }
 
     public static (bool Success, string Message) TriggerSolo(int displayIndex)
+        => TriggerSolo(displayIndex, null);
+
+    public static (bool Success, string Message) TriggerSolo(int displayIndex, string? language)
     {
+        string effectiveLang = LocalizationCatalog.TryResolveExplicitLanguage(language)
+                               ?? LocalizationCatalog.ResolveEffectiveLanguage(null);
         return displayIndex switch
         {
-            1 => Dispatch("internal"),
-            2 => Dispatch("external"),
-            _ => (false, "Hanya Layar 1 dan Layar 2 yang didukung untuk mode layar tunggal.")
+            1 => Dispatch("internal", effectiveLang),
+            2 => Dispatch("external", effectiveLang),
+            _ => (false, LocalizationCatalog.Get("Projection.SoloUnsupportedIndex", effectiveLang))
         };
     }
 
