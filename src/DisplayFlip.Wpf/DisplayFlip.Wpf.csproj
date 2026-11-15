@@ -25,4 +25,8 @@
     <Resource Include="DisplayFlip.ico" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="DisplayFlip.Tests" />
+  </ItemGroup>
+
 </Project>

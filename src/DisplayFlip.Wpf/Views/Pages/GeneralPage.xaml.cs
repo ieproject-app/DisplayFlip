@@ -22,6 +22,7 @@ public partial class GeneralPage : Page
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         InitializeComponent();
+        LoadSettings();
         Loaded += OnPageLoaded;
     }
 
@@ -115,34 +116,49 @@ public partial class GeneralPage : Page
     // 3. PERSONALISASI TEMA APLIKASI
     // =========================================================================
 
-    private void OnThemeSystemCardMouseDown(object sender, MouseButtonEventArgs e)
+    private void OnThemeSystemCardClick(object sender, MouseButtonEventArgs e)
     {
-        SelectTheme(AppThemeMode.System);
+        if (e.ChangedButton == MouseButton.Left)
+            SelectTheme(AppThemeMode.System);
     }
 
-    private void OnRadioThemeSystemClick(object sender, RoutedEventArgs e)
+    private void OnThemeSystemCardKeyDown(object sender, KeyEventArgs e)
     {
-        SelectTheme(AppThemeMode.System);
+        if (e.Key is Key.Space or Key.Enter)
+        {
+            SelectTheme(AppThemeMode.System);
+            e.Handled = true;
+        }
     }
 
-    private void OnThemeLightCardMouseDown(object sender, MouseButtonEventArgs e)
+    private void OnThemeLightCardClick(object sender, MouseButtonEventArgs e)
     {
-        SelectTheme(AppThemeMode.Light);
+        if (e.ChangedButton == MouseButton.Left)
+            SelectTheme(AppThemeMode.Light);
     }
 
-    private void OnRadioThemeLightClick(object sender, RoutedEventArgs e)
+    private void OnThemeLightCardKeyDown(object sender, KeyEventArgs e)
     {
-        SelectTheme(AppThemeMode.Light);
+        if (e.Key is Key.Space or Key.Enter)
+        {
+            SelectTheme(AppThemeMode.Light);
+            e.Handled = true;
+        }
     }
 
-    private void OnThemeDarkCardMouseDown(object sender, MouseButtonEventArgs e)
+    private void OnThemeDarkCardClick(object sender, MouseButtonEventArgs e)
     {
-        SelectTheme(AppThemeMode.Dark);
+        if (e.ChangedButton == MouseButton.Left)
+            SelectTheme(AppThemeMode.Dark);
     }
 
-    private void OnRadioThemeDarkClick(object sender, RoutedEventArgs e)
+    private void OnThemeDarkCardKeyDown(object sender, KeyEventArgs e)
     {
-        SelectTheme(AppThemeMode.Dark);
+        if (e.Key is Key.Space or Key.Enter)
+        {
+            SelectTheme(AppThemeMode.Dark);
+            e.Handled = true;
+        }
     }
 
     private void SelectTheme(AppThemeMode mode)
@@ -178,34 +194,49 @@ public partial class GeneralPage : Page
     // 4. GAYA IKON MODERN
     // =========================================================================
 
-    private void OnIconCardFluentMouseDown(object sender, MouseButtonEventArgs e)
+    private void OnIconCardFluentClick(object sender, MouseButtonEventArgs e)
     {
-        SelectIconStyle("fluent");
+        if (e.ChangedButton == MouseButton.Left)
+            SelectIconStyle("fluent");
     }
 
-    private void OnRadioIconFluentClick(object sender, RoutedEventArgs e)
+    private void OnIconCardFluentKeyDown(object sender, KeyEventArgs e)
     {
-        SelectIconStyle("fluent");
+        if (e.Key is Key.Space or Key.Enter)
+        {
+            SelectIconStyle("fluent");
+            e.Handled = true;
+        }
     }
 
-    private void OnIconCardAccentMouseDown(object sender, MouseButtonEventArgs e)
+    private void OnIconCardAccentClick(object sender, MouseButtonEventArgs e)
     {
-        SelectIconStyle("accent");
+        if (e.ChangedButton == MouseButton.Left)
+            SelectIconStyle("accent");
     }
 
-    private void OnRadioIconAccentClick(object sender, RoutedEventArgs e)
+    private void OnIconCardAccentKeyDown(object sender, KeyEventArgs e)
     {
-        SelectIconStyle("accent");
+        if (e.Key is Key.Space or Key.Enter)
+        {
+            SelectIconStyle("accent");
+            e.Handled = true;
+        }
     }
 
-    private void OnIconCardMinimalMouseDown(object sender, MouseButtonEventArgs e)
+    private void OnIconCardMinimalClick(object sender, MouseButtonEventArgs e)
     {
-        SelectIconStyle("minimal");
+        if (e.ChangedButton == MouseButton.Left)
+            SelectIconStyle("minimal");
     }
 
-    private void OnRadioIconMinimalClick(object sender, RoutedEventArgs e)
+    private void OnIconCardMinimalKeyDown(object sender, KeyEventArgs e)
     {
-        SelectIconStyle("minimal");
+        if (e.Key is Key.Space or Key.Enter)
+        {
+            SelectIconStyle("minimal");
+            e.Handled = true;
+        }
     }
 
     private void SelectIconStyle(string styleKey)
@@ -276,16 +307,15 @@ public partial class GeneralPage : Page
     {
         if (isSelected)
         {
-            if (Application.Current?.TryFindResource("AccentFillColorDefaultBrush") is Brush accentBrush)
-            {
-                card.BorderBrush = accentBrush;
-                card.BorderThickness = new Thickness(1.5);
-            }
+            var accentBrush = Application.Current?.TryFindResource("AccentFillColorDefaultBrush") as Brush
+                ?? SystemColors.HighlightBrush;
+            card.BorderBrush = accentBrush;
+            card.BorderThickness = new Thickness(1.5);
         }
         else
         {
-            card.ClearValue(Border.BorderBrushProperty);
-            card.ClearValue(Border.BorderThicknessProperty);
+            card.ClearValue(Control.BorderBrushProperty);
+            card.ClearValue(Control.BorderThicknessProperty);
         }
     }
 }

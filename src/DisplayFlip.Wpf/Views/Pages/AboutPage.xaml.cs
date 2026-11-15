@@ -27,6 +27,7 @@ public partial class AboutPage : Page
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         InitializeComponent();
+        PopulateCliCommands();
         Loaded += OnPageLoaded;
     }
 
@@ -76,7 +77,15 @@ public partial class AboutPage : Page
         {
             FontTypography = FontTypography.BodyStrong,
             Text = cmd.Title,
-            Margin = new Thickness(0, 0, 10, 0),
+            Margin = new Thickness(0, 0, 8, 0),
+            VerticalAlignment = SystemVerticalAlignment.Center
+        });
+
+        titleRow.Children.Add(new Badge
+        {
+            Appearance = ControlAppearance.Info,
+            Content = cmd.Option,
+            Margin = new Thickness(0, 0, 8, 0),
             VerticalAlignment = SystemVerticalAlignment.Center
         });
 
@@ -84,7 +93,7 @@ public partial class AboutPage : Page
         {
             Appearance = ControlAppearance.Secondary,
             Content = cmd.Category,
-            Margin = new Thickness(0, 0, 10, 0),
+            Margin = new Thickness(0, 0, 8, 0),
             VerticalAlignment = SystemVerticalAlignment.Center
         });
 
@@ -160,9 +169,13 @@ public partial class AboutPage : Page
 
     private async Task OnCopyCommandClickedAsync(WpfButton btn, CliCommandItem cmd)
     {
+        if (!btn.IsEnabled)
+            return;
+
         bool ok = GeneralHelper.TryCopyToClipboard(cmd.Syntax);
         if (ok)
         {
+            btn.IsEnabled = false;
             btn.Content = "Disalin!";
             btn.Icon = new SymbolIcon { Symbol = SymbolRegular.Checkmark24 };
             btn.Appearance = ControlAppearance.Primary;
@@ -175,6 +188,7 @@ public partial class AboutPage : Page
             btn.Content = "Salin";
             btn.Icon = new SymbolIcon { Symbol = SymbolRegular.Copy24 };
             btn.Appearance = ControlAppearance.Secondary;
+            btn.IsEnabled = true;
         }
         else
         {
@@ -202,34 +216,16 @@ public partial class AboutPage : Page
 
     public void OnOpenDocsClick(object sender, RoutedEventArgs e)
     {
-        // Cari direktori dokumentasi lokal proyek
-        string currentDir = Directory.GetCurrentDirectory();
-        string localDocs = Path.Combine(currentDir, "docs");
-
-        if (!Directory.Exists(localDocs))
+        const string docsUrl = "https://github.com/akses/multi-monitor";
+        var (ok, msg) = GeneralHelper.OpenUrl(docsUrl);
+        if (ok)
         {
-            string baseDir = AppContext.BaseDirectory;
-            localDocs = Path.Combine(baseDir, "docs");
-        }
-
-        if (Directory.Exists(localDocs))
-        {
-            var (ok, msg) = GeneralHelper.OpenStorageFolder(Path.Combine(localDocs, "dummy.txt"));
-            if (ok)
-            {
-                ShowNotification(InfoBarSeverity.Success, "Dokumentasi Dibuka",
-                    $"Folder dokumentasi lokal dibuka di File Explorer: {localDocs}");
-            }
-            else
-            {
-                ShowNotification(InfoBarSeverity.Error, "Gagal Membuka Dokumentasi", msg);
-            }
+            ShowNotification(InfoBarSeverity.Success, "Membuka Browser",
+                $"Membuka repositori dan dokumentasi proyek di browser: {docsUrl}");
         }
         else
         {
-            var (ok, msg) = GeneralHelper.OpenUrl("https://github.com/akses/multi-monitor");
-            if (!ok)
-                ShowNotification(InfoBarSeverity.Warning, "Tautan Dokumentasi", msg);
+            ShowNotification(InfoBarSeverity.Warning, "Tautan Dokumentasi", msg);
         }
     }
 

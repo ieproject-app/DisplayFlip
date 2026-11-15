@@ -77,13 +77,14 @@ public class WpfGeneralTests
     }
 
     [Fact]
-    public void ApplyTheme_AllModes_ShouldNotThrow()
+    public void ApplyTheme_AllModes_ShouldNotThrowAndReflectMode()
     {
-        var modes = new[] { AppThemeMode.System, AppThemeMode.Light, AppThemeMode.Dark };
+        var modes = new[] { AppThemeMode.System, AppThemeMode.Light, AppThemeMode.Dark, AppThemeMode.System };
         foreach (var mode in modes)
         {
             var res = GeneralHelper.ApplyTheme(mode);
             res.Should().BeTrue();
+            GeneralHelper.GetCurrentThemeMode().Should().Be(mode);
         }
     }
 
@@ -173,6 +174,14 @@ public class WpfGeneralTests
     }
 
     [Fact]
+    public void GetStorageDirectory_WithExistingDirectory_ShouldReturnExactDirectory()
+    {
+        var currentDir = Directory.GetCurrentDirectory();
+        var result = GeneralHelper.GetStorageDirectory(currentDir);
+        result.Should().Be(currentDir);
+    }
+
+    [Fact]
     public void OpenStorageFolder_WithInvalidPath_ShouldReturnFailure()
     {
         var (ok1, msg1) = GeneralHelper.OpenStorageFolder(null);
@@ -256,6 +265,42 @@ public class WpfGeneralTests
             // Verify caching
             var generalPage2 = service.GetPage(typeof(GeneralPage));
             generalPage2.Should().BeSameAs(generalPage);
+        });
+    }
+
+    [Fact]
+    public void GeneralPage_STA_InitializesFromProfileStore()
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"displayflip_general_test_{Guid.NewGuid():N}.json");
+        try
+        {
+            var store = new ProfileStore(tempFile);
+            store.UpdateSettings(cfg => cfg with { AutoApplyDrag = true, IconStyle = "accent" });
+
+            ExecuteOnSta(() =>
+            {
+                var page = new GeneralPage(store);
+                page.Should().NotBeNull();
+                page.TxtStoragePath.Text.Should().Be(tempFile);
+                page.ToggleAutoApply.IsChecked.Should().BeTrue();
+                page.RadioIconAccent.IsChecked.Should().BeTrue();
+            });
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+                File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void AboutPage_STA_PopulatesAllCliCommands()
+    {
+        ExecuteOnSta(() =>
+        {
+            var page = new AboutPage();
+            page.Should().NotBeNull();
+            page.CliCommandsPanel.Children.Count.Should().Be(8);
         });
     }
 

@@ -95,7 +95,9 @@
                 Grid.Column="0"
                 Padding="16"
                 Cursor="Hand"
-                MouseDown="OnThemeSystemCardMouseDown">
+                Focusable="True"
+                MouseLeftButtonUp="OnThemeSystemCardClick"
+                KeyDown="OnThemeSystemCardKeyDown">
                 <StackPanel>
                     <Grid Margin="0,0,0,10">
                         <ui:SymbolIcon Symbol="Desktop24" HorizontalAlignment="Left" FontSize="24" />
@@ -103,7 +105,8 @@
                             x:Name="RadioThemeSystem"
                             HorizontalAlignment="Right"
                             GroupName="AppThemeGroup"
-                            Click="OnRadioThemeSystemClick" />
+                            IsHitTestVisible="False"
+                            Focusable="False" />
                     </Grid>
                     <ui:TextBlock FontTypography="BodyStrong" Text="Ikuti Sistem" Margin="0,0,0,4" />
                     <ui:TextBlock
@@ -120,7 +123,9 @@
                 Grid.Column="2"
                 Padding="16"
                 Cursor="Hand"
-                MouseDown="OnThemeLightCardMouseDown">
+                Focusable="True"
+                MouseLeftButtonUp="OnThemeLightCardClick"
+                KeyDown="OnThemeLightCardKeyDown">
                 <StackPanel>
                     <Grid Margin="0,0,0,10">
                         <ui:SymbolIcon Symbol="WeatherSunny24" HorizontalAlignment="Left" FontSize="24" />
@@ -128,7 +133,8 @@
                             x:Name="RadioThemeLight"
                             HorizontalAlignment="Right"
                             GroupName="AppThemeGroup"
-                            Click="OnRadioThemeLightClick" />
+                            IsHitTestVisible="False"
+                            Focusable="False" />
                     </Grid>
                     <ui:TextBlock FontTypography="BodyStrong" Text="Mode Terang (Light)" Margin="0,0,0,4" />
                     <ui:TextBlock
@@ -145,7 +151,9 @@
                 Grid.Column="4"
                 Padding="16"
                 Cursor="Hand"
-                MouseDown="OnThemeDarkCardMouseDown">
+                Focusable="True"
+                MouseLeftButtonUp="OnThemeDarkCardClick"
+                KeyDown="OnThemeDarkCardKeyDown">
                 <StackPanel>
                     <Grid Margin="0,0,0,10">
                         <ui:SymbolIcon Symbol="WeatherMoon24" HorizontalAlignment="Left" FontSize="24" />
@@ -153,7 +161,8 @@
                             x:Name="RadioThemeDark"
                             HorizontalAlignment="Right"
                             GroupName="AppThemeGroup"
-                            Click="OnRadioThemeDarkClick" />
+                            IsHitTestVisible="False"
+                            Focusable="False" />
                     </Grid>
                     <ui:TextBlock FontTypography="BodyStrong" Text="Mode Gelap (Dark)" Margin="0,0,0,4" />
                     <ui:TextBlock
@@ -186,7 +195,9 @@
                 Grid.Column="0"
                 Padding="16"
                 Cursor="Hand"
-                MouseDown="OnIconCardFluentMouseDown">
+                Focusable="True"
+                MouseLeftButtonUp="OnIconCardFluentClick"
+                KeyDown="OnIconCardFluentKeyDown">
                 <StackPanel>
                     <Grid Margin="0,0,0,10">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
@@ -201,7 +212,8 @@
                             x:Name="RadioIconFluent"
                             HorizontalAlignment="Right"
                             GroupName="IconStyleGroup"
-                            Click="OnRadioIconFluentClick" />
+                            IsHitTestVisible="False"
+                            Focusable="False" />
                     </Grid>
                     <ui:TextBlock FontTypography="BodyStrong" Text="Fluent Glass Dual" Margin="0,0,0,4" />
                     <ui:TextBlock
@@ -218,7 +230,9 @@
                 Grid.Column="2"
                 Padding="16"
                 Cursor="Hand"
-                MouseDown="OnIconCardAccentMouseDown">
+                Focusable="True"
+                MouseLeftButtonUp="OnIconCardAccentClick"
+                KeyDown="OnIconCardAccentKeyDown">
                 <StackPanel>
                     <Grid Margin="0,0,0,10">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
@@ -234,7 +248,8 @@
                             x:Name="RadioIconAccent"
                             HorizontalAlignment="Right"
                             GroupName="IconStyleGroup"
-                            Click="OnRadioIconAccentClick" />
+                            IsHitTestVisible="False"
+                            Focusable="False" />
                     </Grid>
                     <ui:TextBlock FontTypography="BodyStrong" Text="Windows 11 Accent" Margin="0,0,0,4" />
                     <ui:TextBlock
@@ -251,7 +266,9 @@
                 Grid.Column="4"
                 Padding="16"
                 Cursor="Hand"
-                MouseDown="OnIconCardMinimalMouseDown">
+                Focusable="True"
+                MouseLeftButtonUp="OnIconCardMinimalClick"
+                KeyDown="OnIconCardMinimalKeyDown">
                 <StackPanel>
                     <Grid Margin="0,0,0,10">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
@@ -267,7 +284,8 @@
                             x:Name="RadioIconMinimal"
                             HorizontalAlignment="Right"
                             GroupName="IconStyleGroup"
-                            Click="OnRadioIconMinimalClick" />
+                            IsHitTestVisible="False"
+                            Focusable="False" />
                     </Grid>
                     <ui:TextBlock FontTypography="BodyStrong" Text="Minimalist Precision" Margin="0,0,0,4" />
                     <ui:TextBlock

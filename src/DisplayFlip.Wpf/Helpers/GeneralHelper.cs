@@ -38,6 +38,8 @@ public static class GeneralHelper
 {
     public const string DefaultIconStyle = "fluent";
 
+    private static AppThemeMode _currentThemeMode = AppThemeMode.System;
+
     private static readonly IconStyleOption[] IconStyles =
     [
         new(
@@ -159,24 +161,14 @@ public static class GeneralHelper
 
     public static AppThemeMode GetCurrentThemeMode()
     {
-        try
-        {
-            if (ApplicationThemeManager.IsAppMatchesSystem())
-                return AppThemeMode.System;
-
-            var current = ApplicationThemeManager.GetAppTheme();
-            return current == ApplicationTheme.Dark ? AppThemeMode.Dark : AppThemeMode.Light;
-        }
-        catch
-        {
-            return AppThemeMode.System;
-        }
+        return _currentThemeMode;
     }
 
     public static bool ApplyTheme(AppThemeMode mode)
     {
         try
         {
+            _currentThemeMode = mode;
             switch (mode)
             {
                 case AppThemeMode.Light:
@@ -283,6 +275,9 @@ public static class GeneralHelper
 
         try
         {
+            if (Directory.Exists(filePath))
+                return Path.GetFullPath(filePath);
+
             return Path.GetDirectoryName(filePath) ?? string.Empty;
         }
         catch
@@ -305,7 +300,7 @@ public static class GeneralHelper
             var startInfo = new ProcessStartInfo
             {
                 FileName = "explorer.exe",
-                Arguments = dir,
+                Arguments = $"\"{dir}\"",
                 UseShellExecute = true
             };
             Process.Start(startInfo);
@@ -328,7 +323,7 @@ public static class GeneralHelper
             Process.Start(new ProcessStartInfo
             {
                 FileName = "explorer.exe",
-                Arguments = dir,
+                Arguments = $"\"{dir}\"",
                 UseShellExecute = true
             });
             return (true, $"Folder aplikasi berhasil dibuka: {dir}");
