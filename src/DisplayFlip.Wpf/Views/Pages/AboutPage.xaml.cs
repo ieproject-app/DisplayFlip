@@ -27,7 +27,7 @@ public partial class AboutPage : Page
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         InitializeComponent();
-        AppLogoImage.Source = IconHelper.GetBestIconFrame(68);
+        UpdateLogo(_store.Load().IconStyle);
         PopulateCliCommands();
         Loaded += OnPageLoaded;
     }
@@ -35,8 +35,14 @@ public partial class AboutPage : Page
     private void OnPageLoaded(object sender, RoutedEventArgs e)
     {
         PageInfoBar.IsOpen = false;
-        AppLogoImage.Source = IconHelper.GetBestIconFrame(68);
+        UpdateLogo(_store.Load().IconStyle);
         PopulateCliCommands();
+    }
+
+    public void UpdateLogo(string? style = null)
+    {
+        string s = style ?? _store.Load().IconStyle ?? "fluent";
+        AppLogoImage.Source = IconHelper.GetBestIconFrame(68, s);
     }
 
     private void PopulateCliCommands()

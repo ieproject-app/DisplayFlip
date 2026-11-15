@@ -199,23 +199,31 @@
                 MouseLeftButtonUp="OnIconCardFluentClick"
                 KeyDown="OnIconCardFluentKeyDown">
                 <StackPanel>
-                    <Grid Margin="0,0,0,10">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                            <ui:SymbolIcon Symbol="Color24" FontSize="24" Margin="0,0,8,0" />
-                            <ui:Badge
-                                x:Name="BadgeIconFluent"
-                                Appearance="Success"
-                                Content="Aktif"
-                                VerticalAlignment="Center" />
-                        </StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Image
+                            x:Name="IconPreviewFluent"
+                            Width="44"
+                            Height="44"
+                            HorizontalAlignment="Left"
+                            RenderOptions.BitmapScalingMode="HighQuality"
+                            UseLayoutRounding="True"
+                            SnapsToDevicePixels="True" />
                         <RadioButton
                             x:Name="RadioIconFluent"
                             HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
                             GroupName="IconStyleGroup"
                             IsHitTestVisible="False"
                             Focusable="False" />
                     </Grid>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Fluent Glass Dual" Margin="0,0,0,4" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Fluent Glass Dual" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <ui:Badge
+                            x:Name="BadgeIconFluent"
+                            Appearance="Success"
+                            Content="Aktif"
+                            VerticalAlignment="Center" />
+                    </StackPanel>
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
@@ -234,24 +242,32 @@
                 MouseLeftButtonUp="OnIconCardAccentClick"
                 KeyDown="OnIconCardAccentKeyDown">
                 <StackPanel>
-                    <Grid Margin="0,0,0,10">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                            <ui:SymbolIcon Symbol="PaintBrush24" FontSize="24" Margin="0,0,8,0" />
-                            <ui:Badge
-                                x:Name="BadgeIconAccent"
-                                Appearance="Success"
-                                Content="Aktif"
-                                VerticalAlignment="Center"
-                                Visibility="Collapsed" />
-                        </StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Image
+                            x:Name="IconPreviewAccent"
+                            Width="44"
+                            Height="44"
+                            HorizontalAlignment="Left"
+                            RenderOptions.BitmapScalingMode="HighQuality"
+                            UseLayoutRounding="True"
+                            SnapsToDevicePixels="True" />
                         <RadioButton
                             x:Name="RadioIconAccent"
                             HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
                             GroupName="IconStyleGroup"
                             IsHitTestVisible="False"
                             Focusable="False" />
                     </Grid>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Windows 11 Accent" Margin="0,0,0,4" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Windows 11 Accent" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <ui:Badge
+                            x:Name="BadgeIconAccent"
+                            Appearance="Success"
+                            Content="Aktif"
+                            VerticalAlignment="Center"
+                            Visibility="Collapsed" />
+                    </StackPanel>
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"
@@ -270,24 +286,32 @@
                 MouseLeftButtonUp="OnIconCardMinimalClick"
                 KeyDown="OnIconCardMinimalKeyDown">
                 <StackPanel>
-                    <Grid Margin="0,0,0,10">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                            <ui:SymbolIcon Symbol="WindowApps24" FontSize="24" Margin="0,0,8,0" />
-                            <ui:Badge
-                                x:Name="BadgeIconMinimal"
-                                Appearance="Success"
-                                Content="Aktif"
-                                VerticalAlignment="Center"
-                                Visibility="Collapsed" />
-                        </StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Image
+                            x:Name="IconPreviewMinimal"
+                            Width="44"
+                            Height="44"
+                            HorizontalAlignment="Left"
+                            RenderOptions.BitmapScalingMode="HighQuality"
+                            UseLayoutRounding="True"
+                            SnapsToDevicePixels="True" />
                         <RadioButton
                             x:Name="RadioIconMinimal"
                             HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
                             GroupName="IconStyleGroup"
                             IsHitTestVisible="False"
                             Focusable="False" />
                     </Grid>
-                    <ui:TextBlock FontTypography="BodyStrong" Text="Minimalist Precision" Margin="0,0,0,4" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <ui:TextBlock FontTypography="BodyStrong" Text="Minimalist Precision" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <ui:Badge
+                            x:Name="BadgeIconMinimal"
+                            Appearance="Success"
+                            Content="Aktif"
+                            VerticalAlignment="Center"
+                            Visibility="Collapsed" />
+                    </StackPanel>
                     <ui:TextBlock
                         Appearance="Secondary"
                         FontTypography="Caption"

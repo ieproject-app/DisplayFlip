@@ -51,6 +51,7 @@ public partial class GeneralPage : Page
             var cfg = _store.Load();
             var iconStyle = GeneralHelper.NormalizeIconStyle(cfg.IconStyle);
             UpdateIconStyleSelectionVisuals(iconStyle);
+            LoadIconPreviews();
 
             // 5. Lokasi Direktori Penyimpanan
             TxtStoragePath.Text = _store.FilePath;
@@ -239,6 +240,20 @@ public partial class GeneralPage : Page
         }
     }
 
+    private void LoadIconPreviews()
+    {
+        try
+        {
+            IconPreviewFluent.Source = IconHelper.GetIconStylePreview("fluent", 44);
+            IconPreviewAccent.Source = IconHelper.GetIconStylePreview("accent", 44);
+            IconPreviewMinimal.Source = IconHelper.GetIconStylePreview("minimal", 44);
+        }
+        catch
+        {
+            // Abaikan kegagalan preview
+        }
+    }
+
     private void SelectIconStyle(string styleKey)
     {
         var normalized = GeneralHelper.NormalizeIconStyle(styleKey);
@@ -247,6 +262,7 @@ public partial class GeneralPage : Page
         var (ok, msg) = GeneralHelper.SetIconStyle(_store, normalized);
         if (ok)
         {
+            (Application.Current as App)?.ApplyIconStyle(normalized);
             ShowNotification(InfoBarSeverity.Success, "Gaya Ikon Diperbarui", msg);
         }
         else

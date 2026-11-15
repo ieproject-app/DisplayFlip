@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using DisplayFlip.Core;
 using DisplayFlip.UI.Helpers;
@@ -124,12 +125,84 @@ public sealed class WpfTrayAndHotkeysTests
         frame.PixelWidth.Should().Be(expectedPixelWidth);
     }
 
-    [Fact]
-    public void IconHelper_CreateNativeIconHandle_ReturnsValidHandle()
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ICONINFO
     {
-        IntPtr hIcon = IconHelper.CreateNativeIconHandle(16);
+        public bool fIcon;
+        public int xHotspot;
+        public int yHotspot;
+        public IntPtr hbmMask;
+        public IntPtr hbmColor;
+    }
 
-        hIcon.Should().NotBe(IntPtr.Zero);
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool GetIconInfo(IntPtr hIcon, out ICONINFO piconinfo);
+
+    [DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
+
+    [Fact]
+    public void IconHelper_CreateNativeIconHandle_ReturnsValidHandle_AndPassesGetIconInfo()
+    {
+        IntPtr hIcon = IconHelper.CreateNativeIconHandle(16, "fluent");
+
+        try
+        {
+            hIcon.Should().NotBe(IntPtr.Zero);
+
+            bool success = GetIconInfo(hIcon, out var info);
+            success.Should().BeTrue();
+            info.fIcon.Should().BeTrue();
+
+            if (info.hbmColor != IntPtr.Zero) DeleteObject(info.hbmColor);
+            if (info.hbmMask != IntPtr.Zero) DeleteObject(info.hbmMask);
+        }
+        finally
+        {
+            IconHelper.DestroyNativeIcon(hIcon);
+        }
+    }
+
+    [Theory]
+    [InlineData("fluent")]
+    [InlineData("accent")]
+    [InlineData("minimal")]
+    public void IconHelper_GetIconStylePreview_ReturnsValidFrozenBitmap_ForAllStyles(string style)
+    {
+        var preview = IconHelper.GetIconStylePreview(style, 44);
+
+        preview.Should().NotBeNull();
+        preview.PixelWidth.Should().Be(44);
+        preview.PixelHeight.Should().Be(44);
+        preview.IsFrozen.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(16)]
+    [InlineData(24)]
+    [InlineData(32)]
+    [InlineData(44)]
+    [InlineData(68)]
+    [InlineData(128)]
+    public void IconHelper_RenderAppBitmap_ProducesExactDimensions(int size)
+    {
+        using var bmp = IconHelper.RenderAppBitmap("fluent", size);
+
+        bmp.Should().NotBeNull();
+        bmp.Width.Should().Be(size);
+        bmp.Height.Should().Be(size);
+    }
+
+    [Fact]
+    public void TrayIconManager_CanInitializeAndUpdateIcon_WithoutExceptions()
+    {
+        RunInStaThread(() =>
+        {
+            using var tray = new TrayIconManager();
+            tray.UpdateIcon("accent");
+            tray.UpdateIcon("minimal");
+            tray.UpdateIcon("fluent");
+        });
     }
 
     // =========================================================================

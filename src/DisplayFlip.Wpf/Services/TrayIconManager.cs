@@ -68,6 +68,7 @@ public sealed class TrayIconManager : IDisposable
     private readonly HwndSource _source;
     private readonly ProfileStore _store;
     private NOTIFYICONDATA _nid;
+    private IntPtr _hCurrentIcon;
     private ContextMenu? _contextMenu;
     private bool _isCreated;
     private bool _disposed;
@@ -95,7 +96,8 @@ public sealed class TrayIconManager : IDisposable
 
     private void InitializeNotifyIcon()
     {
-        IntPtr hIcon = IconHelper.CreateNativeIconHandle(16);
+        string style = _store.Load().IconStyle ?? "fluent";
+        _hCurrentIcon = IconHelper.CreateNativeIconHandle(0, style);
 
         _nid = new NOTIFYICONDATA
         {
@@ -104,13 +106,35 @@ public sealed class TrayIconManager : IDisposable
             uID = 1001,
             uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP,
             uCallbackMessage = WM_TRAY,
-            hIcon = hIcon,
+            hIcon = _hCurrentIcon,
             szTip = "DisplayFlip — Multi-Monitor Manager",
             szInfo = string.Empty,
             szInfoTitle = string.Empty
         };
 
         _isCreated = Shell_NotifyIcon(NIM_ADD, ref _nid);
+    }
+
+    /// <summary>
+    /// Memperbarui ikon system tray secara dinamis (misal saat preferensi gaya ikon diubah).
+    /// </summary>
+    public void UpdateIcon(string? style = null)
+    {
+        if (_disposed || !_isCreated)
+            return;
+
+        string targetStyle = style ?? _store.Load().IconStyle ?? "fluent";
+        IntPtr newIcon = IconHelper.CreateNativeIconHandle(0, targetStyle);
+        if (newIcon != IntPtr.Zero)
+        {
+            var old = _hCurrentIcon;
+            _hCurrentIcon = newIcon;
+            _nid.hIcon = newIcon;
+            _nid.uFlags |= NIF_ICON;
+            Shell_NotifyIcon(NIM_MODIFY, ref _nid);
+
+            IconHelper.DestroyNativeIcon(old);
+        }
     }
 
     private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -163,7 +187,7 @@ public sealed class TrayIconManager : IDisposable
         var swapItem = new WpfMenuItem
         {
             Header = "Tukar Kiri-Kanan (Quick Swap)",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.ArrowSwap24 }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.ArrowSwap24, FontSize = 16 }
         };
         swapItem.Click += async (_, _) =>
         {
@@ -176,7 +200,7 @@ public sealed class TrayIconManager : IDisposable
         var identifyItem = new WpfMenuItem
         {
             Header = "Identifikasi Layar",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Eye24 }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Eye24, FontSize = 16 }
         };
         identifyItem.Click += (_, _) => actions.IdentifyMonitors();
         menu.Items.Add(identifyItem);
@@ -185,13 +209,13 @@ public sealed class TrayIconManager : IDisposable
         var projectionParent = new WpfMenuItem
         {
             Header = "Multi-Layar",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Desktop24 }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Desktop24, FontSize = 16 }
         };
 
         var solo1Item = new WpfMenuItem
         {
             Header = "Hanya Layar 1",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Desktop16 }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Desktop16, FontSize = 16 }
         };
         solo1Item.Click += (_, _) =>
         {
@@ -203,7 +227,7 @@ public sealed class TrayIconManager : IDisposable
         var solo2Item = new WpfMenuItem
         {
             Header = "Hanya Layar 2",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Desktop16 }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Desktop16, FontSize = 16 }
         };
         solo2Item.Click += (_, _) =>
         {
@@ -215,7 +239,7 @@ public sealed class TrayIconManager : IDisposable
         var extendItem = new WpfMenuItem
         {
             Header = "Bentangkan / Extend",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.ArrowExpandAll24 }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.ArrowExpandAll24, FontSize = 16 }
         };
         extendItem.Click += (_, _) =>
         {
@@ -230,7 +254,7 @@ public sealed class TrayIconManager : IDisposable
         var profileParent = new WpfMenuItem
         {
             Header = "Profil Tampilan",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Folder24 }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Folder24, FontSize = 16 }
         };
 
         var profiles = _store.Load().Profiles;
@@ -252,7 +276,7 @@ public sealed class TrayIconManager : IDisposable
                 {
                     Header = profName,
                     InputGestureText = profile.Shortcut,
-                    Icon = new SymbolIcon { Symbol = SymbolRegular.CheckmarkCircle24 }
+                    Icon = new SymbolIcon { Symbol = SymbolRegular.CheckmarkCircle24, FontSize = 16 }
                 };
                 pItem.Click += (_, _) =>
                 {
@@ -271,7 +295,7 @@ public sealed class TrayIconManager : IDisposable
         var settingsItem = new WpfMenuItem
         {
             Header = "Buka Pengaturan",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Settings24 }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Settings24, FontSize = 16 }
         };
         settingsItem.Click += (_, _) => OpenSettingsAction?.Invoke();
         menu.Items.Add(settingsItem);
@@ -280,7 +304,7 @@ public sealed class TrayIconManager : IDisposable
         var exitItem = new WpfMenuItem
         {
             Header = "Keluar",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Dismiss24 }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Dismiss24, FontSize = 16 }
         };
         exitItem.Click += (_, _) => ExitApplicationAction?.Invoke();
         menu.Items.Add(exitItem);
@@ -322,6 +346,12 @@ public sealed class TrayIconManager : IDisposable
         {
             Shell_NotifyIcon(NIM_DELETE, ref _nid);
             _isCreated = false;
+        }
+
+        if (_hCurrentIcon != IntPtr.Zero)
+        {
+            IconHelper.DestroyNativeIcon(_hCurrentIcon);
+            _hCurrentIcon = IntPtr.Zero;
         }
 
         _source.RemoveHook(HwndHook);

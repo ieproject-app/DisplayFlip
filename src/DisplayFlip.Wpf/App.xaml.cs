@@ -10,6 +10,7 @@ using DisplayFlip.UI.Services;
 using DisplayFlip.UI.Views;
 using DisplayFlip.UI.Views.Pages;
 using Wpf.Ui.Appearance;
+using Wpf.Ui.Controls;
 
 namespace DisplayFlip.UI;
 
@@ -121,6 +122,15 @@ public partial class App : Application
     }
 
     /// <summary>
+    /// Menerapkan preferensi gaya ikon ke seluruh tampilan aplikasi (Tray, TitleBar, Taskbar).
+    /// </summary>
+    public void ApplyIconStyle(string style)
+    {
+        _trayManager?.UpdateIcon(style);
+        _mainWindow?.UpdateIconStyle(style);
+    }
+
+    /// <summary>
     /// Menutup aplikasi DisplayFlip secara eksplisit dan membersihkan seluruh resource sistem.
     /// </summary>
     public void ExitApplication()
@@ -187,8 +197,8 @@ public partial class App : Application
         win.Close();
 
         // DARK MODE RUN: Set theme BEFORE creating the window so entire visual tree & Mica init in Dark
-        ApplicationThemeManager.Apply(ApplicationTheme.Dark);
-        var winDark = new SettingsWindow();
+        ApplicationThemeManager.Apply(ApplicationTheme.Dark, WindowBackdropType.Mica, true);
+        var winDark = new SettingsWindow(false);
         winDark.WindowStartupLocation = WindowStartupLocation.CenterScreen;
         winDark.Width = 1000;
         winDark.Height = 720;
@@ -223,8 +233,21 @@ public partial class App : Application
     {
         int w = (int)Math.Max(window.ActualWidth, 1000);
         int h = (int)Math.Max(window.ActualHeight, 720);
+
+        bool isDark = path.Contains("_dark.png", StringComparison.OrdinalIgnoreCase);
+        var bgBrush = isDark
+            ? new SolidColorBrush(Color.FromRgb(0x20, 0x20, 0x20))
+            : new SolidColorBrush(Color.FromRgb(0xF8, 0xF8, 0xF8));
+
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawRectangle(bgBrush, null, new Rect(0, 0, w, h));
+            dc.DrawRectangle(new VisualBrush(window), null, new Rect(0, 0, w, h));
+        }
+
         var rtb = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
-        rtb.Render(window);
+        rtb.Render(visual);
 
         var enc = new PngBitmapEncoder();
         enc.Frames.Add(BitmapFrame.Create(rtb));

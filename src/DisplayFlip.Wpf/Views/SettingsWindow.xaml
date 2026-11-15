@@ -77,6 +77,7 @@
             SnapsToDevicePixels="True">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon
+                    x:Name="TitleBarIcon"
                     Source="pack://application:,,,/DisplayFlip.ico"
                     RenderOptions.BitmapScalingMode="HighQuality"
                     UseLayoutRounding="True"
