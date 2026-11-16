@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DisplayFlip for Windows 11 - Spatial Multi-Monitor Studio</title>
+  <link rel="icon" href="data:," />
+  <meta name="description" content="DisplayFlip v1.1.0 is a native Windows 11 and 10 multi-monitor layout switcher with an interactive 2D snap canvas, System Tray quick actions, global shortcuts, and Win32 SetDisplayConfig profiles." />
+  <link rel="canonical" href="https://displayflip.snipgeek.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://displayflip.snipgeek.com/" />
+  <meta property="og:title" content="DisplayFlip for Windows 11 - Spatial Multi-Monitor Switcher" />
+  <meta property="og:description" content="Rearrange monitors, swap primary displays, and automate layouts from the Windows 11 tray, hotkeys, or CLI." />
+  <meta property="og:image" content="https://displayflip.snipgeek.com/assets/displays-dark.webp" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "DisplayFlip",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Windows 11, Windows 10 (x64)",
+        "softwareVersion": "1.1.0",
+        "url": "https://displayflip.snipgeek.com/",
+        "downloadUrl": "https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Native .NET 10 and WPF-UI Fluent multi-monitor layout and profile switcher for Windows 10 and 11."
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Should I download the 3 MB ZIP or the 74 MB Standalone EXE?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pick the 3 MB ZIP if your PC has the .NET 10 Desktop Runtime for the lightest startup footprint. Pick the 74 MB Standalone EXE for a single portable file with zero dependencies."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does Auto-Wake restore dual monitors from Solo mode?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "DisplayFlip uses native Win32 QueryDisplayConfig and SetDisplayConfig APIs to transition into Extend mode before restoring exact screen coordinates and primary assignments."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does closing the settings window stop global keyboard shortcuts?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Closing the main window minimizes DisplayFlip to the Windows notification tray so hotkeys and quick actions remain active."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/light/style.css" />
+
+  <style>
+    /*
+      Design Read: Flagship spatial Windows desktop product site for multi-monitor power users,
+      with an Ethereal Glass + Fluent 2 language, leaning toward Double-Bezel machined frames, Fluid Island nav, Button-in-Button pills, and Outfit + Plus Jakarta Sans.
+      Dials: DESIGN_VARIANCE: 8 | MOTION_INTENSITY: 7 | VISUAL_DENSITY: 4
+    */
+    :root {
+      --bg: #070a10;
+      --bg-mesh-1: rgba(0, 120, 212, 0.22);
+      --bg-mesh-2: rgba(56, 189, 248, 0.14);
+      --shell-bg: rgba(255, 255, 255, 0.035);
+      --shell-ring: rgba(255, 255, 255, 0.09);
+      --core-bg: #10151f;
+      --core-alt: #151c29;
+      --core-tint: linear-gradient(150deg, #101827 0%, #0b2239 100%);
+      --core-inset: rgba(255, 255, 255, 0.11);
+      --ink: #f4f7fb;
+      --ink-sec: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #7dd3fc;
+      --accent-ink: #041e2e;
+      --accent-soft: rgba(56, 189, 248, 0.14);
+      --nav-glass: rgba(16, 21, 31, 0.78);
+      --shadow-ambient: 0 32px 80px rgba(0, 15, 40, 0.65);
+      --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+      --r-outer: 24px;
+      --r-pad: 7px;
+      --r-inner: 17px;
+    }
+
+    html[data-theme="light"] {
+      --bg: #eef3f9;
+      --bg-mesh-1: rgba(0, 103, 192, 0.12);
+      --bg-mesh-2: rgba(14, 165, 233, 0.09);
+      --shell-bg: rgba(15, 23, 42, 0.035);
+      --shell-ring: rgba(15, 23, 42, 0.09);
+      --core-bg: #ffffff;
+      --core-alt: #f7f9fc;
+      --core-tint: linear-gradient(150deg, #ffffff 0%, #e5f1fc 100%);
+      --core-inset: rgba(255, 255, 255, 0.9);
+      --ink: #0f172a;
+      --ink-sec: #475569;
+      --accent: #0067c0;
+      --accent-hover: #0054a0;
+      --accent-ink: #ffffff;
+      --accent-soft: rgba(0, 103, 192, 0.1);
+      --nav-glass: rgba(255, 255, 255, 0.8);
+      --shadow-ambient: 0 28px 70px rgba(0, 72, 138, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Plus Jakarta Sans", "Segoe UI Variable Text", system-ui, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 60% 42% at 76% 6%, var(--bg-mesh-1), transparent 70%),
+        radial-gradient(ellipse 48% 36% at 14% 16%, var(--bg-mesh-2), transparent 65%);
+      color: var(--ink);
+      line-height: 1.6;
+      overflow-x: clip;
+      transition: background-color 0.45s var(--ease-fluid), color 0.35s var(--ease-fluid);
+    }
+
+    /* Fixed subtle pointer-events-none film texture */
+    .grain-layer {
+      position: fixed; inset: 0; pointer-events: none; z-index: 40; opacity: 0.025;
+      background-image: radial-gradient(rgba(255,255,255,0.6) 0.5px, transparent 0.5px);
+      background-size: 3px 3px;
+    }
+    html[data-theme="light"] .grain-layer { opacity: 0.018; }
+
+    .container { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+    /* Floating Fluid Island Navigation */
+    .island-wrap {
+      position: sticky; top: 16px; z-index: 50;
+      display: flex; justify-content: center; padding: 16px 16px 0;
+      pointer-events: none;
+    }
+    .island-nav {
+      pointer-events: auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 22px;
+      padding: 7px 8px 7px 14px;
+      background: var(--nav-glass);
+      backdrop-filter: blur(22px) saturate(160%);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+      border: 1px solid var(--shell-ring);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--core-inset);
+      border-radius: 999px;
+      height: 54px;
+      max-width: 820px;
+      width: 100%;
+    }
+    .brand {
+      display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
+      color: var(--ink); font-family: "Outfit", sans-serif; font-weight: 700; font-size: 16px;
+      white-space: nowrap;
+    }
+    .brand-dot {
+      width: 30px; height: 30px; border-radius: 999px;
+      background: var(--accent); color: var(--accent-ink);
+      display: grid; place-items: center; font-size: 15px;
+    }
+    .nav-links { display: flex; align-items: center; gap: 20px; }
+    .nav-links a {
+      color: var(--ink-sec); text-decoration: none; font-size: 13.5px; font-weight: 500;
+      white-space: nowrap; transition: color 0.25s var(--ease-fluid);
+    }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-right { display: flex; align-items: center; gap: 8px; }
+
+    /* Button-in-Button CTA Architecture */
+    .btn-pill {
+      group: cta; display: inline-flex; align-items: center; gap: 10px;
+      padding: 5px 5px 5px 18px; border-radius: 999px;
+      background: var(--accent); color: var(--accent-ink);
+      font-size: 13.5px; font-weight: 600; text-decoration: none; white-space: nowrap;
+      border: none; cursor: pointer; font-family: inherit;
+      box-shadow: 0 8px 24px rgba(0, 120, 212, 0.25);
+      transition: background 0.35s var(--ease-fluid), transform 0.2s var(--ease-fluid);
+    }
+    .btn-pill:hover { background: var(--accent-hover); }
+    .btn-pill:active { transform: scale(0.98); }
+    .btn-pill .icon-well {
+      width: 30px; height: 30px; border-radius: 999px;
+      background: rgba(0, 0, 0, 0.14);
+      display: grid; place-items: center; font-size: 15px;
+      transition: transform 0.35s var(--ease-fluid);
+    }
+    html[data-theme="light"] .btn-pill .icon-well { background: rgba(255, 255, 255, 0.2); }
+    .btn-pill:hover .icon-well { transform: translate(2px, -1px) scale(1.06); }
+
+    .btn-pill-ghost {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 5px 5px 5px 18px; border-radius: 999px;
+      background: var(--core-bg); color: var(--ink);
+      border: 1px solid var(--shell-ring);
+      font-size: 13.5px; font-weight: 600; text-decoration: none; white-space: nowrap;
+      cursor: pointer; font-family: inherit;
+      transition: border-color 0.3s var(--ease-fluid), transform 0.2s var(--ease-fluid);
+    }
+    .btn-pill-ghost:hover { border-color: var(--accent); }
+    .btn-pill-ghost:active { transform: scale(0.98); }
+    .btn-pill-ghost .icon-well {
+      width: 30px; height: 30px; border-radius: 999px;
+      background: var(--shell-bg); display: grid; place-items: center; font-size: 15px;
+      transition: transform 0.35s var(--ease-fluid);
+    }
+    .btn-pill-ghost:hover .icon-well { transform: translate(2px, -1px) scale(1.06); }
+
+    /* Morphing Hamburger & Full-Screen Glass Drawer */
+    .hamburger {
+      display: none; width: 38px; height: 38px; border-radius: 999px;
+      border: 1px solid var(--shell-ring); background: var(--core-bg);
+      cursor: pointer; position: relative; align-items: center; justify-content: center;
+    }
+    .hamburger span {
+      position: absolute; width: 16px; height: 1.5px; background: var(--ink);
+      border-radius: 2px; transition: transform 0.4s var(--ease-fluid);
+    }
+    .hamburger span:first-child { transform: translateY(-3.5px); }
+    .hamburger span:last-child { transform: translateY(3.5px); }
+    .hamburger[aria-expanded="true"] span:first-child { transform: translateY(0) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:last-child { transform: translateY(0) rotate(-45deg); }
+
+    .mobile-drawer {
+      position: fixed; inset: 0; z-index: 45;
+      background: var(--nav-glass);
+      backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+      display: flex; flex-direction: column; justify-content: center; gap: 18px;
+      padding: 32px; opacity: 0; pointer-events: none;
+      transition: opacity 0.4s var(--ease-fluid);
+    }
+    .mobile-drawer.open { opacity: 1; pointer-events: auto; }
+    .mobile-drawer a {
+      font-family: "Outfit", sans-serif; font-size: 28px; font-weight: 600;
+      color: var(--ink); text-decoration: none;
+      transform: translateY(28px); opacity: 0;
+      transition: transform 0.55s var(--ease-fluid), opacity 0.45s var(--ease-fluid);
+    }
+    .mobile-drawer.open a { transform: translateY(0); opacity: 1; }
+    .mobile-drawer.open a:nth-child(2) { transition-delay: 60ms; }
+    .mobile-drawer.open a:nth-child(3) { transition-delay: 120ms; }
+    .mobile-drawer.open a:nth-child(4) { transition-delay: 180ms; }
+
+    @media (max-width: 767px) {
+      .nav-links { display: none; }
+      .nav-cta-desktop { display: none; }
+      .hamburger { display: inline-flex; }
+    }
+
+    /* Double-Bezel (Doppelrand) Machined Enclosures */
+    .bezel-outer {
+      background: var(--shell-bg);
+      border: 1px solid var(--shell-ring);
+      border-radius: var(--r-outer);
+      padding: var(--r-pad);
+      box-shadow: var(--shadow-ambient);
+      position: relative;
+    }
+    .bezel-inner {
+      background: var(--core-bg);
+      border-radius: var(--r-inner);
+      box-shadow: inset 0 1px 1px var(--core-inset);
+      overflow: hidden;
+      position: relative;
+    }
+    .spotlight-card::after {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+      background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), var(--accent-soft), transparent 65%);
+      opacity: 0; transition: opacity 0.35s var(--ease-fluid);
+    }
+    .spotlight-card:hover::after { opacity: 1; }
+
+    /* Hero: Centered Spatial Architectural Showcase */
+    .hero { padding: 28px 0 24px; text-align: center; }
+    .hero-copy { max-width: 720px; margin: 0 auto 24px; }
+    .eyebrow-pill {
+      display: inline-block; padding: 5px 12px; border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent);
+      font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-family: "Outfit", "Segoe UI Variable Display", sans-serif;
+      font-size: clamp(32px, 4.1vw, 52px); font-weight: 700;
+      line-height: 1.06; letter-spacing: -0.03em; margin-bottom: 12px;
+    }
+    .hero-sub {
+      font-size: 16px; color: var(--ink-sec); max-width: 54ch; margin: 0 auto 20px;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; }
+
+    /* Spatial Perspective Hero Stage */
+    .spatial-stage {
+      perspective: 1400px; max-width: 820px; margin: 0 auto;
+    }
+    .spatial-frame {
+      transition: transform 0.6s var(--ease-fluid);
+      transform-style: preserve-3d;
+    }
+    .bloom-backdrop {
+      position: relative; padding: 16px;
+      background-size: cover; background-position: center;
+      border-radius: var(--r-inner);
+    }
+    .hero-shot {
+      width: 100%; max-width: 680px; margin: 0 auto;
+      aspect-ratio: 1000 / 720; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 28px 64px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+    .hero-shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.35s var(--ease-fluid); }
+    .stage-switcher {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px;
+      background: var(--core-alt); border-top: 1px solid var(--shell-ring);
+      justify-content: space-between; align-items: center;
+    }
+    .stage-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .stage-pill {
+      padding: 6px 12px; border-radius: 999px; border: 1px solid var(--shell-ring);
+      background: transparent; color: var(--ink-sec); font-size: 12px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all 0.25s var(--ease-fluid);
+    }
+    .stage-pill.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .stage-pill:hover:not(.active) { color: var(--ink); border-color: var(--accent); }
+
+    /* Interactive Windows Display Topology Morph Strip */
+    .section-space { padding: 84px 0; }
+    .sec-head { max-width: 60ch; margin-bottom: 34px; }
+    h2 {
+      font-family: "Outfit", sans-serif; font-size: clamp(26px, 3.2vw, 40px);
+      font-weight: 700; line-height: 1.12; letter-spacing: -0.025em; margin-bottom: 10px;
+    }
+    .sec-head p { color: var(--ink-sec); font-size: 15.5px; }
+
+    .topo-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 24px; align-items: center; padding: 26px; }
+    @media (max-width: 900px) { .topo-grid { grid-template-columns: 1fr; padding: 18px; } }
+    .mode-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .mode-pill {
+      padding: 8px 14px; border-radius: 999px; border: 1px solid var(--shell-ring);
+      background: var(--core-alt); color: var(--ink-sec); font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all 0.3s var(--ease-fluid);
+    }
+    .mode-pill.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .topo-visual {
+      height: 190px; border-radius: 14px; background: var(--core-alt);
+      border: 1px solid var(--shell-ring); position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; gap: 14px; padding: 18px;
+    }
+    .v-screen {
+      border-radius: 10px; border: 1.5px solid var(--shell-ring); background: var(--core-bg);
+      padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between;
+      transition: transform 0.55s var(--ease-fluid), opacity 0.45s var(--ease-fluid), border-color 0.35s var(--ease-fluid);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.16);
+    }
+    .v-screen.primary { border-color: var(--accent); box-shadow: 0 12px 28px var(--accent-soft); }
+    .v-screen.sleep { opacity: 0.22; transform: scale(0.92); border-style: dashed; }
+    .v-s1 { width: 156px; height: 96px; }
+    .v-s2 { width: 174px; height: 106px; }
+    .v-head { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; }
+    .v-role {
+      font-family: "JetBrains Mono", monospace; font-size: 10px; padding: 2px 7px;
+      border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+    }
+    .v-spec { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--ink-sec); }
+    .cli-pill {
+      margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      background: var(--core-alt); border: 1px solid var(--shell-ring); border-radius: 12px;
+      padding: 10px 14px; font-family: "JetBrains Mono", monospace; font-size: 12.5px; color: var(--accent);
+    }
+
+    /* Architectural AdSense Enclosures */
+    .ad-shell {
+      margin: 32px auto;
+      background: var(--shell-bg); border: 1px solid var(--shell-ring);
+      border-radius: 18px; padding: 6px;
+    }
+    .ad-hidden .ad-shell { display: none !important; }
+    .ad-core {
+      background: var(--core-bg); border-radius: 12px;
+      border: 1px dashed var(--shell-ring);
+      padding: 14px 18px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .ad-tag {
+      font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); margin-bottom: 4px;
+    }
+    .ad-desc { font-size: 12px; color: var(--ink-sec); }
+    .ad-leader { max-width: 780px; } .ad-leader .ad-core { min-height: 96px; }
+    .ad-rail { margin: 0 0 18px; } .ad-rail .ad-core { min-height: 250px; }
+    .ad-inarticle { max-width: 840px; } .ad-inarticle .ad-core { min-height: 250px; }
+    .ad-footer { max-width: 980px; } .ad-footer .ad-core { min-height: 110px; }
+
+    /* Asymmetrical Double-Bezel Bento (4 distinct cells) */
+    .bento-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; }
+    .b-col-7 { grid-column: span 7; }
+    .b-col-5 { grid-column: span 5; }
+    @media (max-width: 900px) { .b-col-7, .b-col-5 { grid-column: span 12; } }
+    .b-pad { padding: 24px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
+    .b-pad.tinted { background: var(--core-tint); }
+    .b-pad h3 {
+      font-family: "Outfit", sans-serif; font-size: 19px; font-weight: 600;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 9px;
+    }
+    .b-pad h3 i { color: var(--accent); font-size: 20px; }
+    .b-pad p { font-size: 14px; color: var(--ink-sec); max-width: 48ch; margin-bottom: 18px; }
+    .b-img {
+      border-radius: 12px; overflow: hidden; border: 1px solid var(--shell-ring);
+      aspect-ratio: 1000 / 720;
+    }
+    .b-img.tray-ratio { aspect-ratio: 520 / 348; max-width: 380px; }
+    .b-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Guide + Sticky 300x250 AdSense Rail */
+    .guide-split { display: grid; grid-template-columns: 1fr 316px; gap: 28px; align-items: start; }
+    @media (max-width: 960px) { .guide-split { grid-template-columns: 1fr; } }
+    .sticky-rail { position: sticky; top: 84px; }
+    .diff-list { display: grid; gap: 12px; margin-top: 18px; }
+    .diff-item {
+      display: grid; grid-template-columns: 180px 1fr; gap: 14px; padding: 16px 18px;
+      border-radius: 14px; background: var(--core-alt); border: 1px solid var(--shell-ring);
+      font-size: 14px;
+    }
+    @media (max-width: 600px) { .diff-item { grid-template-columns: 1fr; gap: 4px; } }
+    .diff-item strong { color: var(--ink); font-family: "Outfit", sans-serif; }
+    .diff-item span { color: var(--ink-sec); }
+
+    /* Package Chooser */
+    .pkg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+    @media (max-width: 767px) { .pkg-grid { grid-template-columns: 1fr; } }
+    .pkg-body { padding: 26px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
+    .pkg-meta {
+      font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--accent);
+      margin-bottom: 8px; display: block;
+    }
+    .pkg-body h3 { font-family: "Outfit", sans-serif; font-size: 20px; margin-bottom: 8px; }
+    .pkg-body p { font-size: 14px; color: var(--ink-sec); margin-bottom: 20px; }
+
+    /* FAQ */
+    .faq-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    @media (max-width: 820px) { .faq-grid { grid-template-columns: 1fr; } }
+    details {
+      background: var(--core-bg); border: 1px solid var(--shell-ring);
+      border-radius: 16px; padding: 18px 20px;
+    }
+    summary {
+      cursor: pointer; font-weight: 600; font-size: 15px; list-style: none;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    summary::after { content: "+"; color: var(--accent); font-size: 18px; }
+    details[open] summary::after { content: "-"; }
+    details p { margin-top: 10px; font-size: 14px; color: var(--ink-sec); }
+
+    footer {
+      border-top: 1px solid var(--shell-ring); padding: 36px 0 88px;
+      font-size: 13.5px; color: var(--ink-sec);
+    }
+    .foot-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+    .foot-links { display: flex; flex-wrap: wrap; gap: 20px; }
+    .foot-links a { color: var(--ink-sec); text-decoration: none; font-weight: 500; }
+    .foot-links a:hover { color: var(--accent); }
+
+    /* Entry Scroll Choreography */
+    .reveal {
+      opacity: 0; transform: translateY(28px); filter: blur(6px);
+      transition: opacity 0.75s var(--ease-fluid), transform 0.75s var(--ease-fluid), filter 0.75s var(--ease-fluid);
+    }
+    .reveal.in { opacity: 1; transform: translateY(0); filter: blur(0); }
+
+    /* Floating Bottom-Right Preview Dock (Does not glue to top or break nav) */
+    .dock {
+      position: fixed; bottom: 16px; right: 16px; z-index: 55;
+      background: var(--nav-glass); backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid var(--shell-ring); border-radius: 999px;
+      padding: 6px 8px; display: flex; align-items: center; gap: 6px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3);
+      max-width: calc(100vw - 32px); overflow-x: auto;
+    }
+    .dock-btn {
+      padding: 5px 11px; border-radius: 999px; border: 1px solid transparent;
+      background: transparent; color: var(--ink-sec); font-size: 11.5px; font-weight: 600;
+      text-decoration: none; cursor: pointer; font-family: inherit; white-space: nowrap;
+    }
+    .dock-btn.active { background: var(--accent); color: var(--accent-ink); }
+    .dock-btn:hover:not(.active) { color: var(--ink); border-color: var(--shell-ring); }
+    .d-short { display: none; }
+    @media (max-width: 640px) {
+      .dock { padding: 5px 6px; gap: 3px; right: 12px; left: 12px; justify-content: space-between; max-width: none; }
+      .dock-btn { padding: 5px 8px; font-size: 11px; }
+      .d-full { display: none; }
+      .d-short { display: inline; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; filter: none; transition: none; }
+      *, *::before, *::after { transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grain-layer" aria-hidden="true"></div>
+
+  <!-- Detached Floating Fluid Island Nav -->
+  <div class="island-wrap">
+    <nav class="island-nav" aria-label="Primary navigation">
+      <a class="brand" href="#top">
+        <span class="brand-dot"><i class="ph-light ph-monitor"></i></span>
+        <span>DisplayFlip</span>
+      </a>
+      <div class="nav-links">
+        <a href="#topology">Modes</a>
+        <a href="#bento">Capabilities</a>
+        <a href="#guide">Win32 Guide</a>
+        <a href="#downloads">Packages</a>
+      </div>
+      <div class="nav-right">
+        <a class="btn-pill nav-cta-desktop" href="#downloads">
+          <span>Download v1.1.0</span>
+          <span class="icon-well"><i class="ph-light ph-arrow-down"></i></span>
+        </a>
+        <button class="hamburger" id="burgerBtn" type="button" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Mobile Full-Screen Glass Drawer -->
+  <div class="mobile-drawer" id="mobileDrawer" aria-hidden="true">
+    <a href="#topology">Display Modes</a>
+    <a href="#bento">Capabilities</a>
+    <a href="#guide">Win32 Architecture</a>
+    <a href="#downloads">Download v1.1.0</a>
+  </div>
+
+  <main id="top" class="container">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow-pill">Windows 11 Spatial Switcher</span>
+        <h1>Dual Screens Orchestrated In One Motion</h1>
+        <p class="hero-sub">
+          Save exact monitor coordinates, wake sleeping displays from Solo mode, and flip primary roles cleanly.
+        </p>
+        <div class="hero-actions">
+          <a class="btn-pill" href="#downloads">
+            <span>Download v1.1.0</span>
+            <span class="icon-well"><i class="ph-light ph-arrow-down-right"></i></span>
+          </a>
+          <a class="btn-pill-ghost" href="#topology">
+            <span>Try Mode Stage</span>
+            <span class="icon-well"><i class="ph-light ph-sliders-horizontal"></i></span>
+          </a>
+        </div>
+      </div>
+
+      <div class="spatial-stage" id="tiltStage">
+        <div class="bezel-outer spatial-frame" id="tiltFrame">
+          <div class="bezel-inner">
+            <div class="bloom-backdrop" id="heroBloom" style="background-image: url('assets/bloom-dark.webp');">
+              <div class="hero-shot">
+                <img id="heroImg" src="assets/displays-dark.webp" width="1000" height="720" alt="DisplayFlip Spatial 2D Monitor Canvas" />
+              </div>
+            </div>
+            <div class="stage-switcher">
+              <div class="stage-pills" id="heroTabs">
+                <button type="button" class="stage-pill active" data-shot="displays">2D Canvas</button>
+                <button type="button" class="stage-pill" data-shot="shortcuts">Hotkeys</button>
+                <button type="button" class="stage-pill" data-shot="general">General</button>
+                <button type="button" class="stage-pill" data-shot="about">CLI</button>
+              </div>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-sec);">1000x720 Live Capture</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slot 1: Below Hero Tool -->
+    <aside class="ad-shell ad-leader reveal" aria-label="Advertisement">
+      <div class="ad-core">
+        <span class="ad-tag">Advertisement - AdSense Slot 1: belowHero (728x90 / Responsive)</span>
+        <span class="ad-desc">Publisher ca-pub-6235611333449307 - Reserved 96px anti-CLS container cleanly below the Spatial Hero.</span>
+      </div>
+    </aside>
+
+    <!-- Section 2: Interactive Topology Morph Stage -->
+    <section class="section-space reveal" id="topology">
+      <div class="sec-head">
+        <h2>Watch Windows Display Modes Morph Live</h2>
+        <p>Preview how DisplayFlip updates coordinates, active power state, and CLI syntax across common multi-screen triggers.</p>
+      </div>
+
+      <div class="bezel-outer spotlight-card">
+        <div class="bezel-inner topo-grid">
+          <div>
+            <div class="mode-pills" id="modePills">
+              <button type="button" class="mode-pill active" data-mode="extend">Extend Dual</button>
+              <button type="button" class="mode-pill" data-mode="swap">Quick Swap</button>
+              <button type="button" class="mode-pill" data-mode="solo1">Solo 1</button>
+              <button type="button" class="mode-pill" data-mode="solo2">Solo 2</button>
+              <button type="button" class="mode-pill" data-mode="wake">Auto-Wake Profile</button>
+            </div>
+            <p id="modeExplain" style="font-size:14.5px; color:var(--ink-sec);">
+              Extends desktop across BOE08D7 (Left Primary) and MSI40B7 (Right Extended) using saved coordinates.
+            </p>
+            <div class="cli-pill">
+              <code id="modeCmd">DisplayFlip.exe --extend</code>
+              <span style="font-size:11px; color:var(--ink-sec);">Win32 CCD</span>
+            </div>
+          </div>
+
+          <div class="topo-visual">
+            <div class="v-screen v-s1 primary" id="vMon1">
+              <div class="v-head"><span>1 BOE08D7</span><span class="v-role" id="vRole1">Primary</span></div>
+              <div class="v-spec" id="vSpec1">X: 0, 1920x1080</div>
+            </div>
+            <div class="v-screen v-s2" id="vMon2">
+              <div class="v-head"><span>2 MSI40B7</span><span class="v-role" id="vRole2" style="display:none;">Primary</span></div>
+              <div class="v-spec" id="vSpec2">X: +1920, 2560x1440</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Cursor-Spotlight Double-Bezel Bento -->
+    <section class="section-space reveal" id="bento">
+      <div class="sec-head">
+        <h2>Machined Details Across Every View</h2>
+        <p>Every DisplayFlip module solves a concrete multi-monitor friction point without background clutter.</p>
+      </div>
+
+      <div class="bento-grid">
+        <div class="bezel-outer spotlight-card b-col-7">
+          <div class="bezel-inner b-pad">
+            <div>
+              <h3><i class="ph-light ph-keyboard"></i> Conflict-Guarded Global Shortcuts</h3>
+              <p>Bind six system-wide display triggers and per-profile hotkeys using canonical Windows key normalization.</p>
+            </div>
+            <div class="b-img">
+              <img data-theme-img="shortcuts" src="assets/shortcuts-dark.webp" width="1000" height="720" alt="DisplayFlip Global Keyboard Shortcuts screen" />
+            </div>
+          </div>
+        </div>
+
+        <div class="bezel-outer spotlight-card b-col-5">
+          <div class="bezel-inner b-pad tinted">
+            <div>
+              <h3><i class="ph-light ph-translate"></i> Bilingual Live Switch &amp; Startup</h3>
+              <p>Launch silently via Windows startup and toggle English or Indonesian live without restarting.</p>
+            </div>
+            <div class="b-img">
+              <img data-theme-img="general" src="assets/general-dark.webp" width="1000" height="720" alt="DisplayFlip General and Icons configuration" />
+            </div>
+          </div>
+        </div>
+
+        <div class="bezel-outer spotlight-card b-col-5">
+          <div class="bezel-inner b-pad">
+            <div>
+              <h3><i class="ph-light ph-tray-arrow-down"></i> Native Taskbar Quick Menu</h3>
+              <p>Right-click the Windows 11 notification tray anytime for Quick Swap, Identify, Solo modes, or saved profiles.</p>
+            </div>
+            <div class="b-img tray-ratio">
+              <img data-theme-img="tray" src="assets/tray-dark.webp" width="520" height="348" alt="DisplayFlip System Tray flyout menu" />
+            </div>
+          </div>
+        </div>
+
+        <div class="bezel-outer spotlight-card b-col-7">
+          <div class="bezel-inner b-pad">
+            <div>
+              <h3><i class="ph-light ph-terminal-window"></i> Headless CLI &amp; Diagnostic Reference</h3>
+              <p>Trigger profiles from Stream Deck, AutoHotkey, or PowerShell with JSON export and per-call language flags.</p>
+            </div>
+            <div class="b-img">
+              <img data-theme-img="about" src="assets/about-dark.webp" width="1000" height="720" alt="DisplayFlip About and CLI cards" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Win32 Guide + Sticky 300x250 AdSense Rail -->
+    <section class="section-space reveal" id="guide">
+      <div class="guide-split">
+        <div>
+          <span class="eyebrow-pill">Technical Deep Dive</span>
+          <h2>Why Win32 SetDisplayConfig Outperforms Win + P</h2>
+          <p style="color:var(--ink-sec); max-width:58ch;">
+            Built-in projection shortcuts cycle four generic states and forget exact monitor placement. DisplayFlip writes validated path topology directly through Windows CCD.
+          </p>
+          <div class="diff-list">
+            <div class="diff-item">
+              <strong>Auto-Wake From Solo</strong>
+              <span>Detects disabled paths in Solo or Duplicate mode, transitions cleanly to Extend, then restores coordinates.</span>
+            </div>
+            <div class="diff-item">
+              <strong>Safe Partial-Apply</strong>
+              <span>When an external monitor is unplugged while traveling, DisplayFlip configures connected displays without errors.</span>
+            </div>
+            <div class="diff-item">
+              <strong>Hardware EDID Labels</strong>
+              <span>Maps paths to real model IDs such as MSI40B7 or BOE08D7 so identical screens stay distinguishable.</span>
+            </div>
+            <div class="diff-item">
+              <strong>Single-Instance Mutex</strong>
+              <span>Prevents duplicate tray processes while firing CLI commands straight through command-line flags.</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="sticky-rail">
+          <div class="ad-shell ad-rail" aria-label="Advertisement">
+            <div class="ad-core">
+              <span class="ad-tag">Advertisement - Slot 2: guideRail</span>
+              <span class="ad-desc">300x250 Sticky Desktop Medium Rectangle beside the Win32 guide for strong Active View time.</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Slot 3: Mid-Page In-Guide -->
+    <aside class="ad-shell ad-inarticle reveal" aria-label="Advertisement">
+      <div class="ad-core">
+        <span class="ad-tag">Advertisement - Slot 3: inGuide (Responsive In-Article)</span>
+        <span class="ad-desc">250px min-height break placed cleanly above Download Packages with zero accidental click proximity.</span>
+      </div>
+    </aside>
+
+    <!-- Section 5: Packages -->
+    <section class="section-space reveal" id="downloads">
+      <div class="sec-head">
+        <h2>Download DisplayFlip v1.1.0</h2>
+        <p>Verified x64 builds on .NET 10 LTS. Completely local with zero telemetry.</p>
+      </div>
+
+      <div class="pkg-grid">
+        <div class="bezel-outer spotlight-card">
+          <div class="bezel-inner pkg-body tinted">
+            <div>
+              <span class="pkg-meta">RECOMMENDED - ~3 MB ZIP</span>
+              <h3>DisplayFlip-v1.1.0-win-x64.zip</h3>
+              <p>Compact 6.87 MB executable requiring Microsoft .NET 10 Desktop Runtime. Fastest cold start for daily tray use.</p>
+            </div>
+            <div>
+              <a class="btn-pill" href="https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0" target="_blank" rel="noopener">
+                <span>Get ZIP on GitHub</span>
+                <span class="icon-well"><i class="ph-light ph-arrow-up-right"></i></span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="bezel-outer spotlight-card">
+          <div class="bezel-inner pkg-body">
+            <div>
+              <span class="pkg-meta">PORTABLE - ~74 MB SINGLE EXE</span>
+              <h3>DisplayFlip-v1.1.0-Standalone-win-x64.exe</h3>
+              <p>Zero external prerequisites with the full runtime bundled inside. Drop onto a USB drive and run anywhere.</p>
+            </div>
+            <div>
+              <a class="btn-pill-ghost" href="https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0" target="_blank" rel="noopener">
+                <span>Get Standalone EXE</span>
+                <span class="icon-well"><i class="ph-light ph-arrow-up-right"></i></span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6: FAQ -->
+    <section class="section-space reveal" id="faq">
+      <div class="sec-head">
+        <h2>Frequently Asked Questions</h2>
+        <p>Quick answers about packages, background tray residency, and Win32 multi-monitor safety.</p>
+      </div>
+      <div class="faq-grid">
+        <details open>
+          <summary>Which package fits my Windows PC best?</summary>
+          <p>Download the 3 MB ZIP if your PC has .NET 10 Desktop Runtime. Pick the 74 MB Standalone EXE if you want zero prerequisites.</p>
+        </details>
+        <details>
+          <summary>Does closing the main window stop hotkeys?</summary>
+          <p>No. Closing minimizes DisplayFlip quietly to the Windows notification area so hotkeys stay active until you choose Exit.</p>
+        </details>
+        <details>
+          <summary>Can I script profile switches via PowerShell?</summary>
+          <p>Yes. Run <code>DisplayFlip.exe --apply "Profile"</code>, <code>--swap</code>, <code>--solo 1</code>, or <code>--list --json</code> directly.</p>
+        </details>
+        <details>
+          <summary>Does DisplayFlip collect usage telemetry?</summary>
+          <p>Never. Profiles, hotkeys, and preferences stay strictly local on your Windows device.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- Slot 4: Closing Footer -->
+    <aside class="ad-shell ad-footer reveal" aria-label="Advertisement">
+      <div class="ad-core">
+        <span class="ad-tag">Advertisement - Slot 4: preFooter (Responsive Banner)</span>
+        <span class="ad-desc">Closing full-width AdSense unit clearly separated above SnipGeek footer navigation.</span>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="container foot-inner">
+      <div><strong>DisplayFlip</strong> Native Windows 10 and 11 Multi-Monitor Switcher on SnipGeek</div>
+      <div class="foot-links">
+        <a href="https://github.com/ieproject-app/DisplayFlip" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://snipgeek.com" target="_blank" rel="noopener">SnipGeek</a>
+        <a href="https://snipgeek.com/privacy" target="_blank" rel="noopener">Privacy</a>
+        <a href="https://snipgeek.com/terms" target="_blank" rel="noopener">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating Bottom-Right Control Dock -->
+  <div class="dock" role="region" aria-label="Prototype switcher">
+    <a class="dock-btn" href="index.html"><span class="d-full">All 3</span><span class="d-short">All</span></a>
+    <a class="dock-btn active" href="option-1-win11-mica.html"><span class="d-full">1: Spatial Studio</span><span class="d-short">Opt 1</span></a>
+    <a class="dock-btn" href="option-2-win11-bloom.html"><span class="d-full">2: Surface Atelier</span><span class="d-short">Opt 2</span></a>
+    <a class="dock-btn" href="option-3-win11-dark.html"><span class="d-full">3: Command Terminal</span><span class="d-short">Opt 3</span></a>
+    <button class="dock-btn" id="themeBtn" type="button">Light Mode</button>
+    <button class="dock-btn active" id="adsBtn" type="button">Ads: On</button>
+  </div>
+
+  <script>
+    // Mobile Fluid Drawer
+    const burger = document.getElementById("burgerBtn");
+    const drawer = document.getElementById("mobileDrawer");
+    burger.addEventListener("click", () => {
+      const open = drawer.classList.toggle("open");
+      burger.setAttribute("aria-expanded", String(open));
+      drawer.setAttribute("aria-hidden", String(!open));
+    });
+    drawer.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => {
+      drawer.classList.remove("open");
+      burger.setAttribute("aria-expanded", "false");
+    }));
+
+    // Synchronized Light / Dark theme + real Windows 11 captures
+    let currentTheme = "dark";
+    let currentHeroShot = "displays";
+    function syncAssets() {
+      const suffix = currentTheme === "dark" ? "dark" : "light";
+      document.getElementById("heroBloom").style.backgroundImage = `url('assets/bloom-${suffix}.webp')`;
+      document.getElementById("heroImg").src = `assets/${currentHeroShot}-${suffix}.webp`;
+      document.querySelectorAll("[data-theme-img]").forEach((img) => {
+        img.src = `assets/${img.dataset.themeImg}-${suffix}.webp`;
+      });
+    }
+    document.getElementById("themeBtn").addEventListener("click", function () {
+      currentTheme = currentTheme === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", currentTheme);
+      this.textContent = currentTheme === "dark" ? "Light Mode" : "Dark Mode";
+      syncAssets();
+    });
+
+    // Hero live screenshot switcher
+    document.querySelectorAll("#heroTabs .stage-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#heroTabs .stage-pill").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentHeroShot = btn.dataset.shot;
+        syncAssets();
+      });
+    });
+
+    // Ads preview toggle
+    document.getElementById("adsBtn").addEventListener("click", function () {
+      document.body.classList.toggle("ad-hidden");
+      const hidden = document.body.classList.contains("ad-hidden");
+      this.textContent = hidden ? "Ads: Off" : "Ads: On";
+      this.classList.toggle("active", !hidden);
+    });
+
+    // Pointer 3D tilt on hero spatial frame (desktop non-reduced-motion only)
+    const tiltStage = document.getElementById("tiltStage");
+    const tiltFrame = document.getElementById("tiltFrame");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduceMotion && window.innerWidth > 960) {
+      tiltStage.addEventListener("pointermove", (e) => {
+        const r = tiltStage.getBoundingClientRect();
+        const x = ((e.clientX - r.left) / r.width - 0.5) * 6;
+        const y = ((e.clientY - r.top) / r.height - 0.5) * -6;
+        tiltFrame.style.transform = `rotateY(${x.toFixed(2)}deg) rotateX(${y.toFixed(2)}deg)`;
+      });
+      tiltStage.addEventListener("pointerleave", () => {
+        tiltFrame.style.transform = "rotateY(0deg) rotateX(0deg)";
+      });
+    }
+
+    // Cursor spotlight tracking across Double-Bezel cards
+    document.querySelectorAll(".spotlight-card").forEach((card) => {
+      card.addEventListener("pointermove", (e) => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty("--mx", `${e.clientX - r.left}px`);
+        card.style.setProperty("--my", `${e.clientY - r.top}px`);
+      });
+    });
+
+    // Interactive Topology Mode Morph Stage
+    const modes = {
+      extend: {
+        cmd: "DisplayFlip.exe --extend",
+        explain: "Extends desktop across BOE08D7 (Left Primary) and MSI40B7 (Right Extended) using saved coordinates.",
+        s1Sleep: false, s2Sleep: false, p1: true, swapOrder: false,
+        spec1: "X: 0, 1920x1080", spec2: "X: +1920, 2560x1440"
+      },
+      swap: {
+        cmd: "DisplayFlip.exe --swap",
+        explain: "Flips left and right X coordinates and transfers Primary status to MSI40B7 without unplugging cables.",
+        s1Sleep: false, s2Sleep: false, p1: false, swapOrder: true,
+        spec1: "X: +2560, 1920x1080", spec2: "X: 0, 2560x1440"
+      },
+      solo1: {
+        cmd: "DisplayFlip.exe --solo 1",
+        explain: "Switches strictly to BOE08D7 internal screen and turns off MSI40B7 for battery travel.",
+        s1Sleep: false, s2Sleep: true, p1: true, swapOrder: false,
+        spec1: "Solo Active, 1920x1080", spec2: "Sleeping (Off)"
+      },
+      solo2: {
+        cmd: "DisplayFlip.exe --solo 2",
+        explain: "Sends full output exclusively to MSI40B7 (ideal for external monitor, gaming, or TV output).",
+        s1Sleep: true, s2Sleep: false, p1: false, swapOrder: false,
+        spec1: "Sleeping (Off)", spec2: "Solo Active, 2560x1440"
+      },
+      wake: {
+        cmd: 'DisplayFlip.exe --apply "Studio"',
+        explain: "Auto-Wakes sleeping screen from Solo mode into Extend first, then restores exact Studio layout.",
+        s1Sleep: false, s2Sleep: false, p1: false, swapOrder: false,
+        spec1: "Woken, X: -1920", spec2: "Primary, X: 0"
+      }
+    };
+    const m1 = document.getElementById("vMon1");
+    const m2 = document.getElementById("vMon2");
+    document.querySelectorAll("#modePills .mode-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        document.querySelectorAll("#modePills .mode-pill").forEach((p) => p.classList.remove("active"));
+        pill.classList.add("active");
+        const d = modes[pill.dataset.mode];
+        document.getElementById("modeCmd").textContent = d.cmd;
+        document.getElementById("modeExplain").textContent = d.explain;
+        document.getElementById("vSpec1").textContent = d.spec1;
+        document.getElementById("vSpec2").textContent = d.spec2;
+        m1.classList.toggle("sleep", d.s1Sleep);
+        m2.classList.toggle("sleep", d.s2Sleep);
+        m1.classList.toggle("primary", d.p1);
+        m2.classList.toggle("primary", !d.p1);
+        document.getElementById("vRole1").style.display = d.p1 ? "inline-block" : "none";
+        document.getElementById("vRole2").style.display = d.p1 ? "none" : "inline-block";
+        m1.style.order = d.swapOrder ? "2" : "1";
+        m2.style.order = d.swapOrder ? "1" : "2";
+      });
+    });
+
+    // Scroll reveal via IntersectionObserver
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+  </script>
+</body>
+</html>

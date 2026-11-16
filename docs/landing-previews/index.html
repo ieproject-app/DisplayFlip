@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DisplayFlip Landing Page - Choose Your Design Direction</title>
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/light/style.css" />
+  <style>
+    :root {
+      --bg: #080b12;
+      --shell-bg: rgba(255, 255, 255, 0.04);
+      --shell-ring: rgba(255, 255, 255, 0.1);
+      --core-bg: #101520;
+      --core-inset: rgba(255, 255, 255, 0.1);
+      --ink: #f4f7fb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #7dd3fc;
+      --accent-ink: #041d2c;
+      --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Plus Jakarta Sans", "Segoe UI Variable Text", system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse 60% 42% at 75% 4%, rgba(0, 120, 212, 0.2), transparent 65%),
+        var(--bg);
+      color: var(--ink);
+      min-height: 100dvh;
+      padding: 48px 20px 72px;
+      line-height: 1.6;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; }
+    header { margin-bottom: 36px; max-width: 68ch; }
+    .eyebrow {
+      display: inline-block; padding: 5px 12px; border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14); color: var(--accent);
+      font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-family: "Outfit", sans-serif; font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.08; letter-spacing: -0.025em; margin-bottom: 12px;
+    }
+    .lead { color: var(--muted); font-size: 16px; }
+
+    .grid {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px; margin-bottom: 32px;
+    }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+    .bezel-outer {
+      background: var(--shell-bg); border: 1px solid var(--shell-ring);
+      border-radius: 22px; padding: 7px;
+      box-shadow: 0 26px 64px rgba(0, 0, 0, 0.48);
+    }
+    .bezel-inner {
+      background: var(--core-bg); border-radius: 15px; padding: 20px; height: 100%;
+      box-shadow: inset 0 1px 1px var(--core-inset);
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .thumb {
+      border-radius: 10px; overflow: hidden; border: 1px solid var(--shell-ring);
+      aspect-ratio: 16 / 10; margin-bottom: 18px;
+    }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+    h2 { font-family: "Outfit", sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    p.desc { color: var(--muted); font-size: 14px; margin-bottom: 14px; }
+    ul { padding-left: 18px; display: grid; gap: 6px; margin-bottom: 20px; font-size: 13.5px; color: var(--muted); }
+
+    .btn-pill {
+      display: inline-flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+      padding: 6px 6px 6px 18px; border-radius: 999px;
+      background: var(--accent); color: var(--accent-ink);
+      text-decoration: none; font-weight: 600; font-size: 13.5px;
+      transition: background 0.3s var(--ease-fluid), transform 0.2s var(--ease-fluid);
+    }
+    .btn-pill:hover { background: var(--accent-hover); }
+    .btn-pill:active { transform: scale(0.98); }
+    .btn-pill .icon-well {
+      width: 30px; height: 30px; border-radius: 999px; background: rgba(0, 0, 0, 0.14);
+      display: grid; place-items: center; font-size: 15px; transition: transform 0.35s var(--ease-fluid);
+    }
+    .btn-pill:hover .icon-well { transform: translate(2px, -1px) scale(1.06); }
+
+    .notes {
+      background: var(--shell-bg); border: 1px solid var(--shell-ring);
+      border-radius: 16px; padding: 18px 22px; font-size: 14px; color: var(--muted);
+    }
+    .notes strong { color: var(--ink); }
+    code { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="eyebrow">DisplayFlip v1.1.0 - Redesign Selection</span>
+      <h1>Three Distinct Flagship Landing Concepts</h1>
+      <p class="lead">
+        Built with Floating Island navigation, Double-Bezel hardware enclosures, Button-in-Button micro-physics, synchronized Light/Dark theme switching, 100% English SEO schema, and 4 toggleable AdSense slots via the floating bottom-right dock.
+      </p>
+    </header>
+
+    <div class="grid">
+      <article class="bezel-outer">
+        <div class="bezel-inner">
+          <div>
+            <div class="thumb">
+              <img src="assets/displays-dark.webp" width="1000" height="720" alt="Option 1 Spatial Studio preview" />
+            </div>
+            <h2>Option 1: Spatial Studio</h2>
+            <p class="desc">Ethereal obsidian glass with a 3D pointer-tilt Bloom hero frame and live Display Mode Morph stage.</p>
+            <ul>
+              <li>Floating Fluid Island Nav + morphing glass mobile drawer</li>
+              <li>Cursor-spotlight Double-Bezel Bento cells</li>
+              <li>Interactive Extend / Swap / Solo / Auto-Wake mode stage</li>
+            </ul>
+          </div>
+          <a class="btn-pill" href="option-1-win11-mica.html">
+            <span>Open Option 1</span>
+            <span class="icon-well"><i class="ph-light ph-arrow-up-right"></i></span>
+          </a>
+        </div>
+      </article>
+
+      <article class="bezel-outer">
+        <div class="bezel-inner">
+          <div>
+            <div class="thumb">
+              <img src="assets/desk-workstation.webp" width="1440" height="810" alt="Option 2 Surface Atelier preview" />
+            </div>
+            <h2>Option 2: Surface Atelier</h2>
+            <p class="desc">Soft Structuralism daylight workstation featuring a Z-Axis desk cascade and magnetic 2D drag sandbox.</p>
+            <ul>
+              <li>Z-Axis workstation desk + DisplayFlip window cascade</li>
+              <li>Draggable 2D Sandbox with laser magnetic snap guides &amp; OSD</li>
+              <li>Horizontal scroll-snap gallery of all 5 app views</li>
+            </ul>
+          </div>
+          <a class="btn-pill" href="option-2-win11-bloom.html">
+            <span>Open Option 2</span>
+            <span class="icon-well"><i class="ph-light ph-arrow-up-right"></i></span>
+          </a>
+        </div>
+      </article>
+
+      <article class="bezel-outer">
+        <div class="bezel-inner">
+          <div>
+            <div class="thumb">
+              <img src="assets/shortcuts-dark.webp" width="1000" height="720" alt="Option 3 Command Terminal preview" />
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <h2>Option 3: Command Terminal</h2>
+              <span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#10b981;color:#04261b;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Selected for Production</span>
+            </div>
+            <p class="desc">PowerToys and Windows Terminal workbench pairing an interactive Hotkey Deck with a PowerShell/AHK builder.</p>
+            <ul>
+              <li>Interactive Hotkey Deck switching live hero captures</li>
+              <li>CMD / AutoHotkey v2 / PowerShell Task output generator</li>
+              <li>Staggered Double-Bezel technical walkthrough</li>
+            </ul>
+          </div>
+          <a class="btn-pill" href="option-3-win11-dark.html">
+            <span>Open Option 3</span>
+            <span class="icon-well"><i class="ph-light ph-arrow-up-right"></i></span>
+          </a>
+        </div>
+      </article>
+    </div>
+
+    <section class="notes">
+      <strong>Engineering &amp; AdSense Baseline:</strong> Every option reserves anti-CLS heights for 4 policy-safe AdSense placements (<code>belowHero</code>, sticky <code>guideRail</code> 300x250, <code>inGuide</code>, and <code>preFooter</code>) ready for <code>ca-pub-6235611333449307</code>, embeds <code>SoftwareApplication</code> + <code>FAQPage</code> JSON-LD, and uses optimized WebP assets (&le; 72 KB).
+    </section>
+  </div>
+</body>
+</html>

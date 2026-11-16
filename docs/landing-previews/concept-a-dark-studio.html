@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DisplayFlip — Free Windows 11 &amp; 10 Multi-Monitor Layout &amp; Profile Switcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #070b14;
+      --bg-elev: #0d1424;
+      --bg-panel: #111a2e;
+      --border: rgba(148, 163, 184, 0.16);
+      --border-strong: rgba(56, 189, 248, 0.4);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --cyan: #00b4d8;
+      --blue: #0078d4;
+      --emerald: #10b981;
+      --ad-bg: rgba(15, 23, 42, 0.72);
+      --ad-border: rgba(56, 189, 248, 0.3);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(circle at 80% 0%, rgba(0, 120, 212, 0.18), transparent 45%),
+        radial-gradient(circle at 15% 12%, rgba(0, 180, 216, 0.12), transparent 35%),
+        linear-gradient(rgba(148, 163, 184, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.03) 1px, transparent 1px);
+      background-size: auto, auto, 44px 44px, 44px 44px;
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    /* Preview Bar (Removed in production) */
+    .preview-bar {
+      background: #03060c; border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 8px 16px; display: flex; flex-wrap: wrap; align-items: center;
+      justify-content: space-between; gap: 10px; font-size: 12px;
+      position: sticky; top: 0; z-index: 60;
+    }
+    .preview-bar .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .preview-chip {
+      padding: 4px 10px; border-radius: 8px; text-decoration: none;
+      color: #cbd5e1; border: 1px solid rgba(148,163,184,0.22); background: rgba(255,255,255,0.03);
+      font-weight: 500; cursor: pointer; font-family: inherit; font-size: 12px;
+    }
+    .preview-chip.active { background: #0284c7; color: #fff; border-color: #38bdf8; }
+    .preview-chip:hover { border-color: #38bdf8; }
+
+    /* Subdomain Navbar */
+    .navbar {
+      border-bottom: 1px solid var(--border);
+      background: rgba(7, 11, 20, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .nav-inner {
+      height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text);
+      font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 19px;
+    }
+    .brand-mark {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      display: grid; place-items: center; font-size: 14px; font-weight: 700; color: #fff;
+      box-shadow: 0 0 20px rgba(0, 180, 216, 0.35);
+    }
+    .nav-links { display: flex; align-items: center; gap: 22px; font-size: 14px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-weight: 500; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      padding: 8px 16px; border-radius: 10px; background: var(--blue); color: #fff !important;
+      font-weight: 600; transition: background 0.15s;
+    }
+    .nav-cta:hover { background: #1084e0; }
+    @media (max-width: 720px) { .nav-links .hide-sm { display: none; } }
+
+    /* Hero */
+    .hero { padding: 52px 0 36px; }
+    .hero-grid {
+      display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 36px; align-items: center;
+    }
+    @media (max-width: 960px) { .hero-grid { grid-template-columns: 1fr; } }
+    .version-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: "JetBrains Mono", monospace; font-size: 12px; color: #7dd3fc;
+      background: rgba(0, 180, 216, 0.1); border: 1px solid rgba(0, 180, 216, 0.3);
+      padding: 5px 12px; border-radius: 999px; margin-bottom: 18px;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--emerald); }
+    h1 {
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      font-size: clamp(32px, 4.4vw, 52px); line-height: 1.1; letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    h1 span { color: var(--cyan); }
+    .hero-sub {
+      color: var(--muted); font-size: 17px; max-width: 560px; margin-bottom: 26px;
+    }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 22px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--blue), #0284c7);
+      color: #fff; font-weight: 600; font-size: 15px; text-decoration: none;
+      box-shadow: 0 10px 30px rgba(0, 120, 212, 0.32);
+    }
+    .btn-primary:hover { filter: brightness(1.08); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 20px; border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border);
+      color: var(--text); font-weight: 600; font-size: 14px; text-decoration: none;
+    }
+    .btn-secondary:hover { border-color: var(--cyan); }
+    .trust-strip {
+      display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    /* Interactive 2D Display Canvas Simulator */
+    .canvas-card {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 18px; padding: 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    }
+    .canvas-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px; font-size: 12px; color: var(--muted);
+    }
+    .canvas-top strong { color: var(--text); font-family: "Space Grotesk", sans-serif; font-size: 14px; }
+    .canvas-stage {
+      position: relative; height: 240px; border-radius: 12px; overflow: hidden;
+      background: #060a12; border: 1px solid rgba(148,163,184,0.14);
+      background-image: radial-gradient(rgba(148,163,184,0.18) 1px, transparent 1px);
+      background-size: 18px 18px; user-select: none;
+    }
+    .mon {
+      position: absolute; border-radius: 10px; cursor: grab; padding: 10px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      transition: border-color 0.15s, opacity 0.2s, left 0.22s ease, top 0.22s ease;
+    }
+    .mon:active { cursor: grabbing; }
+    .mon-1 {
+      width: 145px; height: 92px;
+      background: linear-gradient(145deg, #0f294a, #0a182d);
+      border: 2px solid var(--cyan); box-shadow: 0 8px 24px rgba(0, 180, 216, 0.2);
+    }
+    .mon-2 {
+      width: 162px; height: 98px;
+      background: linear-gradient(145deg, #172036, #0d1322);
+      border: 2px solid #475569;
+    }
+    .mon.primary-active { border-color: var(--cyan); box-shadow: 0 0 0 1px rgba(0,180,216,0.35), 0 10px 26px rgba(0,180,216,0.22); }
+    .mon.off { opacity: 0.28; filter: grayscale(0.9); border-style: dashed; }
+    .mon-head { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+    .mon-num {
+      width: 20px; height: 20px; border-radius: 6px; background: rgba(255,255,255,0.12);
+      display: grid; place-items: center; font-weight: 700;
+    }
+    .badge-p {
+      font-size: 9px; font-family: "JetBrains Mono", monospace; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 4px; background: rgba(0, 180, 216, 0.22); color: #7dd3fc;
+    }
+    .mon-meta { font-family: "JetBrains Mono", monospace; font-size: 10px; color: #cbd5e1; }
+    .identify-flash {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      background: rgba(0, 120, 212, 0.72); font-family: "Space Grotesk", sans-serif;
+      font-size: 34px; font-weight: 700; color: #fff; opacity: 0; pointer-events: none;
+      transition: opacity 0.15s;
+    }
+    .identify-flash.show { opacity: 1; }
+    .canvas-controls {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+    }
+    .sim-btn {
+      flex: 1 1 auto; padding: 8px 10px; border-radius: 9px; font-size: 12px; font-weight: 600;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text);
+      cursor: pointer; font-family: inherit;
+    }
+    .sim-btn:hover { border-color: var(--cyan); background: rgba(0, 180, 216, 0.1); }
+    .sim-btn.active { background: var(--blue); border-color: var(--cyan); }
+    .sim-status {
+      margin-top: 10px; padding: 8px 12px; border-radius: 8px;
+      background: rgba(0,0,0,0.32); font-family: "JetBrains Mono", monospace;
+      font-size: 11.5px; color: #7dd3fc; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+    }
+
+    /* AdSense Slots */
+    .ad-zone {
+      margin: 28px auto; border: 1.5px dashed var(--ad-border); background: var(--ad-bg);
+      border-radius: 14px; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center; padding: 12px; color: var(--muted);
+      transition: opacity 0.2s;
+    }
+    .ad-hidden .ad-zone { display: none !important; }
+    .ad-label {
+      font-family: "JetBrains Mono", monospace; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.1em; color: #7dd3fc; margin-bottom: 4px;
+    }
+    .ad-sub { font-size: 12px; color: var(--muted); }
+    .ad-leader { min-height: 100px; max-width: 760px; }
+    .ad-rail { min-height: 250px; width: 100%; margin: 0 0 20px; }
+    .ad-inarticle { min-height: 250px; max-width: 820px; }
+    .ad-footer { min-height: 120px; max-width: 970px; }
+
+    /* Sections */
+    section.block { padding: 48px 0; border-top: 1px solid var(--border); }
+    .sec-head { max-width: 720px; margin-bottom: 28px; }
+    .sec-kicker {
+      font-family: "JetBrains Mono", monospace; font-size: 11.5px; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--cyan); margin-bottom: 8px;
+    }
+    h2 {
+      font-family: "Space Grotesk", sans-serif; font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.2; margin-bottom: 10px;
+    }
+    .sec-head p { color: var(--muted); font-size: 15.5px; }
+
+    /* Cards & Packages */
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .panel {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px;
+    }
+    .panel h3 { font-family: "Space Grotesk", sans-serif; font-size: 18px; margin-bottom: 8px; }
+    .panel p { font-size: 14px; color: var(--muted); }
+
+    /* Screenshots */
+    .shot-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .shot-tab {
+      padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03); color: var(--muted); cursor: pointer;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+    }
+    .shot-tab.active { background: rgba(0, 180, 216, 0.15); border-color: var(--cyan); color: #fff; }
+    .shot-stage {
+      background: #050811; border: 1px solid var(--border); border-radius: 16px;
+      padding: 16px; text-align: center;
+    }
+    .shot-stage img {
+      max-width: 100%; max-height: 520px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .shot-caption { margin-top: 10px; font-size: 13px; color: var(--muted); }
+
+    /* 2-Col Guide Layout with Sidebar Rail for AdSense */
+    .guide-layout {
+      display: grid; grid-template-columns: 1fr 310px; gap: 28px; align-items: start;
+    }
+    @media (max-width: 960px) { .guide-layout { grid-template-columns: 1fr; } }
+    .sticky-rail { position: sticky; top: 56px; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; text-align: left; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    th { background: rgba(255,255,255,0.03); font-family: "Space Grotesk", sans-serif; color: #cbd5e1; }
+    td code {
+      font-family: "JetBrains Mono", monospace; font-size: 12px; color: #7dd3fc;
+      background: rgba(56,189,248,0.09); padding: 2px 6px; border-radius: 6px;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    /* FAQ */
+    details {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 18px; margin-bottom: 10px;
+    }
+    summary {
+      cursor: pointer; font-weight: 600; font-size: 15px; list-style: none;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    summary::after { content: "+"; color: var(--cyan); font-size: 18px; }
+    details[open] summary::after { content: "−"; }
+    details p { margin-top: 10px; font-size: 14px; color: var(--muted); }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 32px 0 48px; color: var(--muted); font-size: 13.5px;
+    }
+    .foot-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+    .foot-links { display: flex; flex-wrap: wrap; gap: 18px; }
+    .foot-links a { color: var(--muted); text-decoration: none; }
+    .foot-links a:hover { color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <div class="group">
+      <strong>Design Preview:</strong>
+      <a class="preview-chip" href="index.html">All Concepts</a>
+      <a class="preview-chip active" href="concept-a-dark-studio.html">A · Dark Studio</a>
+      <a class="preview-chip" href="concept-b-mica-fluent.html">B · Mica Fluent</a>
+      <a class="preview-chip" href="concept-c-editorial-cli.html">C · Editorial CLI</a>
+    </div>
+    <div class="group">
+      <button class="preview-chip active" id="toggleAdsBtn" type="button">AdSense Slots: Visible</button>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a class="brand" href="#top">
+        <span class="brand-mark">DF</span>
+        <span>DisplayFlip</span>
+      </a>
+      <div class="nav-links">
+        <a class="hide-sm" href="#features">Features</a>
+        <a class="hide-sm" href="#screenshots">Screenshots</a>
+        <a class="hide-sm" href="#cli">CLI &amp; Guide</a>
+        <a class="hide-sm" href="#faq">FAQ</a>
+        <a class="nav-cta" href="#download">Download v1.1.0</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="top" class="container">
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <div class="version-pill"><span class="dot"></span> v1.1.0 Released · Windows 10 &amp; 11 (x64) · Free &amp; Open Source</div>
+          <h1>Rearrange Monitors &amp; Switch Display Profiles <span>In One Click</span></h1>
+          <p class="hero-sub">
+            DisplayFlip replaces clunky Windows Display Settings menus with an interactive 2D layout canvas, instant tray quick-swap, global hotkeys, and CLI automation — including smart auto-wake from Solo mode.
+          </p>
+          <div class="cta-row">
+            <a class="btn-primary" href="https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0" target="_blank" rel="noopener">
+              Download v1.1.0 (ZIP / Portable)
+            </a>
+            <a class="btn-secondary" href="#cli">View CLI Reference</a>
+          </div>
+          <div class="trust-strip">
+            <span>✓ .NET 10 LTS</span>
+            <span>✓ Zero Telemetry</span>
+            <span>✓ Win32 SetDisplayConfig</span>
+            <span>✓ EN / ID Bilingual UI</span>
+          </div>
+        </div>
+
+        <!-- Interactive Browser Widget (Boosts Dwell Time & Viewability) -->
+        <div class="canvas-card" aria-label="Interactive DisplayFlip 2D Monitor Simulator">
+          <div class="canvas-top">
+            <strong>Interactive 2D Layout Sandbox</strong>
+            <span>Drag monitors or click an action</span>
+          </div>
+          <div class="canvas-stage" id="simStage">
+            <div class="mon mon-1 primary-active" id="mon1" style="left: 44px; top: 70px;">
+              <div class="mon-head">
+                <span class="mon-num">1</span>
+                <span class="badge-p" id="badge1">Primary</span>
+              </div>
+              <div class="mon-meta">
+                <div>DISPLAY1 · Built-in</div>
+                <div id="pos1">1920×1080 @ 144Hz</div>
+              </div>
+              <div class="identify-flash" id="flash1">1</div>
+            </div>
+            <div class="mon mon-2" id="mon2" style="left: 204px; top: 66px;">
+              <div class="mon-head">
+                <span class="mon-num">2</span>
+                <span class="badge-p" id="badge2" style="display:none;">Primary</span>
+              </div>
+              <div class="mon-meta">
+                <div>DISPLAY2 · MSI40B7</div>
+                <div id="pos2">2560×1440 @ 165Hz</div>
+              </div>
+              <div class="identify-flash" id="flash2">2</div>
+            </div>
+          </div>
+          <div class="canvas-controls">
+            <button class="sim-btn" id="btnSwap" type="button">⇄ Quick Swap</button>
+            <button class="sim-btn active" id="btnExtend" type="button">Extend</button>
+            <button class="sim-btn" id="btnSolo1" type="button">Solo 1</button>
+            <button class="sim-btn" id="btnSolo2" type="button">Solo 2</button>
+            <button class="sim-btn" id="btnIdentify" type="button">Identify</button>
+          </div>
+          <div class="sim-status">
+            <span id="simModeText">Mode: Extend · 1 (Left) + 2 (Right)</span>
+            <span id="simCmdText">DisplayFlip.exe --extend</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AD PLACEMENT 1: Below Interactive Tool (Clean gap from Download CTA) -->
+    <aside class="ad-zone ad-leader" aria-label="Advertisement">
+      <div class="ad-label">Advertisement · Slot 1: belowTool (728×90 Desktop / Responsive Mobile)</div>
+      <div class="ad-sub">Placed cleanly below the interactive sandbox &amp; Hero CTA — zero accidental download clicks, 90–100px min-height anti-CLS.</div>
+    </aside>
+
+    <!-- Download Package Chooser -->
+    <section class="block" id="download">
+      <div class="sec-head">
+        <div class="sec-kicker">v1.1.0 Releases</div>
+        <h2>Choose Your Windows x64 Package</h2>
+        <p>Lightweight, offline-ready Windows desktop app with no background bloatware or forced account sign-in.</p>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Recommended · DisplayFlip-v1.1.0-win-x64.zip</h3>
+          <p style="margin-bottom: 12px;">
+            <strong>~3 MB download</strong> (6.87 MB executable). Requires Microsoft .NET 10 Desktop Runtime. Ideal for daily startup &amp; tray residency.
+          </p>
+          <a class="btn-primary" href="https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0" target="_blank" rel="noopener">Get Framework ZIP on GitHub →</a>
+        </div>
+        <div class="panel">
+          <h3>Portable · DisplayFlip-v1.1.0-Standalone-win-x64.exe</h3>
+          <p style="margin-bottom: 12px;">
+            <strong>~74 MB single-file .exe</strong> with bundled runtime. Zero dependencies — drop onto a USB drive and run on any Windows 10/11 PC.
+          </p>
+          <a class="btn-secondary" href="https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0" target="_blank" rel="noopener">Get Standalone EXE on GitHub →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Real App Screenshots -->
+    <section class="block" id="screenshots">
+      <div class="sec-head">
+        <div class="sec-kicker">Native Fluent UI (WPF-UI 4.3 Mica)</div>
+        <h2>Inside DisplayFlip v1.1.0</h2>
+        <p>Inspect every window before installing — complete Dark &amp; Light theme sync, System Tray quick menu, and conflict-safe hotkey recorder.</p>
+      </div>
+      <div class="shot-tabs" id="shotTabs">
+        <button class="shot-tab active" data-src="../screenshots/05_layar_dan_profil_dark.png" data-cap="Displays &amp; Profiles — Interactive 2D snap canvas with hardware model IDs (MSI40B7) &amp; saved layout presets.">Displays &amp; Profiles</button>
+        <button class="shot-tab" data-src="../screenshots/10_menu_cepat_tray_dark.png" data-cap="System Tray Quick Settings — Quick Swap, Identify, Solo 1 / Solo 2 / Extend modes, and one-click Saved Profiles.">System Tray Menu</button>
+        <button class="shot-tab" data-src="../screenshots/06_pintasan_keyboard_dark.png" data-cap="Keyboard Shortcuts — Global action bindings and per-profile hotkeys with canonical conflict protection.">Keyboard Shortcuts</button>
+        <button class="shot-tab" data-src="../screenshots/07_umum_dan_ikon_dark.png" data-cap="General &amp; Icons — Run at Windows startup (--tray), Light/Dark/System themes, and live EN/ID language switching.">General &amp; Icons</button>
+        <button class="shot-tab" data-src="../screenshots/08_tentang_dan_cli_dark.png" data-cap="About &amp; CLI — Built-in command-line reference cards for PowerShell, CMD, and Task Scheduler.">About &amp; CLI</button>
+      </div>
+      <div class="shot-stage">
+        <img id="shotImg" src="../screenshots/05_layar_dan_profil_dark.png" alt="DisplayFlip Dark Mode Displays and Profiles workspace" />
+        <div class="shot-caption" id="shotCap">Displays &amp; Profiles — Interactive 2D snap canvas with hardware model IDs (MSI40B7) &amp; saved layout presets.</div>
+      </div>
+    </section>
+
+    <!-- 2-Column Technical Guide + Sticky Desktop Ad Rail -->
+    <section class="block" id="features">
+      <div class="guide-layout">
+        <div>
+          <div class="sec-head">
+            <div class="sec-kicker">Why DisplayFlip Beats Win+P</div>
+            <h2>Engineered for Real Multi-Monitor Workflows</h2>
+            <p>Windows' built-in <code>DisplaySwitch.exe</code> forgets exact monitor coordinates, refresh rates, and primary assignments. DisplayFlip uses native Win32 <code>QueryDisplayConfig</code> &amp; <code>SetDisplayConfig</code>.</p>
+          </div>
+
+          <div class="grid-2" style="margin-bottom: 28px;">
+            <div class="panel">
+              <h3>Smart Auto-Wake Profiles</h3>
+              <p>Applying a dual-monitor profile while in Solo (PC Screen Only) or Duplicate automatically wakes sleeping displays into Extend mode before restoring exact coordinates.</p>
+            </div>
+            <div class="panel">
+              <h3>Graceful Partial-Apply</h3>
+              <p>If an external monitor is unplugged while traveling, DisplayFlip safely configures available screens and reports clear status instead of failing silently.</p>
+            </div>
+            <div class="panel">
+              <h3>Proportional 2D Snap Canvas</h3>
+              <p>Drag monitors with magnetic edge snapping, toggleable hardware model labels, portrait/flipped orientation controls, and per-display Hz inspection.</p>
+            </div>
+            <div class="panel">
+              <h3>Single-Instance Tray &amp; Hotkeys</h3>
+              <p>Built-in mutex prevents duplicate instances while keeping global hotkeys alive quietly in the notification area.</p>
+            </div>
+          </div>
+
+          <h3 id="cli" style="font-family:'Space Grotesk',sans-serif; font-size: 22px; margin-bottom: 12px;">CLI &amp; Automation Reference</h3>
+          <div class="table-wrap" style="margin-bottom: 24px;">
+            <table>
+              <thead>
+                <tr><th>Command</th><th>Alias</th><th>Behavior</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>DisplayFlip.exe --swap</code></td><td><code>--flip</code></td><td>Swap horizontal left/right positions of primary and secondary displays</td></tr>
+                <tr><td><code>DisplayFlip.exe --apply "&lt;name&gt;"</code></td><td><code>-p</code></td><td>Apply a saved profile (auto-wakes sleeping displays from Solo/Clone)</td></tr>
+                <tr><td><code>DisplayFlip.exe --solo 1</code> / <code>2</code></td><td><code>--internal</code></td><td>Switch strictly to Display 1 or Display 2</td></tr>
+                <tr><td><code>DisplayFlip.exe --extend</code></td><td><code>--perluas</code></td><td>Extend desktop across all connected displays</td></tr>
+                <tr><td><code>DisplayFlip.exe --list --json</code></td><td>—</td><td>Export saved profiles as machine-readable JSON</td></tr>
+                <tr><td><code>DisplayFlip.exe --lang en</code></td><td><code>--lang=id</code></td><td>Override CLI output language for a single invocation</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- AD PLACEMENT 2: Desktop Guide Rail -->
+        <aside class="sticky-rail">
+          <div class="ad-zone ad-rail" aria-label="Advertisement">
+            <div class="ad-label">Advertisement · Slot 2: guideRail</div>
+            <div class="ad-sub">300×250 Medium Rectangle (or 300×600). Sticky beside technical guide &amp; CLI docs for maximum desktop Active View %.</div>
+          </div>
+          <div class="panel">
+            <h3>Comparison Snapshot</h3>
+            <p style="margin-bottom:10px;">DisplayFlip vs Windows Built-in:</p>
+            <p style="font-size:13px;">✓ Unlimited named layout profiles<br />✓ Remembers left/right &amp; vertical offsets<br />✓ Preserves Primary monitor role<br />✓ Full CLI flags + JSON listing</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- AD PLACEMENT 3: Pre-FAQ High Intent -->
+    <aside class="ad-zone ad-inarticle" aria-label="Advertisement">
+      <div class="ad-label">Advertisement · Slot 3: inGuide (Responsive In-Article · min-height 250px)</div>
+      <div class="ad-sub">Placed cleanly between CLI documentation and Troubleshooting FAQ — high scroll-intent placement.</div>
+    </aside>
+
+    <!-- FAQ -->
+    <section class="block" id="faq">
+      <div class="sec-head">
+        <div class="sec-kicker">Troubleshooting &amp; Safety</div>
+        <h2>Frequently Asked Questions</h2>
+      </div>
+      <details open>
+        <summary>Should I download the 3 MB ZIP or the 74 MB Standalone EXE?</summary>
+        <p>Choose the <strong>3 MB ZIP</strong> if your PC already has (or can install) the free Microsoft .NET 10 Desktop Runtime — it starts fastest and keeps disk usage tiny. Choose the <strong>Standalone .exe</strong> for portable USB use or locked-down machines without .NET 10 installed.</p>
+      </details>
+      <details>
+        <summary>How does DisplayFlip auto-wake a turned-off monitor from Solo mode?</summary>
+        <p>When you trigger a multi-monitor profile while Windows is set to Solo (PC screen only) or Duplicate, DisplayFlip first transitions the display topology into Extend via Win32 CCD APIs, waits briefly for monitor enumeration, and then applies exact coordinates and primary role.</p>
+      </details>
+      <details>
+        <summary>Does DisplayFlip run in the background or collect telemetry?</summary>
+        <p>Zero telemetry, zero network analytics inside the desktop app. When minimized to the System Tray (or launched with <code>--tray</code>), it stays resident purely to respond to your global shortcuts and tray menu clicks.</p>
+      </details>
+    </section>
+
+    <!-- AD PLACEMENT 4: Footer Closing Unit -->
+    <aside class="ad-zone ad-footer" aria-label="Advertisement">
+      <div class="ad-label">Advertisement · Slot 4: footer (Closing Responsive Unit)</div>
+      <div class="ad-sub">Full-container closing AdSense unit above legal &amp; SnipGeek navigation links.</div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="container foot-inner">
+      <div><strong>DisplayFlip</strong> v1.1.0 · Open-source Windows Multi-Monitor Utility by SnipGeek</div>
+      <div class="foot-links">
+        <a href="https://github.com/ieproject-app/DisplayFlip" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://snipgeek.com" target="_blank" rel="noopener">SnipGeek</a>
+        <a href="https://snipgeek.com/privacy" target="_blank" rel="noopener">Privacy</a>
+        <a href="https://snipgeek.com/terms" target="_blank" rel="noopener">Terms</a>
+        <a href="https://snipgeek.com/contact" target="_blank" rel="noopener">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Toggle AdSense wireframes
+    document.getElementById("toggleAdsBtn").addEventListener("click", function () {
+      document.body.classList.toggle("ad-hidden");
+      const hidden = document.body.classList.contains("ad-hidden");
+      this.textContent = hidden ? "AdSense Slots: Hidden" : "AdSense Slots: Visible";
+      this.classList.toggle("active", !hidden);
+    });
+
+    // Screenshot switcher
+    document.querySelectorAll(".shot-tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".shot-tab").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("shotImg").src = btn.dataset.src;
+        document.getElementById("shotCap").textContent = btn.dataset.cap;
+      });
+    });
+
+    // Interactive 2D Monitor Sandbox
+    const mon1 = document.getElementById("mon1");
+    const mon2 = document.getElementById("mon2");
+    const stage = document.getElementById("simStage");
+    const modeText = document.getElementById("simModeText");
+    const cmdText = document.getElementById("simCmdText");
+    let swapped = false;
+
+    function updateSimLabels(modeLabel, cmd) {
+      modeText.textContent = modeLabel;
+      cmdText.textContent = cmd;
+    }
+
+    document.getElementById("btnSwap").addEventListener("click", () => {
+      swapped = !swapped;
+      mon1.classList.remove("off");
+      mon2.classList.remove("off");
+      if (swapped) {
+        mon2.style.left = "44px";
+        mon1.style.left = "220px";
+        mon1.classList.remove("primary-active");
+        mon2.classList.add("primary-active");
+        document.getElementById("badge1").style.display = "none";
+        document.getElementById("badge2").style.display = "inline-block";
+        updateSimLabels("Mode: Extend · 2 (Left Primary) + 1 (Right)", "DisplayFlip.exe --swap");
+      } else {
+        mon1.style.left = "44px";
+        mon2.style.left = "204px";
+        mon2.classList.remove("primary-active");
+        mon1.classList.add("primary-active");
+        document.getElementById("badge1").style.display = "inline-block";
+        document.getElementById("badge2").style.display = "none";
+        updateSimLabels("Mode: Extend · 1 (Left Primary) + 2 (Right)", "DisplayFlip.exe --swap");
+      }
+    });
+
+    function setActiveBtn(id) {
+      ["btnExtend", "btnSolo1", "btnSolo2"].forEach((k) => {
+        document.getElementById(k).classList.toggle("active", k === id);
+      });
+    }
+
+    document.getElementById("btnExtend").addEventListener("click", () => {
+      setActiveBtn("btnExtend");
+      mon1.classList.remove("off");
+      mon2.classList.remove("off");
+      updateSimLabels("Mode: Extend · Both Displays Active", "DisplayFlip.exe --extend");
+    });
+
+    document.getElementById("btnSolo1").addEventListener("click", () => {
+      setActiveBtn("btnSolo1");
+      mon1.classList.remove("off");
+      mon2.classList.add("off");
+      updateSimLabels("Mode: Solo 1 · Internal Display Only", "DisplayFlip.exe --solo 1");
+    });
+
+    document.getElementById("btnSolo2").addEventListener("click", () => {
+      setActiveBtn("btnSolo2");
+      mon1.classList.add("off");
+      mon2.classList.remove("off");
+      updateSimLabels("Mode: Solo 2 · External MSI40B7 Only", "DisplayFlip.exe --solo 2");
+    });
+
+    document.getElementById("btnIdentify").addEventListener("click", () => {
+      const f1 = document.getElementById("flash1");
+      const f2 = document.getElementById("flash2");
+      f1.classList.add("show");
+      f2.classList.add("show");
+      cmdText.textContent = "DisplayFlip.exe --identify";
+      setTimeout(() => { f1.classList.remove("show"); f2.classList.remove("show"); }, 1100);
+    });
+
+    // Basic mouse drag inside sandbox
+    [mon1, mon2].forEach((el) => {
+      let dragging = false, ox = 0, oy = 0;
+      el.addEventListener("mousedown", (e) => {
+        dragging = true;
+        ox = e.clientX - el.offsetLeft;
+        oy = e.clientY - el.offsetTop;
+        el.style.transition = "none";
+      });
+      window.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        const maxX = stage.clientWidth - el.clientWidth - 8;
+        const maxY = stage.clientHeight - el.clientHeight - 8;
+        el.style.left = Math.max(8, Math.min(maxX, e.clientX - ox)) + "px";
+        el.style.top = Math.max(8, Math.min(maxY, e.clientY - oy)) + "px";
+      });
+      window.addEventListener("mouseup", () => {
+        if (dragging) {
+          dragging = false;
+          el.style.transition = "";
+          updateSimLabels("Custom 2D Drag Coordinates Saved -> Profile Ready", 'DisplayFlip.exe --apply "Studio"');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

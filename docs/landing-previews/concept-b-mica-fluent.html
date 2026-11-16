@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DisplayFlip — Native Windows 11 &amp; 10 Monitor Profile &amp; Layout Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #eff4fb;
+      --card: rgba(255, 255, 255, 0.9);
+      --card-solid: #ffffff;
+      --border: #d8e2f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #0067c0;
+      --accent-soft: #e0effe;
+      --teal: #0f766e;
+      --shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+      --ad-bg: #f8fafc;
+      --ad-border: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Plus Jakarta Sans", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 10% 5%, #dbeafe 0%, transparent 40%),
+        radial-gradient(circle at 92% 10%, #e0f2fe 0%, transparent 38%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    /* Preview Bar */
+    .preview-bar {
+      background: #0f172a; color: #f8fafc; padding: 8px 16px;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 10px; font-size: 12px; position: sticky; top: 0; z-index: 60;
+    }
+    .preview-bar .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .preview-chip {
+      padding: 4px 10px; border-radius: 8px; text-decoration: none; color: #cbd5e1;
+      border: 1px solid rgba(148,163,184,0.3); background: rgba(255,255,255,0.06);
+      font-weight: 600; cursor: pointer; font-family: inherit; font-size: 12px;
+    }
+    .preview-chip.active { background: #0067c0; color: #fff; border-color: #60a5fa; }
+
+    .container { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+
+    /* Navbar */
+    .navbar {
+      background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text);
+      font-weight: 800; font-size: 19px; letter-spacing: -0.02em;
+    }
+    .brand-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, #0067c0, #0099ff);
+      color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 800;
+    }
+    .nav-links { display: flex; align-items: center; gap: 22px; font-size: 14px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-weight: 600; }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-btn {
+      padding: 8px 16px; border-radius: 10px; background: var(--accent); color: #fff !important;
+    }
+    @media (max-width: 720px) { .nav-links .hide-sm { display: none; } }
+
+    /* Centered Mica Hero */
+    .hero { padding: 48px 0 28px; text-align: center; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--card-solid); border: 1px solid var(--border);
+      padding: 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+      color: var(--accent); box-shadow: 0 4px 12px rgba(0, 103, 192, 0.08);
+      margin-bottom: 18px;
+    }
+    h1 {
+      font-size: clamp(32px, 4.6vw, 54px); line-height: 1.1; font-weight: 800;
+      letter-spacing: -0.03em; max-width: 820px; margin: 0 auto 16px;
+    }
+    .hero-sub {
+      color: var(--muted); font-size: 17.5px; max-width: 680px; margin: 0 auto 28px;
+    }
+
+    /* Package Download Chooser directly in Hero */
+    .dl-chooser {
+      max-width: 860px; margin: 0 auto 24px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;
+      text-align: left;
+    }
+    .dl-card {
+      background: var(--card-solid); border: 1px solid var(--border); border-radius: 18px;
+      padding: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .dl-card.featured { border: 2px solid var(--accent); }
+    .dl-badge {
+      display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; padding: 3px 9px; border-radius: 6px; margin-bottom: 10px;
+      background: var(--accent-soft); color: var(--accent);
+    }
+    .dl-card h3 { font-size: 17px; margin-bottom: 6px; }
+    .dl-card p { font-size: 13.5px; color: var(--muted); margin-bottom: 14px; }
+    .btn-win {
+      display: inline-flex; justify-content: center; align-items: center;
+      padding: 11px 16px; border-radius: 10px; background: var(--accent); color: #fff;
+      font-weight: 700; font-size: 14px; text-decoration: none;
+    }
+    .btn-win:hover { background: #0058a3; }
+    .btn-ghost {
+      display: inline-flex; justify-content: center; align-items: center;
+      padding: 11px 16px; border-radius: 10px; background: #f1f5f9; color: var(--text);
+      border: 1px solid var(--border); font-weight: 700; font-size: 14px; text-decoration: none;
+    }
+    .trust-row {
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 18px;
+      font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 28px;
+    }
+
+    /* Mica Window Frame Showcase with Light/Dark Switch */
+    .showcase-shell {
+      background: var(--card); border: 1px solid var(--border); border-radius: 24px;
+      padding: 20px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08); text-align: left;
+    }
+    .showcase-bar {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 12px; margin-bottom: 16px;
+    }
+    .pill-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tab-btn {
+      padding: 7px 14px; border-radius: 10px; border: 1px solid var(--border);
+      background: #fff; color: var(--muted); font-weight: 600; font-size: 13px;
+      cursor: pointer; font-family: inherit;
+    }
+    .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .theme-switch {
+      display: inline-flex; background: #e2e8f0; padding: 3px; border-radius: 10px; gap: 4px;
+    }
+    .theme-switch button {
+      border: none; padding: 6px 12px; border-radius: 8px; font-size: 12.5px;
+      font-weight: 700; cursor: pointer; background: transparent; color: #475569; font-family: inherit;
+    }
+    .theme-switch button.active { background: #fff; color: #0f172a; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .shot-frame {
+      background: #e2e8f0; border-radius: 16px; padding: 14px; text-align: center;
+      border: 1px solid var(--border); transition: background 0.2s;
+    }
+    .shot-frame.dark-backdrop { background: #0f172a; }
+    .shot-frame img { max-width: 100%; max-height: 500px; border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.18); }
+
+    /* AdSense Slots */
+    .ad-zone {
+      margin: 28px auto; border: 1.5px dashed var(--ad-border); background: var(--ad-bg);
+      border-radius: 14px; padding: 14px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .ad-hidden .ad-zone { display: none !important; }
+    .ad-label {
+      font-family: "JetBrains Mono", monospace; font-size: 10.5px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 4px;
+    }
+    .ad-sub { font-size: 12.5px; color: var(--muted); }
+    .ad-leader { min-height: 100px; max-width: 780px; }
+    .ad-rail { min-height: 250px; margin: 0 0 18px; }
+    .ad-inarticle { min-height: 250px; max-width: 840px; }
+    .ad-footer { min-height: 120px; max-width: 970px; }
+
+    /* Interactive Auto-Wake Simulator */
+    section.sec { padding: 48px 0; }
+    .mica-card {
+      background: var(--card-solid); border: 1px solid var(--border); border-radius: 20px;
+      padding: 26px; box-shadow: var(--shadow);
+    }
+    .guide-grid {
+      display: grid; grid-template-columns: 1fr 310px; gap: 26px; align-items: start;
+    }
+    @media (max-width: 960px) { .guide-grid { grid-template-columns: 1fr; } }
+    .sticky-rail { position: sticky; top: 58px; }
+
+    .sim-box {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: 14px; padding: 18px;
+      margin-top: 16px;
+    }
+    .sim-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .sim-action {
+      padding: 8px 13px; border-radius: 9px; border: 1px solid var(--border);
+      background: #fff; font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit;
+    }
+    .sim-action.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .sim-log {
+      font-family: "JetBrains Mono", monospace; font-size: 12.5px; background: #0f172a;
+      color: #e2e8f0; padding: 14px; border-radius: 10px; line-height: 1.7;
+    }
+    .sim-log span.ok { color: #34d399; }
+    .sim-log span.warn { color: #fbbf24; }
+
+    h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .kicker {
+      font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--accent); margin-bottom: 6px;
+    }
+    .cards-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 18px; }
+    .mini-card {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: 14px; padding: 18px;
+    }
+    .mini-card h3 { font-size: 16px; margin-bottom: 6px; }
+    .mini-card p { font-size: 13.5px; color: var(--muted); }
+
+    details {
+      background: var(--card-solid); border: 1px solid var(--border); border-radius: 14px;
+      padding: 16px 18px; margin-bottom: 10px;
+    }
+    summary { font-weight: 700; cursor: pointer; font-size: 15px; }
+    details p { margin-top: 8px; font-size: 14px; color: var(--muted); }
+
+    footer {
+      border-top: 1px solid var(--border); background: rgba(255,255,255,0.65);
+      padding: 30px 0 46px; font-size: 13.5px; color: var(--muted);
+    }
+    .foot-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; }
+    .foot-links { display: flex; gap: 16px; flex-wrap: wrap; }
+    .foot-links a { color: var(--muted); text-decoration: none; font-weight: 600; }
+    .foot-links a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <div class="group">
+      <strong>Design Preview:</strong>
+      <a class="preview-chip" href="index.html">All Concepts</a>
+      <a class="preview-chip" href="concept-a-dark-studio.html">A · Dark Studio</a>
+      <a class="preview-chip active" href="concept-b-mica-fluent.html">B · Mica Fluent</a>
+      <a class="preview-chip" href="concept-c-editorial-cli.html">C · Editorial CLI</a>
+    </div>
+    <div class="group">
+      <button class="preview-chip active" id="toggleAdsBtn" type="button">AdSense Slots: Visible</button>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a class="brand" href="#top">
+        <span class="brand-icon">DF</span>
+        <span>DisplayFlip</span>
+      </a>
+      <div class="nav-links">
+        <a class="hide-sm" href="#showcase">App Preview</a>
+        <a class="hide-sm" href="#autowake">Auto-Wake Simulator</a>
+        <a class="hide-sm" href="#faq">FAQ</a>
+        <a class="nav-btn" href="https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0" target="_blank" rel="noopener">Download v1.1.0</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="top" class="container">
+    <section class="hero">
+      <div class="pill">Windows 11 &amp; 10 (x64) · Native .NET 10 Fluent Design · Version 1.1.0</div>
+      <h1>The Cleanest Way to Switch Multi-Monitor Layouts on Windows</h1>
+      <p class="hero-sub">
+        Save custom monitor positions, swap left &amp; right screens, wake sleeping displays from Solo mode, and assign global keyboard shortcuts — built cleanly with native Win32 display APIs.
+      </p>
+
+      <div class="dl-chooser">
+        <div class="dl-card featured">
+          <div>
+            <span class="dl-badge">Recommended · ~3 MB ZIP</span>
+            <h3>DisplayFlip-v1.1.0-win-x64.zip</h3>
+            <p>Fast 6.87 MB executable for PCs with .NET 10 Desktop Runtime installed. Lightweight tray startup.</p>
+          </div>
+          <a class="btn-win" href="https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0" target="_blank" rel="noopener">Download Lightweight ZIP →</a>
+        </div>
+        <div class="dl-card">
+          <div>
+            <span class="dl-badge" style="background:#f1f5f9;color:#334155;">Portable · ~74 MB Single EXE</span>
+            <h3>DisplayFlip-v1.1.0-Standalone-win-x64.exe</h3>
+            <p>Zero dependencies required. Everything bundled into one portable file — ideal for USB drives or work laptops.</p>
+          </div>
+          <a class="btn-ghost" href="https://github.com/ieproject-app/DisplayFlip/releases/tag/v1.1.0" target="_blank" rel="noopener">Download Standalone EXE →</a>
+        </div>
+      </div>
+
+      <div class="trust-row">
+        <span>✓ Free &amp; Open Source</span>
+        <span>✓ Runs Offline (No Account)</span>
+        <span>✓ Per-Monitor V2 DPI Aware</span>
+        <span>✓ English &amp; Indonesian UI</span>
+      </div>
+
+      <!-- Light/Dark Interactive Mica Showcase -->
+      <div class="showcase-shell" id="showcase">
+        <div class="showcase-bar">
+          <div class="pill-tabs" id="shotTabs">
+            <button class="tab-btn active" data-key="displays">Displays &amp; Profiles</button>
+            <button class="tab-btn" data-key="tray">System Tray Quick Menu</button>
+            <button class="tab-btn" data-key="shortcuts">Keyboard Shortcuts</button>
+            <button class="tab-btn" data-key="general">General &amp; Icons</button>
+            <button class="tab-btn" data-key="about">About &amp; CLI</button>
+          </div>
+          <div class="theme-switch" role="group" aria-label="Toggle screenshot theme">
+            <button type="button" class="active" id="modeLightBtn">☀ Light Mode</button>
+            <button type="button" id="modeDarkBtn">🌙 Dark Mode</button>
+          </div>
+        </div>
+        <div class="shot-frame" id="shotFrame">
+          <img id="shotImg" src="../screenshots/01_layar_dan_profil_light.png" alt="DisplayFlip Light Mode screenshot" />
+        </div>
+      </div>
+    </section>
+
+    <!-- AD PLACEMENT 1 -->
+    <aside class="ad-zone ad-leader" aria-label="Advertisement">
+      <div class="ad-label">Advertisement · Slot 1: belowTool (728×90 Leaderboard / Mobile Banner)</div>
+      <div class="ad-sub">Daylight framing delivers crisp contrast and strict separation below the Download cards &amp; Showcase.</div>
+    </aside>
+
+    <!-- 2-Col Guide + Sidebar AdSense -->
+    <section class="sec" id="autowake">
+      <div class="guide-grid">
+        <div class="mica-card">
+          <div class="kicker">How Smart Auto-Wake &amp; Safety Work</div>
+          <h2>Interactive Topology Behavior Simulator</h2>
+          <p style="color:var(--muted); font-size:15px;">
+            See how DisplayFlip prevents broken layouts when switching from <strong>PC Screen Only (Solo)</strong> or when an external monitor is unplugged.
+          </p>
+
+          <div class="sim-box">
+            <div class="sim-btns">
+              <button class="sim-action active" data-sim="solo-to-profile">Apply "2-Monitor Desk" while in Solo 1</button>
+              <button class="sim-action" data-sim="unplugged">Apply "2-Monitor Desk" when Monitor 2 is unplugged</button>
+              <button class="sim-action" data-sim="quick-swap">Trigger Tray Quick Swap</button>
+            </div>
+            <div class="sim-log" id="simLog">
+              <div>&gt; Current Windows state: <strong>Solo 1 (External display sleeping)</strong></div>
+              <div>&gt; Requested profile: <strong>"2-Monitor Desk" (DISPLAY1 Left + DISPLAY2 Right Primary)</strong></div>
+              <div><span class="ok">✓ Auto-Wake:</span> Transitioning Win32 topology to Extend first...</div>
+              <div><span class="ok">✓ Applied:</span> DISPLAY2 woken, positioned at X=1920, set as Primary @ 165Hz.</div>
+            </div>
+          </div>
+
+          <div class="cards-2">
+            <div class="mini-card">
+              <h3>Instant System Tray Control</h3>
+              <p>Right-click the tray icon anytime for Quick Swap, Identify overlays, Solo 1 / Solo 2 / Extend modes, or saved profiles.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Conflict-Safe Global Hotkeys</h3>
+              <p>Bind 6 global actions plus unlimited per-profile keyboard shortcuts without fighting existing Windows shortcuts.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Hardware Monitor Model Labels</h3>
+              <p>Identifies screens with real hardware IDs like <code>DISPLAY2 (MSI40B7)</code> so you never mix up identical monitors.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Scriptable CLI Ready</h3>
+              <p>Trigger switches from Stream Deck, AutoHotkey, PowerShell, or Task Scheduler with <code>--apply</code>, <code>--swap</code>, and <code>--list --json</code>.</p>
+            </div>
+          </div>
+        </div>
+
+        <aside class="sticky-rail">
+          <div class="ad-zone ad-rail" aria-label="Advertisement">
+            <div class="ad-label">Advertisement · Slot 2: guideRail (300×250)</div>
+            <div class="ad-sub">Sticky desktop rail positioned alongside the interactive simulator &amp; feature breakdown.</div>
+          </div>
+          <div class="mica-card" style="padding:20px;">
+            <h3 style="font-size:16px; margin-bottom:8px;">Minimum System Specs</h3>
+            <p style="font-size:13.5px; color:var(--muted);">
+              • Windows 11 or Windows 10 (64-bit x64)<br />
+              • 2+ connected displays (HDMI / DP / USB-C)<br />
+              • .NET 10 Desktop Runtime (for 3 MB ZIP) or none (for Standalone EXE)
+            </p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- AD PLACEMENT 3 -->
+    <aside class="ad-zone ad-inarticle" aria-label="Advertisement">
+      <div class="ad-label">Advertisement · Slot 3: inGuide (Responsive In-Article · min 250px)</div>
+      <div class="ad-sub">High-visibility mid-page break between Features and FAQ.</div>
+    </aside>
+
+    <section class="sec" id="faq">
+      <div class="kicker">Common Questions</div>
+      <h2 style="margin-bottom:18px;">Frequently Asked Questions</h2>
+      <details open>
+        <summary>Why use DisplayFlip instead of pressing Win + P?</summary>
+        <p><code>Win + P</code> only toggles basic modes (PC screen only, Duplicate, Extend, Second screen only). It cannot save left/right coordinates, swap which screen is Primary, remember portrait orientation, or restore a multi-display profile cleanly from a single hotkey or CLI script.</p>
+      </details>
+      <details>
+        <summary>Does closing the DisplayFlip window quit the app?</summary>
+        <p>Clicking X minimizes DisplayFlip to the System Tray so your global shortcuts keep working. Choose <strong>Exit</strong> from the System Tray menu whenever you want to close it completely.</p>
+      </details>
+      <details>
+        <summary>Is DisplayFlip free and safe to run on Windows 11?</summary>
+        <p>Yes — DisplayFlip is 100% free, open source on GitHub, and uses official Windows CCD display APIs with zero background telemetry.</p>
+      </details>
+    </section>
+
+    <!-- AD PLACEMENT 4 -->
+    <aside class="ad-zone ad-footer" aria-label="Advertisement">
+      <div class="ad-label">Advertisement · Slot 4: footer (Closing Responsive Ad Unit)</div>
+      <div class="ad-sub">Full-width closing ad unit before footer navigation.</div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="container foot-inner">
+      <div><strong>DisplayFlip v1.1.0</strong> · Native Windows 10/11 Display Layout Utility</div>
+      <div class="foot-links">
+        <a href="https://github.com/ieproject-app/DisplayFlip" target="_blank" rel="noopener">GitHub Repo</a>
+        <a href="https://snipgeek.com" target="_blank" rel="noopener">SnipGeek</a>
+        <a href="https://snipgeek.com/privacy" target="_blank" rel="noopener">Privacy</a>
+        <a href="https://snipgeek.com/terms" target="_blank" rel="noopener">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("toggleAdsBtn").addEventListener("click", function () {
+      document.body.classList.toggle("ad-hidden");
+      const hidden = document.body.classList.contains("ad-hidden");
+      this.textContent = hidden ? "AdSense Slots: Hidden" : "AdSense Slots: Visible";
+      this.classList.toggle("active", !hidden);
+    });
+
+    const shots = {
+      displays: { light: "../screenshots/01_layar_dan_profil_light.png", dark: "../screenshots/05_layar_dan_profil_dark.png" },
+      tray: { light: "../screenshots/09_menu_cepat_tray_light.png", dark: "../screenshots/10_menu_cepat_tray_dark.png" },
+      shortcuts: { light: "../screenshots/02_pintasan_keyboard_light.png", dark: "../screenshots/06_pintasan_keyboard_dark.png" },
+      general: { light: "../screenshots/03_umum_dan_ikon_light.png", dark: "../screenshots/07_umum_dan_ikon_dark.png" },
+      about: { light: "../screenshots/04_tentang_dan_cli_light.png", dark: "../screenshots/08_tentang_dan_cli_dark.png" },
+    };
+    let currentTab = "displays";
+    let currentMode = "light";
+
+    function renderShot() {
+      document.getElementById("shotImg").src = shots[currentTab][currentMode];
+      document.getElementById("shotFrame").classList.toggle("dark-backdrop", currentMode === "dark");
+    }
+
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentTab = btn.dataset.key;
+        renderShot();
+      });
+    });
+
+    document.getElementById("modeLightBtn").addEventListener("click", () => {
+      currentMode = "light";
+      document.getElementById("modeLightBtn").classList.add("active");
+      document.getElementById("modeDarkBtn").classList.remove("active");
+      renderShot();
+    });
+    document.getElementById("modeDarkBtn").addEventListener("click", () => {
+      currentMode = "dark";
+      document.getElementById("modeDarkBtn").classList.add("active");
+      document.getElementById("modeLightBtn").classList.remove("active");
+      renderShot();
+    });
+
+    const simLogs = {
+      "solo-to-profile": `
+        <div>&gt; Current Windows state: <strong>Solo 1 (External display sleeping)</strong></div>
+        <div>&gt; Requested profile: <strong>"2-Monitor Desk" (DISPLAY1 Left + DISPLAY2 Right Primary)</strong></div>
+        <div><span class="ok">✓ Auto-Wake:</span> Transitioning Win32 topology to Extend first...</div>
+        <div><span class="ok">✓ Applied:</span> DISPLAY2 woken, positioned at X=1920, set as Primary @ 165Hz.</div>
+      `,
+      "unplugged": `
+        <div>&gt; Connected hardware: <strong>DISPLAY1 only (MSI40B7 disconnected)</strong></div>
+        <div>&gt; Requested profile: <strong>"2-Monitor Desk"</strong></div>
+        <div><span class="warn">⚠ Partial-Apply Safe Guard:</span> Missing display skipped safely without crash.</div>
+        <div><span class="ok">✓ Result:</span> DISPLAY1 promoted to Primary @ 1920×1080 with clear status badge.</div>
+      `,
+      "quick-swap": `
+        <div>&gt; Trigger: <strong>Tray Context Menu → Quick Swap (Ctrl+Alt+S)</strong></div>
+        <div><span class="ok">✓ Swapped:</span> Left/Right X-coordinates flipped &amp; Primary display transferred in &lt;150ms.</div>
+        <div><span class="ok">✓ Verified:</span> Taskbar &amp; active work area refreshed cleanly.</div>
+      `
+    };
+    document.querySelectorAll(".sim-action").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".sim-action").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("simLog").innerHTML = simLogs[btn.dataset.sim];
+      });
+    });
+  </script>
+</body>
+</html>
