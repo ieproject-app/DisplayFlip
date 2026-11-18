@@ -132,5 +132,6 @@ dotnet run --project src\DisplayFlip.Wpf\DisplayFlip.Wpf.csproj
 
 ## License
 
-Copyright © 2026 Iwan Efendi. All rights reserved.
-*(Currently maintained in a private repository while evaluating Microsoft Store distribution.)*
+Released under the [MIT License](LICENSE).
+
+Copyright © 2026 Iwan Efendi.

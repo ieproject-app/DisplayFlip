@@ -2,6 +2,16 @@
 
 All notable changes to **DisplayFlip** will be documented in this file.
 
+## [1.1.0] - 2026-11-15
+
+### Added
+- **Bilingual Indonesian & English UI and CLI:**
+  - Core `LocalizationCatalog` with backward-compatible `ProfileFile.Language` (`auto`/`id`/`en`).
+  - Observable `Loc` singleton with zero-restart language switching across WPF pages, 2D canvas, tray, and overlays.
+  - Non-mutating `--lang <id|en>` CLI override that never alters persisted settings.
+  - About page links to both GitHub and displayflip.snipgeek.com.
+- Refreshed English Light/Dark UI showcase screenshots; test suite expanded to 316 tests.
+
 ## [1.0.0] - 2026-11-15
 
 ### Added
